@@ -1,0 +1,112 @@
+name: Build Test Control EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt pyinstaller pytest
+      - name: Run tests
+        run: python -m pytest -q
+      - name: Compile sources
+        run: python -m py_compile app.py models.py
+      - name: Build EXE
+        shell: pwsh
+        env:
+          APP_VERSION: v0.1.${{ github.run_number }}
+        run: pyinstaller --noconfirm --clean --onefile --windowed --name "Test_Kontrol_$env:APP_VERSION" app.py
+      - name: Smoke test packaged EXE startup
+        shell: pwsh
+        env:
+          APP_VERSION: v0.1.${{ github.run_number }}
+        run: |
+          $exe = Join-Path $PWD "dist/Test_Kontrol_$env:APP_VERSION.exe"
+          if (-not (Test-Path -LiteralPath $exe)) { throw "EXE not found: $exe" }
+          $proc = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 10
+          if ($proc.HasExited) { throw "Test Control EXE exited during startup smoke test. ExitCode=$($proc.ExitCode)" }
+          Write-Host "Test Control EXE startup OK"
+          Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+      - name: Prepare release assets
+        shell: pwsh
+        env:
+          APP_VERSION: v0.1.${{ github.run_number }}
+        run: |
+          $source = "dist/Test_Kontrol_$env:APP_VERSION.exe"
+          Copy-Item $source dist/Test_Kontrol_latest.exe
+          Copy-Item $source "dist/Test_Kontrol_${env:GITHUB_SHA}.exe"
+          Compress-Archive -Path $source -DestinationPath "dist/Test_Kontrol_${env:GITHUB_SHA}.zip" -CompressionLevel Optimal
+      - name: Publish latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP_VERSION: v0.1.${{ github.run_number }}
+        shell: bash
+        run: |
+          if gh release view latest >/dev/null 2>&1; then
+            gh release upload latest dist/Test_Kontrol_latest.exe --clobber
+            gh release upload latest "dist/Test_Kontrol_${GITHUB_SHA}.exe" --clobber
+            gh release upload latest "dist/Test_Kontrol_${GITHUB_SHA}.zip" --clobber
+            gh release edit latest --title "Test Kontrol $APP_VERSION - Latest" --notes "Version: $APP_VERSION; Build: $GITHUB_SHA"
+          else
+            gh release create latest dist/Test_Kontrol_latest.exe "dist/Test_Kontrol_${GITHUB_SHA}.exe" "dist/Test_Kontrol_${GITHUB_SHA}.zip" --target "$GITHUB_SHA" --title "Test Kontrol $APP_VERSION - Latest" --notes "Version: $APP_VERSION; Build: $GITHUB_SHA"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Test_Kontrol_Windows
+          path: dist/Test_Kontrol_v0.1.${{ github.run_number }}.exe
+
+  deploy-update:
+    needs: build-windows
+    runs-on: self-hosted
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Test_Kontrol_Windows
+          path: update-dist
+      - name: Publish VM update manifest
+        shell: bash
+        env:
+          UPDATE_ROOT: /var/www/test-kontrol-updates
+          BUILD_SHA: ${{ github.sha }}
+          VERSION: v0.1.${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          exe="update-dist/Test_Kontrol_${VERSION}.exe"
+          size="$(stat -c '%s' "$exe")"
+          sha="$(sha256sum "$exe" | awk '{print $1}')"
+          name="Test_Kontrol_${VERSION}_${BUILD_SHA}.exe"
+          chunk_prefix="${name}.part"
+          install -m 0644 "$exe" "$UPDATE_ROOT/.${name}.tmp"
+          rm -f "$UPDATE_ROOT/${chunk_prefix}"*
+          split -b 256k -d -a 3 "$exe" "$UPDATE_ROOT/.${chunk_prefix}"
+          chunks_json="["
+          index=0
+          for chunk in "$UPDATE_ROOT"/.${chunk_prefix}*; do
+            suffix="$(printf '%03d' "$index")"
+            public_name="${chunk_prefix}${suffix}"
+            mv -f "$chunk" "$UPDATE_ROOT/$public_name"
+            chunk_size="$(stat -c '%s' "$UPDATE_ROOT/$public_name")"
+            if [ "$index" -gt 0 ]; then chunks_json+=","; fi
+            chunks_json+="{\"file\":\"$public_name\",\"size\":$chunk_size}"
+            index=$((index + 1))
+          done
+          chunks_json+="]"
+          printf '{"version":"%s","build":"%s","file":"%s","size":%s,"sha256":"%s","chunks":%s}\n' "$VERSION" "$BUILD_SHA" "$name" "$size" "$sha" "$chunks_json" > "$UPDATE_ROOT/.manifest.json.tmp"
+          mv -f "$UPDATE_ROOT/.${name}.tmp" "$UPDATE_ROOT/$name"
+          mv -f "$UPDATE_ROOT/.manifest.json.tmp" "$UPDATE_ROOT/manifest.json"
+          install -m 0644 "$UPDATE_ROOT/$name" "$UPDATE_ROOT/Test_Kontrol_latest.exe"
