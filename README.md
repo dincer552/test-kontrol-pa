@@ -18,7 +18,7 @@ Arayüz, önceki Test Kontrol uygulamasındaki iş akışını koruyacak şekild
 
 ## Güncelleme mimarisi
 
-PDF kW Selector'daki mevcut yayın mantığı esas alınır:
+PDF kW Selector'daki VM tabanlı yayın/indirme mantığı bu projeye de uygulanır:
 
 ```text
 GitHub push
@@ -31,12 +31,21 @@ GitHub Latest Release
    ↓
 Self-hosted runner / VM
    ↓
-/var/www/test-kontrol-updates
+/var/www/pdf-selector-updates/test-kontrol
    ↓
-manifest.json + Test_Kontrol_latest.exe
+manifest.json + 256 KB parçalar + Test_Kontrol_latest.exe
+   ↓
+TEST KONTROL → GÜNCELLE
+   ↓
+manifest kontrolü → paralel parça indirme → SHA-256 doğrulama
+   ↓
+EXE değiştirme → otomatik yeniden başlatma
 ```
 
-VM tarafındaki mevcut servis/indirici yapısına dokunmadan ayrı bir update klasörü kullanılacaktır. Self-hosted runner'ın bu repository için yetkilendirilmesi gerektiğinde ayrıca yapılandırılacaktır.
+Güncelleme manifest adresi:
+`http://20.91.245.7/pdf-updates/test-kontrol/manifest.json`
+
+Self-updater, güncelleme dosyasını dört paralel indirme hattıyla ve parça bazında yeniden denemeyle indirir; toplam boyut ve SHA-256 doğrulamasından sonra çalışan EXE'yi yardımcı PowerShell süreciyle değiştirir.
 
 ## Geliştirme aşamaları
 
@@ -54,7 +63,7 @@ VM tarafındaki mevcut servis/indirici yapısına dokunmadan ayrı bir update kl
 - ☐ Faz 11 — User / imza
 - ☐ Faz 12 — Excel raporu
 - ☐ Faz 13 — PDF raporu
-- ☐ Faz 14 — update client ve VM entegrasyonunun sonlandırılması
+- ☑ Faz 14 — update client ve VM entegrasyonu
 - ☐ Faz 15 — regression / Windows paket testleri
 
 ## Kurallar
