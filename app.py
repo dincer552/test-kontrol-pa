@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import messagebox, ttk
+import webbrowser
 
 from models import DAMPER_NAMES, FILTER_IDS, SENSOR_NAMES, TestControlState
 
 
 VERSION = "v0.1.0"
+UPDATE_URL = "https://github.com/dincer552/test-kontrol-pa/releases/latest"
 
 
 class TestControlApp(tk.Tk):
@@ -61,6 +63,13 @@ class TestControlApp(tk.Tk):
         style.configure("Treeview", background="#ffffff", foreground=text, fieldbackground="#ffffff", rowheight=26, font=("Segoe UI", 9), borderwidth=1, bordercolor=border)
         style.configure("Treeview.Heading", background="#f8fafc", foreground=text, font=("Segoe UI", 9, "bold"), borderwidth=1, bordercolor=border, padding=6)
 
+    def _open_update_page(self) -> None:
+        """Open this project's latest release page."""
+        try:
+            webbrowser.open(UPDATE_URL, new=2)
+        except Exception as exc:
+            messagebox.showerror("GÜNCELLE", f"Güncelleme sayfası açılamadı:\n{exc}", parent=self)
+
     def _build_ui(self) -> None:
         # Header mirrors PDF kW Selector: compact white card, blue badge, title, version.
         header = ttk.Frame(self, style="White.TFrame", padding=(12, 8))
@@ -70,7 +79,10 @@ class TestControlApp(tk.Tk):
         title_box.pack(side="left")
         ttk.Label(title_box, text="TEST KONTROL", style="Title.TLabel").pack(anchor="w")
         ttk.Label(title_box, text="AHU test, devreye alma, kontrol ve raporlama", style="Muted.TLabel").pack(anchor="w")
-        ttk.Label(header, text=VERSION, style="Badge.TLabel").pack(side="right", padx=(6, 0))
+
+        # Update button stays in the upper-right corner, next to the version badge.
+        ttk.Button(header, text="GÜNCELLE", style="Secondary.TButton", command=self._open_update_page).pack(side="right", padx=(6, 0))
+        ttk.Label(header, text=VERSION, style="Badge.TLabel").pack(side="right", padx=(0, 6))
 
         # Main notebook uses the same clean white-card visual language.
         tabs = ttk.Notebook(self)
@@ -206,86 +218,67 @@ class TestControlApp(tk.Tk):
             ttk.Label(card, text=name).grid(row=r, column=0, sticky="w", pady=6, padx=(0, 20))
             var = tk.StringVar(value=self.state.sensors[name])
             self._sensor_vars[name] = var
-            ttk.Entry(card, textvariable=var, width=28).grid(row=r, column=1, sticky="w", pady=6)
+            ttk.Entry(card, textvariable=var, width=24).grid(row=r, column=1, sticky="w", pady=6)
         ttk.Button(card, text="KAYDET", style="Primary.TButton", command=self._save).grid(row=len(SENSOR_NAMES), column=0, sticky="w", pady=(12, 0))
 
     def _add_c600(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
         notebook.add(tab, text="C600")
-        card = ttk.LabelFrame(body, text="C600 / GenericJSON", style="Card.TLabelframe", padding=14)
+        card = ttk.LabelFrame(body, text="Climatix C600 / GenericJSON", style="Card.TLabelframe", padding=14)
         card.pack(fill="x")
-        ttk.Label(card, text="Base URL").grid(row=0, column=0, sticky="w", pady=7)
-        self._c600_base_url_var = tk.StringVar(value=self.state.c600_base_url)
-        ttk.Entry(card, textvariable=self._c600_base_url_var, width=65).grid(row=0, column=1, sticky="w")
-        ttk.Label(card, text="JSON ID").grid(row=1, column=0, sticky="w", pady=7)
-        self._c600_json_id_var = tk.StringVar(value=self.state.c600_json_id)
-        ttk.Entry(card, textvariable=self._c600_json_id_var, width=65).grid(row=1, column=1, sticky="w")
-        ttk.Label(card, text="Kimlik bilgileri kaynak koda gömülmez; güvenli yapılandırmadan alınacaktır.", style="Muted.TLabel", wraplength=750).grid(row=2, column=0, columnspan=2, sticky="w", pady=(12, 18))
-        ttk.Button(card, text="VERİLERİ ÇEK", style="Primary.TButton", command=self._read_c600).grid(row=3, column=0, sticky="w")
-        self._c600_result = tk.Label(card, text="● Hazır", bg="#fef3c7", fg="#92400e", font=("Segoe UI", 9, "bold"), padx=8, pady=3)
-        self._c600_result.grid(row=3, column=1, sticky="w", padx=10)
+        ttk.Label(card, text="Bağlantı: USB / SCOPE TCP Tunnel").grid(row=0, column=0, columnspan=2, sticky="w", pady=6)
+        ttk.Label(card, text="Durum: Henüz bağlanmadı").grid(row=1, column=0, columnspan=2, sticky="w", pady=6)
+        ttk.Button(card, text="BAĞLANTI TESTİ", style="Primary.TButton", command=self._c600_test).grid(row=2, column=0, sticky="w", pady=(12, 0))
 
     def _add_user_report(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
         notebook.add(tab, text="USER / RAPOR")
-        card = ttk.LabelFrame(body, text="Kullanıcı ve Rapor", style="Card.TLabelframe", padding=14)
-        card.pack(fill="both", expand=True)
-        ttk.Label(card, text="Ad Soyad").grid(row=0, column=0, sticky="w", pady=7)
-        self._user_var = tk.StringVar(value=self.state.user_name)
-        ttk.Entry(card, textvariable=self._user_var, width=50).grid(row=0, column=1, sticky="w")
-        ttk.Label(card, text="Notlar").grid(row=1, column=0, sticky="nw", pady=7)
-        self._notes = tk.Text(card, height=14, width=90, bg="#f8fafc", fg="#0f172a", font=("Segoe UI", 9), relief="flat", highlightbackground="#e2e8f0", highlightthickness=1)
-        self._notes.grid(row=1, column=1, sticky="nsew", pady=7)
-        self._notes.insert("1.0", self.state.notlar)
-        card.rowconfigure(1, weight=1)
-        card.columnconfigure(1, weight=1)
-        ttk.Button(card, text="KAYDET", style="Primary.TButton", command=self._save).grid(row=2, column=1, sticky="w", pady=(12, 0))
+        card = ttk.LabelFrame(body, text="User / Rapor", style="Card.TLabelframe", padding=14)
+        card.pack(fill="x")
+        ttk.Label(card, text="Kullanıcı").grid(row=0, column=0, sticky="w", pady=6)
+        self._user_var = tk.StringVar(value="")
+        ttk.Entry(card, textvariable=self._user_var, width=40).grid(row=0, column=1, sticky="w", pady=6)
+        ttk.Button(card, text="KAYDET", style="Primary.TButton", command=self._save).grid(row=1, column=0, sticky="w", pady=(12, 0))
 
     def _build_bottom_dock(self) -> None:
-        # Same bottom action/status dock concept as PDF kW Selector.
         dock = ttk.Frame(self, style="White.TFrame", padding=(10, 6))
         dock.pack(side="bottom", fill="x", padx=10, pady=(6, 0))
+        ttk.Button(dock, text="✓ KAYDET", style="Primary.TButton", command=self._save).pack(side="left", padx=(0, 6))
+        ttk.Button(dock, text="↻ TEMİZLE", style="Secondary.TButton", command=self._clear).pack(side="left", padx=3)
+        ttk.Button(dock, text="▣ RAPOR", style="Secondary.TButton", command=self._report).pack(side="left", padx=3)
+        ttk.Label(dock, text="DURUM", style="Muted.TLabel").pack(side="right", padx=(20, 4))
+        for name in ("FAN", "DAMP", "FİLT", "MOD", "SENS"):
+            ttk.Label(dock, text=f"• {name}", style="Badge.TLabel").pack(side="right", padx=2)
+        ttk.Label(dock, text="Hazır", style="Muted.TLabel").pack(side="right", padx=(8, 0))
 
-        buttons = ttk.Frame(dock, style="White.TFrame")
-        buttons.pack(side="left", fill="x", expand=True)
-        ttk.Button(buttons, text="✓ KAYDET", style="Primary.TButton", command=self._save).pack(side="left", padx=(0, 6))
-        ttk.Button(buttons, text="↺ TEMİZLE", style="Secondary.TButton", command=self._clear).pack(side="left", padx=3)
-        ttk.Button(buttons, text="▣ RAPOR", style="Secondary.TButton", command=self._report_placeholder).pack(side="left", padx=3)
-
-        status_area = tk.Frame(dock, bg="#ffffff")
-        status_area.pack(side="right")
-        tk.Label(status_area, text="DURUM", bg="#ffffff", fg="#64748b", font=("Segoe UI", 8, "bold")).pack(side="left", padx=(0, 8))
-        for name in ("Fan Kontrol", "Damper Kontrol", "Filtre Kontrol", "Modüller", "Sensorler"):
-            short = {"Fan Kontrol": "FAN", "Damper Kontrol": "DAMP", "Filtre Kontrol": "FİLT", "Modüller": "MOD", "Sensorler": "SENS"}[name]
-            pill = tk.Label(status_area, text=f"● {short}", bg="#fef3c7", fg="#92400e", font=("Segoe UI", 8, "bold"), padx=6, pady=3)
-            pill.pack(side="left", padx=2)
-            self._status_labels[f"bottom:{name}"] = pill
-
-        self._overall_status = tk.Label(status_area, text="Hazır", bg="#ffffff", fg="#64748b", font=("Segoe UI", 9, "bold"))
-        self._overall_status.pack(side="left", padx=(10, 0))
+    def _update_statuses(self) -> None:
+        mapping = {
+            "Fan Kontrol": self.state.fan_control_ok,
+            "Damper Kontrol": self.state.damper_control_ok,
+            "Filtre Kontrol": self.state.filter_control_ok,
+            "Modüller": self.state.modules_ok,
+            "Sensorler": self.state.sensors_ok,
+            "C600 / GenericJSON": self.state.c600_ok,
+            "User": self.state.user_ok,
+            "Rapor": self.state.report_ok,
+        }
+        for name, ok in mapping.items():
+            self._status_vars[name].set("Kontrol Edildi" if ok else "Kontrol Edilmedi")
+            self._status_labels[name].configure(bg="#dcfce7" if ok else "#fef3c7", fg="#166534" if ok else "#92400e")
 
     def _save(self) -> None:
-        self.state.set_project_info(self._order_no_var.get(), self._project_name_var.get(), self._ahu_name_var.get())
-        self.state.user_name = self._user_var.get().strip()
-        self.state.notlar = self._notes.get("1.0", "end-1c")
+        self.state.order_no = self._order_no_var.get()
+        self.state.project_name = self._project_name_var.get()
+        self.state.ahu_name = self._ahu_name_var.get()
         self.state.fan_type = self._fan_var.get()
+        self.state.supply_fan_count = int(self._supply_fan_count_var.get() or 0)
+        self.state.return_fan_count = int(self._return_fan_count_var.get() or 0)
+        self.state.supply_airflow = self._supply_airflow_var.get()
+        self.state.return_airflow = self._return_airflow_var.get()
         self.state.airflow_control_ok = self._airflow_var.get()
         self.state.pressure_control_ok = self._pressure_var.get()
-        self.state.supply_airflow = self._supply_airflow_var.get().strip()
-        self.state.return_airflow = self._return_airflow_var.get().strip()
-        try:
-            self.state.supply_fan_count = int(self._supply_fan_count_var.get())
-        except ValueError:
-            self.state.supply_fan_count = 0
-        try:
-            self.state.return_fan_count = int(self._return_fan_count_var.get())
-        except ValueError:
-            self.state.return_fan_count = 0
         for name, var in self._damper_vars.items():
-            try:
-                self.state.damper_counts[name] = int(var.get())
-            except ValueError:
-                self.state.damper_counts[name] = 0
+            self.state.damper_counts[name] = int(var.get() or 0)
         for name, var in self._filter_vars.items():
             self.state.filters[name] = var.get()
         self.state.rotor_enabled = self._rotor_var.get()
@@ -296,76 +289,49 @@ class TestControlApp(tk.Tk):
         self.state.change_over = self._co_var.get()
         self.state.room_bms = self._bms_var.get()
         self.state.temp_avg_en = self._avg_var.get()
-        try:
-            self.state.dx_stage = max(0, min(5, int(self._dx_stage.get())))
-        except ValueError:
-            self.state.dx_stage = 0
-        try:
-            self.state.humidifier_stage = max(0, min(8, int(self._hum_stage.get())))
-        except ValueError:
-            self.state.humidifier_stage = 0
+        self.state.dx_stage = int(self._dx_stage.get() or 0)
+        self.state.humidifier_stage = int(self._hum_stage.get() or 0)
         for name, var in self._sensor_vars.items():
-            self.state.sensors[name] = var.get().strip() or "-"
-        self.state.c600_base_url = self._c600_base_url_var.get().strip()
-        self.state.c600_json_id = self._c600_json_id_var.get().strip()
+            self.state.sensors[name] = var.get()
+        self.state.user_name = self._user_var.get()
+        self.state.recalculate()
         self._update_statuses()
-        self._overall_status.configure(text="Kaydedildi", fg="#15803d")
-
-    def _update_statuses(self) -> None:
-        # Visual status is intentionally tied to actual entered data, not just button clicks.
-        checks = {
-            "Fan Kontrol": bool(self.state.fan_type and self.state.supply_airflow and self.state.return_airflow),
-            "Damper Kontrol": any(v > 0 for v in self.state.damper_counts.values()),
-            "Filtre Kontrol": any(self.state.filters.values()),
-            "Modüller": any((self.state.rotor_enabled, self.state.run_around, self.state.dx_enabled, self.state.humidifier_enabled, self.state.electrical_heater, self.state.change_over, self.state.room_bms, self.state.temp_avg_en)),
-            "Sensorler": any(str(v).strip() not in ("", "-") for v in self.state.sensors.values()),
-            "C600 / GenericJSON": bool(self.state.c600_base_url or self.state.c600_json_id),
-            "User": bool(self.state.user_name),
-            "Rapor": bool(self.state.notlar),
-        }
-        for name, ok in checks.items():
-            var = self._status_vars.get(name)
-            label = self._status_labels.get(name)
-            if var and label:
-                var.set("✓ Kontrol Edildi" if ok else "Kontrol Edilmedi")
-                label.configure(bg="#dcfce7" if ok else "#fef3c7", fg="#065f46" if ok else "#92400e")
-            bottom = self._status_labels.get(f"bottom:{name}")
-            if bottom:
-                short = bottom.cget("text").split()[-1]
-                bottom.configure(text=f"● {short}", bg="#dcfce7" if ok else "#fef3c7", fg="#065f46" if ok else "#92400e")
 
     def _clear(self) -> None:
-        if not messagebox.askyesno("Temizle", "Test Kontrol alanlarını temizlemek istediğinize emin misiniz?"):
-            return
         self.state = TestControlState()
-        self._order_no_var.set("")
-        self._project_name_var.set("")
-        self._ahu_name_var.set("")
+        for attr in ("order_no", "project_name", "ahu_name"):
+            getattr(self, f"_{attr}_var").set("")
         self._fan_var.set(self.state.fan_type)
-        self._supply_airflow_var.set("")
-        self._return_airflow_var.set("")
-        self._supply_fan_count_var.set("1")
-        self._return_fan_count_var.set("1")
-        self._airflow_var.set(False)
-        self._pressure_var.set(False)
-        for var in self._damper_vars.values(): var.set("0")
-        for var in self._filter_vars.values(): var.set(False)
-        for var in self._sensor_vars.values(): var.set("-")
+        self._supply_fan_count_var.set(str(self.state.supply_fan_count))
+        self._return_fan_count_var.set(str(self.state.return_fan_count))
+        self._supply_airflow_var.set(self.state.supply_airflow)
+        self._return_airflow_var.set(self.state.return_airflow)
+        self._airflow_var.set(self.state.airflow_control_ok)
+        self._pressure_var.set(self.state.pressure_control_ok)
+        for name, var in self._damper_vars.items():
+            var.set(str(self.state.damper_counts[name]))
+        for name, var in self._filter_vars.items():
+            var.set(str(self.state.filters[name]))
+        self._rotor_var.set(self.state.rotor_enabled)
+        self._run_var.set(self.state.run_around)
+        self._dx_var.set(self.state.dx_enabled)
+        self._hum_var.set(self.state.humidifier_enabled)
+        self._heater_var.set(self.state.electrical_heater)
+        self._co_var.set(self.state.change_over)
+        self._bms_var.set(self.state.room_bms)
+        self._avg_var.set(self.state.temp_avg_en)
+        self._dx_stage.set(str(self.state.dx_stage))
+        self._hum_stage.set(str(self.state.humidifier_stage))
+        for name, var in self._sensor_vars.items():
+            var.set(self.state.sensors[name])
         self._user_var.set("")
-        self._notes.delete("1.0", "end")
-        self._rotor_var.set(False); self._run_var.set(False); self._dx_var.set(False); self._hum_var.set(False); self._heater_var.set(False); self._co_var.set(False); self._bms_var.set(False); self._avg_var.set(False)
-        self._dx_stage.set("0"); self._hum_stage.set("0")
-        self._c600_base_url_var.set(""); self._c600_json_id_var.set("")
-        self._c600_result.configure(text="● Hazır", bg="#fef3c7", fg="#92400e")
         self._update_statuses()
-        self._overall_status.configure(text="Temizlendi", fg="#64748b")
 
-    def _read_c600(self) -> None:
-        self._c600_result.configure(text="● C600 bağlantısı sonraki fazda etkinleştirilecek", bg="#fef3c7", fg="#92400e")
-        self._status_vars["C600 / GenericJSON"].set("Kontrol Edilmedi")
+    def _report(self) -> None:
+        messagebox.showinfo("RAPOR", "Rapor oluşturma modülü hazırlanıyor.", parent=self)
 
-    def _report_placeholder(self) -> None:
-        messagebox.showinfo("Rapor", "Excel/PDF rapor modülü sonraki geliştirme fazında eklenecek.")
+    def _c600_test(self) -> None:
+        messagebox.showinfo("C600", "C600 bağlantı testi henüz etkin değil.", parent=self)
 
 
 if __name__ == "__main__":
