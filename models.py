@@ -58,6 +58,47 @@ class TestControlState:
     c600_language: str = "en-US"
     c600_user: str = ""
 
+    @property
+    def fan_control_ok(self) -> bool:
+        return bool(self.fan_type and self.supply_airflow and self.return_airflow)
+
+    @property
+    def damper_control_ok(self) -> bool:
+        return any(value > 0 for value in self.damper_counts.values())
+
+    @property
+    def filter_control_ok(self) -> bool:
+        return any(self.filters.values())
+
+    @property
+    def modules_ok(self) -> bool:
+        return any((
+            self.rotor_enabled,
+            self.run_around,
+            self.dx_enabled,
+            self.humidifier_enabled,
+            self.electrical_heater,
+            self.change_over,
+            self.room_bms,
+            self.temp_avg_en,
+        ))
+
+    @property
+    def sensors_ok(self) -> bool:
+        return any(str(value).strip() not in ("", "-") for value in self.sensors.values())
+
+    @property
+    def c600_ok(self) -> bool:
+        return bool(self.c600_base_url or self.c600_json_id)
+
+    @property
+    def user_ok(self) -> bool:
+        return bool(self.user_name)
+
+    @property
+    def report_ok(self) -> bool:
+        return bool(self.notlar)
+
     def set_project_info(self, order_no: str, project_name: str, ahu_name: str) -> None:
         self.order_no = order_no.strip()
         self.project_name = project_name.strip()
