@@ -23,8 +23,19 @@ jobs:
         run: python -m pip install -r requirements.txt pyinstaller pytest
       - name: Run tests
         run: python -m pytest -q
+      - name: Embed build metadata
+        shell: pwsh
+        env:
+          APP_VERSION: v0.1.${{ github.run_number }}
+        run: |
+          Set-Content -Path build_info.py -Value @(
+            '"""Build metadata embedded in the packaged TEST KONTROL application."""'
+            "BUILD_VERSION = `"$env:APP_VERSION`""
+            "BUILD_SHA = `"$env:GITHUB_SHA`""
+          ) -Encoding UTF8
+          python -c "import build_info; assert build_info.BUILD_VERSION == '$env:APP_VERSION'; print(build_info.BUILD_VERSION, build_info.BUILD_SHA)"
       - name: Compile sources
-        run: python -m py_compile app.py models.py
+        run: python -m py_compile app.py models.py updater.py webbrowser.py build_info.py
       - name: Build EXE
         shell: pwsh
         env:
@@ -81,18 +92,20 @@ jobs:
       - name: Publish VM update manifest
         shell: bash
         env:
-          UPDATE_ROOT: /var/www/test-kontrol-updates
+          UPDATE_ROOT: /var/www/pdf-selector-updates/test-kontrol
           BUILD_SHA: ${{ github.sha }}
           VERSION: v0.1.${{ github.run_number }}
         run: |
           set -euo pipefail
+          mkdir -p "$UPDATE_ROOT"
           exe="update-dist/Test_Kontrol_${VERSION}.exe"
+          test -s "$exe"
           size="$(stat -c '%s' "$exe")"
           sha="$(sha256sum "$exe" | awk '{print $1}')"
           name="Test_Kontrol_${VERSION}_${BUILD_SHA}.exe"
           chunk_prefix="${name}.part"
+          rm -f "$UPDATE_ROOT/${name}.tmp" "$UPDATE_ROOT/${chunk_prefix}"*
           install -m 0644 "$exe" "$UPDATE_ROOT/.${name}.tmp"
-          rm -f "$UPDATE_ROOT/${chunk_prefix}"*
           split -b 256k -d -a 3 "$exe" "$UPDATE_ROOT/.${chunk_prefix}"
           chunks_json="["
           index=0
@@ -109,4 +122,7 @@ jobs:
           printf '{"version":"%s","build":"%s","file":"%s","size":%s,"sha256":"%s","chunks":%s}\n' "$VERSION" "$BUILD_SHA" "$name" "$size" "$sha" "$chunks_json" > "$UPDATE_ROOT/.manifest.json.tmp"
           mv -f "$UPDATE_ROOT/.${name}.tmp" "$UPDATE_ROOT/$name"
           mv -f "$UPDATE_ROOT/.manifest.json.tmp" "$UPDATE_ROOT/manifest.json"
+          find "$UPDATE_ROOT" -maxdepth 1 -type f -name 'Test_Kontrol_*.exe' ! -name "$name" ! -name 'Test_Kontrol_latest.exe' -delete
+          find "$UPDATE_ROOT" -maxdepth 1 -type f -name 'Test_Kontrol_*.exe.part*' ! -name "${name}.part*" -delete
           install -m 0644 "$UPDATE_ROOT/$name" "$UPDATE_ROOT/Test_Kontrol_latest.exe"
+          echo "Published Test Control update: version=$VERSION build=$BUILD_SHA size=$size sha256=$sha chunks=$index"
