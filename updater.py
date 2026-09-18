@@ -5,7 +5,7 @@ The update flow mirrors the PDF kW Selector updater:
 - download 256 KB chunks in parallel with retries,
 - verify total size and SHA-256,
 - replace the running EXE from a helper process after exit,
-- restart the updated application.
+- close the old application after installation and ask the user to restart it manually.
 """
 from __future__ import annotations
 
@@ -250,7 +250,6 @@ try {
     if (-not (Test-Path -LiteralPath $Target)) {
         throw "Güncelleme dosyası hedefe taşınamadı."
     }
-    Start-Process -FilePath $Target
 } catch {
     Add-Type -AssemblyName PresentationFramework
     [System.Windows.MessageBox]::Show(
@@ -287,7 +286,7 @@ try {
 
 
 def start_update(parent, button=None) -> None:
-    """Check the VM manifest, download and verify the new EXE, then restart."""
+    """Check the VM manifest, download and verify the new EXE, then ask for a manual restart."""
     if getattr(parent, "_update_running", False):
         return
     parent._update_running = True
@@ -345,7 +344,12 @@ def start_update(parent, button=None) -> None:
             downloaded = download_update(update, progress=report)
             parent.after(0, lambda: parent.title(f"TEST KONTROL {update['version']} — Güncelleme hazırlanıyor..."))
             _start_replacement(downloaded, current)
-            parent.after(250, parent.destroy)
+            parent.after(250, lambda: messagebox.showinfo(
+                "GÜNCELLEME HAZIR",
+                "Güncelleme başarıyla kuruldu.\n\nTEST KONTROL kapatıldı. Değişikliklerin uygulanması için programı yeniden başlatın.",
+                parent=parent,
+            ))
+            parent.after(300, parent.destroy)
         except Exception as exc:
             parent.after(0, lambda: messagebox.showerror("GÜNCELLE", f"Güncelleme başarısız:\n{exc}", parent=parent))
             finish()
