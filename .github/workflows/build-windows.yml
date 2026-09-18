@@ -79,7 +79,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: Test_Kontrol_Windows
-          path: dist/Test_Kontrol_v0.1.${{ github.run_number }}.exe
+          path: dist/Test_Kontrol_v0.1.0.${{ github.run_number }}.exe
 
   deploy-update:
     needs: build-windows
@@ -94,7 +94,7 @@ jobs:
         env:
           UPDATE_ROOT: /var/www/pdf-selector-updates/test-kontrol
           BUILD_SHA: ${{ github.sha }}
-          VERSION: v0.1.${{ github.run_number }}
+          VERSION: v0.1.0.${{ github.run_number }}
         run: |
           set -euo pipefail
           mkdir -p "$UPDATE_ROOT"
