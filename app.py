@@ -19,6 +19,9 @@ from updater import check_for_update, start_update
 VERSION = BUILD_VERSION
 UPDATE_CHECK_INTERVAL_MS = 2 * 60 * 1000
 UPDATE_URL = "https://github.com/dincer552/test-kontrol-pa/releases/latest"
+C600_API_USERNAME = "ADMIN"
+C600_API_PASSWORD = "SBTAdmin!"
+C600_API_PIN = "6000"
 
 
 class TestControlApp(tk.Tk):
@@ -465,14 +468,14 @@ class TestControlApp(tk.Tk):
 
         query = urllib.parse.urlencode({
             "fn": "Read",
-            "pin": "6000",
+            "pin": C600_API_PIN,
             "lng": "0",
             "us": "2",
             "id": point_id,
         })
         url = f"http://{host}:{port}/json.html?{query}"
         request = urllib.request.Request(url, method="GET")
-        credentials = base64.b64encode(b"ADMIN:SBTAdmin!").decode("ascii")
+        credentials = base64.b64encode(f"{C600_API_USERNAME}:{C600_API_PASSWORD}".encode("ascii")).decode("ascii")
         request.add_header("Authorization", f"Basic {credentials}")
         with urllib.request.urlopen(request, timeout=3.0) as response:
             payload = response.read().decode("utf-8")
