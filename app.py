@@ -123,9 +123,11 @@ class TestControlApp(tk.Tk):
                 build_label = self._update_build_label
                 if build_label is not None:
                     if available and update:
-                        build = str(update.get("build") or "").strip()
                         version = str(update.get("version") or "").strip()
-                        label = f"Build {build}" if build else (f"v{version.lstrip('vV')}" if version else "Yeni sürüm")
+                        display_version = version.lstrip("vV")
+                        if display_version.startswith("0.1.0."):
+                            display_version = "1.0." + display_version[len("0.1.0."):]
+                        label = f"v{display_version}" if display_version else "Yeni sürüm"
                         build_label.configure(text=label)
                     else:
                         build_label.configure(text="")
@@ -163,20 +165,26 @@ class TestControlApp(tk.Tk):
         ttk.Label(title_box, text="AHU test, devreye alma, kontrol ve raporlama", style="Muted.TLabel").pack(anchor="w")
 
         # Manual update check stays available; the install button activates only when a newer build exists.
-        update_box = ttk.Frame(header, style="White.TFrame")
-        update_box.pack(side="right", padx=(6, 0))
-        self._update_button = ttk.Button(update_box, text="GÜNCELLE", style="Secondary.TButton", command=self._start_update, state="disabled")
-        self._update_button.pack(side="top")
-        self._update_build_label = ttk.Label(update_box, text="", style="UpdateBuild.TLabel")
-        self._update_build_label.pack(side="top", pady=(2, 0))
+        update_controls = ttk.Frame(header, style="White.TFrame")
+        update_controls.pack(side="right", padx=(6, 0))
         self._manual_update_button = ttk.Button(
-            header,
+            update_controls,
             text="↻",
             style="Secondary.TButton",
             width=2,
             command=self._manual_update_check,
         )
-        self._manual_update_button.pack(side="right", padx=(6, 0))
+        self._manual_update_button.grid(row=0, column=0, padx=(0, 6), sticky="s")
+        self._update_button = ttk.Button(
+            update_controls,
+            text="GÜNCELLE",
+            style="Secondary.TButton",
+            command=self._start_update,
+            state="disabled",
+        )
+        self._update_button.grid(row=0, column=1, sticky="s")
+        self._update_build_label = ttk.Label(update_controls, text="", style="UpdateBuild.TLabel")
+        self._update_build_label.grid(row=1, column=1, pady=(2, 0), sticky="n")
 
         # Main notebook uses the same clean white-card visual language.
         tabs = ttk.Notebook(self)
