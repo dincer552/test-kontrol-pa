@@ -9,9 +9,11 @@ import webbrowser
 
 from models import DAMPER_NAMES, FILTER_IDS, SENSOR_NAMES, TestControlState
 from build_info import BUILD_VERSION, BUILD_SHA
+from updater import check_for_update, start_update
 
 
 VERSION = BUILD_VERSION
+UPDATE_CHECK_INTERVAL_MS = 2 * 60 * 1000
 UPDATE_URL = "https://github.com/dincer552/test-kontrol-pa/releases/latest"
 
 
@@ -31,9 +33,13 @@ class TestControlApp(tk.Tk):
         self._c600_tx_id = 0
         self._c600_log: tk.Text | None = None
         self._c600_info_vars: dict[str, tk.StringVar] = {}
+        self._update_check_running = False
+        self._update_available = False
+        self._update_button: ttk.Button | None = None
         self._init_modern_theme()
         self._build_ui()
         self._update_statuses()
+        self.after(2000, self._schedule_update_check)
 
     def _init_modern_theme(self) -> None:
         self.configure(bg="#f0f4f9")
@@ -79,6 +85,41 @@ class TestControlApp(tk.Tk):
         except Exception as exc:
             messagebox.showerror("GÜNCELLE", f"Güncelleme sayfası açılamadı:\n{exc}", parent=self)
 
+    def _schedule_update_check(self) -> None:
+        """Check the published VM manifest every two minutes without blocking Tkinter."""
+        self._check_for_update_async()
+        self.after(UPDATE_CHECK_INTERVAL_MS, self._schedule_update_check)
+
+    def _check_for_update_async(self) -> None:
+        if self._update_check_running or getattr(self, "_update_running", False):
+            return
+        self._update_check_running = True
+
+        def worker() -> None:
+            available = False
+            try:
+                update = check_for_update()
+                available = bool(update.get("available"))
+            except Exception:
+                available = False
+
+            def apply() -> None:
+                self._update_check_running = False
+                self._update_available = available
+                button = self._update_button
+                if button is None:
+                    return
+                button.configure(text="GÜNCELLE", state="normal" if available else "disabled")
+
+            self.after(0, apply)
+
+        threading.Thread(target=worker, name="test-kontrol-update-check", daemon=True).start()
+
+    def _start_update(self) -> None:
+        if not self._update_available or self._update_button is None:
+            return
+        start_update(self, self._update_button)
+
     def _build_ui(self) -> None:
         # Header mirrors PDF kW Selector: compact white card, blue badge, title, version.
         header = ttk.Frame(self, style="White.TFrame", padding=(12, 8))
@@ -89,8 +130,9 @@ class TestControlApp(tk.Tk):
         ttk.Label(title_box, text="TEST KONTROL", style="Title.TLabel").pack(anchor="w")
         ttk.Label(title_box, text="AHU test, devreye alma, kontrol ve raporlama", style="Muted.TLabel").pack(anchor="w")
 
-        # Update button stays in the upper-right corner, next to the version badge.
-        ttk.Button(header, text="GÜNCELLE", style="Secondary.TButton", command=self._open_update_page).pack(side="right", padx=(6, 0))
+        # Update button is disabled until the VM reports a newer build.
+        self._update_button = ttk.Button(header, text="GÜNCELLE", style="Secondary.TButton", command=self._start_update, state="disabled")
+        self._update_button.pack(side="right", padx=(6, 0))
         ttk.Label(header, text=VERSION, style="Badge.TLabel").pack(side="right", padx=(0, 6))
 
         # Main notebook uses the same clean white-card visual language.
