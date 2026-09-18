@@ -6,6 +6,10 @@ import time
 import tkinter as tk
 from tkinter import messagebox, ttk
 import webbrowser
+import base64
+import json
+import urllib.parse
+import urllib.request
 
 from models import DAMPER_NAMES, FILTER_IDS, SENSOR_NAMES, TestControlState
 from build_info import BUILD_VERSION, BUILD_SHA
@@ -340,7 +344,7 @@ class TestControlApp(tk.Tk):
         info = ttk.LabelFrame(body, text="Cihaz Bilgileri", style="Card.TLabelframe", padding=14)
         info.grid(row=1, column=1, rowspan=2, sticky="nsew", padx=(8, 0), pady=(0, 10))
         info.columnconfigure(1, weight=1)
-        for r, label, key in ((0, "Model", "model"), (1, "Serial No", "serial"), (2, "Firmware", "firmware"), (3, "Bootloader", "bootloader"), (4, "Cihaz Saati", "clock")):
+        for r, label, key in ((0, "Model", "model"), (1, "Serial No", "serial"), (2, "Firmware", "firmware"), (3, "Revision", "revision"), (4, "Cihaz Saati", "clock")):
             ttk.Label(info, text=f"{label}:").grid(row=r, column=0, sticky="w", pady=7, padx=(0, 18))
             var = tk.StringVar(value="—")
             self._c600_info_vars[key] = var
@@ -450,58 +454,63 @@ class TestControlApp(tk.Tk):
             self._c600_ui(fail)
 
     def _c600_read_device_info(self) -> None:
+        """Read C600 identity values through the Climatix JSON API."""
         threading.Thread(target=self._c600_device_info_worker, daemon=True).start()
 
-    def _c600_device_info_worker(self) -> None:
-        sock = self._c600_socket
-        if sock is None:
-            return
-        try:
-            self._c600_tx_id = (self._c600_tx_id + 1) & 0xFFFF
-            tid = self._c600_tx_id
-            pdu = bytes([0x2B, 0x0E, 0x01, 0x00])
-            frame = tid.to_bytes(2, "big") + b"\x00\x00" + (len(pdu) + 1).to_bytes(2, "big") + b"\x01" + pdu
-            sock.sendall(frame)
-            sock.settimeout(2.0)
-            data = sock.recv(512)
-            if len(data) < 9 or data[7] != 0x2B:
-                raise OSError("Cihaz tanımlama yanıtı alınamadı")
-            # MBAP (7 bytes) + function/MEI header (6 bytes), then object count.
-            # The previous parser started at byte 13, which treated the object count
-            # as the first object's ID and left the device information blank.
-            objects = {}
-            pos = 13
-            if len(data) > pos:
-                count = data[pos]
-                pos += 1
-                for _ in range(count):
-                    if pos + 2 > len(data):
-                        break
-                    obj_id, obj_len = data[pos], data[pos + 1]
-                    pos += 2
-                    if pos + obj_len > len(data):
-                        break
-                    value = data[pos:pos + obj_len].decode("utf-8", errors="replace").strip()
-                    pos += obj_len
-                    objects[obj_id] = value
+    def _c600_json_read(self, point_id: str) -> dict:
+        host = self._c600_host_var.get().strip()
+        port = int(self._c600_port_var.get().strip())
+        if self._c600_connection_var.get() != "USB / SCOPE TCP Tunnel":
+            raise OSError("Climatix JSON API yalnızca USB / SCOPE TCP Tunnel bağlantısında kullanılabilir")
 
-            vendor = objects.get(0, "—")
-            product_code = objects.get(1, "")
-            revision = objects.get(2, "—")
-            product_name = objects.get(4, "")
-            model_name = objects.get(5, "")
-            model = model_name or product_name or product_code or "—"
+        query = urllib.parse.urlencode({
+            "fn": "Read",
+            "pin": "6000",
+            "lng": "0",
+            "us": "2",
+            "id": point_id,
+        })
+        url = f"http://{host}:{port}/json.html?{query}"
+        request = urllib.request.Request(url, method="GET")
+        credentials = base64.b64encode(b"ADMIN:SBTAdmin!").decode("ascii")
+        request.add_header("Authorization", f"Basic {credentials}")
+        with urllib.request.urlopen(request, timeout=3.0) as response:
+            payload = response.read().decode("utf-8")
+        values = json.loads(payload)
+        if not isinstance(values, list) or not values or not isinstance(values[0], dict):
+            raise ValueError(f"{point_id}: beklenmeyen JSON yanıtı")
+        return values[0]
+
+    def _c600_device_info_worker(self) -> None:
+        try:
+            points = (
+                ("34-TARGET", "model", "Model"),
+                ("33-TARGET", "serial", "Serial No"),
+                ("14-TARGET", "firmware", "Firmware"),
+                ("35-TARGET", "revision", "Revision"),
+            )
+            results: dict[str, dict] = {}
+            for point_id, key, _label in points:
+                results[key] = self._c600_json_read(point_id)
+
+            model = str(results["model"].get("value", "—")).strip() or "—"
+            serial = str(results["serial"].get("value", "—")).strip() or "—"
+            firmware = str(results["firmware"].get("value", "—")).strip() or "—"
+            revision = str(results["revision"].get("value", "—")).strip() or "—"
 
             def update() -> None:
                 self._c600_info_vars["model"].set(model)
-                self._c600_info_vars["firmware"].set(revision)
-                self._c600_log_write(f"Üretici: {vendor}", "muted")
-                self._c600_log_write(f"Model: {model}", "muted")
-                if product_code:
-                    self._c600_log_write(f"Ürün Kodu: {product_code}", "muted")
-                self._c600_log_write(f"Firmware: {revision}", "muted")
+                self._c600_info_vars["serial"].set(serial)
+                self._c600_info_vars["firmware"].set(firmware)
+                self._c600_info_vars["revision"].set(revision)
+                self._c600_info_vars["clock"].set("—")
+                self._c600_log_write(f"Model: {model}", "ok")
+                self._c600_log_write(f"Serial No: {serial}", "ok")
+                self._c600_log_write(f"Firmware: {firmware}", "ok")
+                self._c600_log_write(f"Revision: {revision}", "ok")
+
             self._c600_ui(update)
-        except (OSError, ValueError) as exc:
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
             self._c600_ui(lambda: self._c600_log_write(f"Cihaz bilgileri okunamadı: {exc}", "error"))
 
     def _c600_read(self) -> None:
@@ -695,6 +704,7 @@ class TestControlApp(tk.Tk):
 
         self.state.c600_connected = True
         self._c600_status_var.set(f"Bağlantı başarılı: {host}:{port}")
+        self._c600_read_device_info()
         self._update_statuses()
         messagebox.showinfo(
             "C600",
