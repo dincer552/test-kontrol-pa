@@ -121,7 +121,7 @@ class TestControlApp(tk.Tk):
         start_update(self, self._update_button)
 
     def _build_ui(self) -> None:
-        # Header mirrors PDF kW Selector: compact white card, blue badge, title, version.
+        # Header mirrors PDF kW Selector: compact white card, blue badge and title.
         header = ttk.Frame(self, style="White.TFrame", padding=(12, 8))
         header.pack(fill="x", pady=(0, 8))
         tk.Label(header, text="TEST", bg="#1a56db", fg="#ffffff", font=("Segoe UI", 10, "bold"), width=5, height=1).pack(side="left", padx=(0, 10))
@@ -133,7 +133,6 @@ class TestControlApp(tk.Tk):
         # Update button is disabled until the VM reports a newer build.
         self._update_button = ttk.Button(header, text="GÜNCELLE", style="Secondary.TButton", command=self._start_update, state="disabled")
         self._update_button.pack(side="right", padx=(6, 0))
-        ttk.Label(header, text=VERSION, style="Badge.TLabel").pack(side="right", padx=(0, 6))
 
         # Main notebook uses the same clean white-card visual language.
         tabs = ttk.Notebook(self)
