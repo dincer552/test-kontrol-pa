@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import re
 
+import fitz
 from pypdf import PdfReader
 
 
@@ -20,6 +21,39 @@ class PdfDiscovery:
     filter_count: int = 0
     module_count: int = 0
     components: dict[str, int] = field(default_factory=dict)
+
+
+
+_PROJECT_BOX = (383.0, 508.0, 228.0, 26.0)
+_ORDER_NO_BOX = (379.0, 478.0, 300.0, 29.0)
+_AHU_BOX = (381.0, 450.0, 315.0, 26.0)
+
+
+def _viewer_rect(page: fitz.Page, box: tuple[float, float, float, float]) -> fitz.Rect:
+    x, y, width, height = box
+    page_height = float(page.rect.height)
+    return fitz.Rect(x, page_height - (y + height), x + width, page_height - y)
+
+
+def _coordinate_text(page: fitz.Page, box: tuple[float, float, float, float]) -> str:
+    words = page.get_text("words", clip=_viewer_rect(page, box))
+    words.sort(key=lambda word: (word[1], word[0]))
+    return " ".join(word[4].strip() for word in words if word[4].strip()).strip()
+
+
+def _read_general_fields(pdf_path: Path) -> tuple[str, str, str]:
+    document = fitz.open(str(pdf_path))
+    try:
+        if len(document) < 1:
+            return "", "", ""
+        page = document[0]
+        return (
+            _coordinate_text(page, _PROJECT_BOX),
+            _coordinate_text(page, _ORDER_NO_BOX),
+            _coordinate_text(page, _AHU_BOX),
+        )
+    finally:
+        document.close()
 
 
 def _text(reader: PdfReader) -> str:
@@ -51,9 +85,10 @@ def discover_pdf(path: str | Path) -> PdfDiscovery:
     first_page = reader.pages[0].extract_text() or ""
     first_lines = [line.strip() for line in first_page.splitlines() if line.strip()]
 
-    project_name = _first_nonempty_after(first_lines, "Appr")
-    order_match = re.search(r"\b\d{8,}\b", first_page)
-    ahu_match = re.search(r"\bFAHU_[A-Z0-9-]+\b", first_page, re.IGNORECASE)
+    coordinate_project, coordinate_order, coordinate_ahu = _read_general_fields(pdf_path)
+    project_name = coordinate_project
+    order_no = coordinate_order
+    ahu_name = coordinate_ahu
 
     supply_fan = 1 if _has_component(
         text, r"VLT\s*(?:®|R)?\s*HVAC Basic Drive\s*FC\s*101"
@@ -86,9 +121,9 @@ def discover_pdf(path: str | Path) -> PdfDiscovery:
 
     return PdfDiscovery(
         page_count=len(reader.pages),
-        order_no=order_match.group(0) if order_match else "",
+        order_no=order_no,
         project_name=project_name,
-        ahu_name=ahu_match.group(0) if ahu_match else "",
+        ahu_name=ahu_name,
         supply_fan_count=supply_fan,
         return_fan_count=return_fan,
         damper_count=len(fda_ids),
