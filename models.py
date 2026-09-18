@@ -57,6 +57,7 @@ class TestControlState:
     c600_json_id: str = "SupplyAirSensorMB\\TmpVal"
     c600_language: str = "en-US"
     c600_user: str = ""
+    c600_connected: bool = False
 
     @property
     def fan_control_ok(self) -> bool:
@@ -89,7 +90,7 @@ class TestControlState:
 
     @property
     def c600_ok(self) -> bool:
-        return bool(self.c600_base_url or self.c600_json_id)
+        return self.c600_connected
 
     @property
     def user_ok(self) -> bool:
