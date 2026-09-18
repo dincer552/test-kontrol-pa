@@ -701,50 +701,5 @@ class TestControlApp(tk.Tk):
     def _report(self) -> None:
         messagebox.showinfo("RAPOR", "Rapor oluşturma modülü hazırlanıyor.", parent=self)
 
-    def _c600_test(self) -> None:
-        """Test the SCOPE TCP tunnel without blocking the Tkinter UI."""
-        host = self._c600_host_var.get().strip()
-        port_text = self._c600_port_var.get().strip()
-
-        if not host:
-            messagebox.showwarning("C600", "Cihaz IP / Host boş bırakılamaz.", parent=self)
-            return
-
-        try:
-            port = int(port_text)
-            if not 1 <= port <= 65535:
-                raise ValueError
-        except ValueError:
-            messagebox.showwarning("C600", "Port 1-65535 arasında bir sayı olmalı.", parent=self)
-            return
-
-        self._c600_status_var.set(f"Bağlanıyor: {host}:{port} ...")
-        self.update_idletasks()
-
-        try:
-            with socket.create_connection((host, port), timeout=3.0):
-                pass
-        except OSError as exc:
-            self.state.c600_connected = False
-            self._c600_status_var.set(f"Bağlantı başarısız: {host}:{port} — {exc}")
-            self._update_statuses()
-            messagebox.showerror(
-                "C600",
-                f"C600 bağlantısı kurulamadı.\\n\\n{host}:{port}\\n{exc}",
-                parent=self,
-            )
-            return
-
-        self.state.c600_connected = True
-        self._c600_status_var.set(f"Bağlantı başarılı: {host}:{port}")
-        self._c600_read_device_info()
-        self._update_statuses()
-        messagebox.showinfo(
-            "C600",
-            f"C600 TCP bağlantısı başarılı.\\n\\n{host}:{port}",
-            parent=self,
-        )
-
-
 if __name__ == "__main__":
     TestControlApp().mainloop()
