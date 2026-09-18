@@ -26,7 +26,7 @@ jobs:
       - name: Embed build metadata
         shell: pwsh
         env:
-          APP_VERSION: v0.1.${{ github.run_number }}
+          APP_VERSION: v0.1.0.${{ github.run_number }}
         run: |
           Set-Content -Path build_info.py -Value @(
             '"""Build metadata embedded in the packaged TEST KONTROL application."""'
@@ -39,12 +39,12 @@ jobs:
       - name: Build EXE
         shell: pwsh
         env:
-          APP_VERSION: v0.1.${{ github.run_number }}
+          APP_VERSION: v0.1.0.${{ github.run_number }}
         run: pyinstaller --noconfirm --clean --onefile --windowed --name "Test_Kontrol_$env:APP_VERSION" app.py
       - name: Smoke test packaged EXE startup
         shell: pwsh
         env:
-          APP_VERSION: v0.1.${{ github.run_number }}
+          APP_VERSION: v0.1.0.${{ github.run_number }}
         run: |
           $exe = Join-Path $PWD "dist/Test_Kontrol_$env:APP_VERSION.exe"
           if (-not (Test-Path -LiteralPath $exe)) { throw "EXE not found: $exe" }
@@ -56,7 +56,7 @@ jobs:
       - name: Prepare release assets
         shell: pwsh
         env:
-          APP_VERSION: v0.1.${{ github.run_number }}
+          APP_VERSION: v0.1.0.${{ github.run_number }}
         run: |
           $source = "dist/Test_Kontrol_$env:APP_VERSION.exe"
           Copy-Item $source dist/Test_Kontrol_latest.exe
@@ -65,7 +65,7 @@ jobs:
       - name: Publish latest release
         env:
           GH_TOKEN: ${{ github.token }}
-          APP_VERSION: v0.1.${{ github.run_number }}
+          APP_VERSION: v0.1.0.${{ github.run_number }}
         shell: bash
         run: |
           if gh release view latest >/dev/null 2>&1; then
