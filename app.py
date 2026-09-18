@@ -8,9 +8,10 @@ from tkinter import messagebox, ttk
 import webbrowser
 
 from models import DAMPER_NAMES, FILTER_IDS, SENSOR_NAMES, TestControlState
+from build_info import BUILD_VERSION, BUILD_SHA
 
 
-VERSION = "v0.1.0"
+VERSION = BUILD_VERSION
 UPDATE_URL = "https://github.com/dincer552/test-kontrol-pa/releases/latest"
 
 
