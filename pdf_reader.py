@@ -41,7 +41,7 @@ def _has_component(text: str, pattern: str) -> bool:
 
 
 def _numbered_components(text: str, prefix: str) -> set[str]:
-    return set(re.findall(rf"\\b{prefix}\s*([1-9]\d*)\b", text, re.IGNORECASE))
+    return set(re.findall(rf"\b{prefix}\s*([1-9]\d*)\b", text, re.IGNORECASE))
 
 
 def discover_pdf(path: str | Path) -> PdfDiscovery:
