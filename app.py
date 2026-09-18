@@ -379,16 +379,8 @@ class TestControlApp(tk.Tk):
 
         buttons = ttk.Frame(body, style="White.TFrame")
         buttons.grid(row=2, column=0, sticky="w", pady=(0, 10))
-        self._c600_test_btn = ttk.Button(buttons, text="BAĞLANTI TESTİ", style="Primary.TButton", command=self._c600_test)
-        self._c600_test_btn.pack(side="left", padx=(0, 8))
-        self._c600_disconnect_btn = ttk.Button(buttons, text="AYIR", style="Secondary.TButton", command=self._c600_disconnect)
-        self._c600_disconnect_btn.pack(side="left", padx=4)
-        self._c600_read_btn = ttk.Button(buttons, text="OKU", style="Secondary.TButton", command=self._c600_read)
-        self._c600_read_btn.pack(side="left", padx=4)
-        self._c600_write_btn = ttk.Button(buttons, text="YAZ", style="Secondary.TButton", command=self._c600_write)
-        self._c600_write_btn.pack(side="left", padx=4)
-        self._c600_refresh_btn = ttk.Button(buttons, text="↻ DURUM YENİLE", style="Secondary.TButton", command=self._c600_refresh)
-        self._c600_refresh_btn.pack(side="left", padx=4)
+        self._c600_test_btn = ttk.Button(buttons, text="BAĞLAN", style="Primary.TButton", command=self._c600_test)
+        self._c600_test_btn.pack(side="left")
 
         log_frame = ttk.LabelFrame(body, text="İşlem Günlüğü", style="Card.TLabelframe", padding=10)
         log_frame.grid(row=3, column=0, columnspan=2, sticky="nsew")
