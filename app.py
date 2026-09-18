@@ -2,17 +2,13 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import messagebox, ttk
-import threading
+import webbrowser
 
 from models import DAMPER_NAMES, FILTER_IDS, SENSOR_NAMES, TestControlState
-from updater import check_for_update, download_update, restart_with_update
-try:
-    from build_info import BUILD_VERSION, BUILD_SHA
-except ImportError:
-    BUILD_VERSION, BUILD_SHA = "v0.1.0", ""
 
 
-VERSION = BUILD_VERSION
+VERSION = "v0.1.0"
+UPDATE_URL = "https://github.com/dincer552/test-kontrol-pa/releases/latest"
 
 
 class TestControlApp(tk.Tk):
@@ -68,37 +64,11 @@ class TestControlApp(tk.Tk):
         style.configure("Treeview.Heading", background="#f8fafc", foreground=text, font=("Segoe UI", 9, "bold"), borderwidth=1, bordercolor=border, padding=6)
 
     def _open_update_page(self) -> None:
-        """Download and install the latest build from the self-hosted update server."""
-        if getattr(self, "_update_running", False):
-            return
-        self._update_running = True
-        self._update_button.configure(state="disabled", text="İNDİRİLİYOR...")
-        threading.Thread(target=self._update_background, daemon=True).start()
-
-    def _update_background(self) -> None:
+        """Open this project's latest release page."""
         try:
-            info = check_for_update(VERSION, BUILD_SHA)
-            if not info["available"]:
-                self.after(0, lambda: messagebox.showinfo("GÜNCELLE", "Program zaten güncel.", parent=self))
-                return
-            self.after(0, lambda: self._update_button.configure(text=f"İNDİRİLİYOR {info[\"version\"]}..."))
-            temp_exe = download_update(info, progress_callback=lambda done, total: self.after(0, self._update_progress, done, total))
-            self.after(0, lambda: self._finish_update(temp_exe))
+            webbrowser.open(UPDATE_URL, new=2)
         except Exception as exc:
-            self.after(0, lambda: messagebox.showerror("GÜNCELLE", f"Güncelleme başarısız:\n{type(exc).__name__}: {exc}", parent=self))
-            self.after(0, self._update_reset)
-
-    def _update_progress(self, done, total) -> None:
-        if total:
-            self._update_button.configure(text=f"İNDİRİLİYOR %{done * 100 / total:.0f}")
-
-    def _finish_update(self, temp_exe) -> None:
-        self._update_button.configure(text="KURULUYOR...")
-        restart_with_update(temp_exe)
-
-    def _update_reset(self) -> None:
-        self._update_running = False
-        self._update_button.configure(state="normal", text="GÜNCELLE")
+            messagebox.showerror("GÜNCELLE", f"Güncelleme sayfası açılamadı:\n{exc}", parent=self)
 
     def _build_ui(self) -> None:
         # Header mirrors PDF kW Selector: compact white card, blue badge, title, version.
@@ -111,8 +81,7 @@ class TestControlApp(tk.Tk):
         ttk.Label(title_box, text="AHU test, devreye alma, kontrol ve raporlama", style="Muted.TLabel").pack(anchor="w")
 
         # Update button stays in the upper-right corner, next to the version badge.
-        self._update_button = ttk.Button(header, text="GÜNCELLE", style="Secondary.TButton", command=self._open_update_page)
-        self._update_button.pack(side="right", padx=(6, 0))
+        ttk.Button(header, text="GÜNCELLE", style="Secondary.TButton", command=self._open_update_page).pack(side="right", padx=(6, 0))
         ttk.Label(header, text=VERSION, style="Badge.TLabel").pack(side="right", padx=(0, 6))
 
         # Main notebook uses the same clean white-card visual language.
