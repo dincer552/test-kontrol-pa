@@ -512,37 +512,40 @@ class TestControlApp(tk.Tk):
             for point_id, key, _label in points:
                 results[key] = self._c600_json_read(point_id)
 
-            clock_points = (
-                ("1-SYSTEM CLOCK", "clock_1"),
-                ("2-SYSTEM CLOCK", "clock_2"),
-                ("3-SYSTEM CLOCK", "clock_3"),
-            )
-            for point_id, key in clock_points:
-                results[key] = self._c600_json_read(point_id)
-
             model = str(results["model"].get("value", "—")).strip() or "—"
             serial = str(results["serial"].get("value", "—")).strip() or "—"
             firmware = str(results["firmware"].get("value", "—")).strip() or "—"
             revision = str(results["revision"].get("value", "—")).strip() or "—"
-            clock_values = [
-                str(results[key].get("value", "")).strip()
-                for key in ("clock_1", "clock_2", "clock_3")
-            ]
-            clock_values = [value for value in clock_values if value]
-            clock = " / ".join(clock_values) if clock_values else "—"
 
-            def update() -> None:
+            # Identity information is independent of the optional clock points.
+            # Do not hide valid device information if a clock point is unavailable.
+            def update_identity() -> None:
                 self._c600_info_vars["model"].set(model)
                 self._c600_info_vars["serial"].set(serial)
                 self._c600_info_vars["firmware"].set(firmware)
                 self._c600_info_vars["revision"].set(revision)
-                self._c600_info_vars["clock"].set(clock)
                 self._c600_log_write(f"Model: {model}", "ok")
                 self._c600_log_write(f"Serial No: {serial}", "ok")
                 self._c600_log_write(f"Firmware: {firmware}", "ok")
                 self._c600_log_write(f"Revision: {revision}", "ok")
 
-            self._c600_ui(update)
+            self._c600_ui(update_identity)
+
+            clock_values: list[str] = []
+            clock_errors: list[str] = []
+            for point_id in ("1-SYSTEM CLOCK", "2-SYSTEM CLOCK", "3-SYSTEM CLOCK"):
+                try:
+                    result = self._c600_json_read(point_id)
+                    value = str(result.get("value", "")).strip()
+                    if value:
+                        clock_values.append(value)
+                except Exception as exc:
+                    clock_errors.append(f"{point_id}: {exc}")
+
+            clock = " / ".join(clock_values) if clock_values else "—"
+            self._c600_ui(lambda: self._c600_info_vars["clock"].set(clock))
+            if clock_errors:
+                self._c600_ui(lambda: self._c600_log_write("Cihaz saati okunamadı; cihaz bilgileri başarıyla okundu.", "muted"))
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             self._c600_ui(lambda: self._c600_log_write(f"Cihaz bilgileri okunamadı: {exc}", "error"))
 
