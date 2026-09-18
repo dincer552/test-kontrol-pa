@@ -36,6 +36,7 @@ class TestControlApp(tk.Tk):
         self._update_check_running = False
         self._update_available = False
         self._update_button: ttk.Button | None = None
+        self._manual_update_button: ttk.Button | None = None
         self._init_modern_theme()
         self._build_ui()
         self._update_statuses()
@@ -90,7 +91,7 @@ class TestControlApp(tk.Tk):
         self._check_for_update_async()
         self.after(UPDATE_CHECK_INTERVAL_MS, self._schedule_update_check)
 
-    def _check_for_update_async(self) -> None:
+    def _check_for_update_async(self, manual: bool = False) -> None:
         if self._update_check_running or getattr(self, "_update_running", False):
             return
         self._update_check_running = True
@@ -107,13 +108,25 @@ class TestControlApp(tk.Tk):
                 self._update_check_running = False
                 self._update_available = available
                 button = self._update_button
-                if button is None:
-                    return
-                button.configure(text="GÜNCELLE", state="normal" if available else "disabled")
+                if button is not None:
+                    button.configure(text="GÜNCELLE", state="normal" if available else "disabled")
+                manual_button = self._manual_update_button
+                if manual_button is not None:
+                    manual_button.configure(state="normal")
+                if manual and not available:
+                    messagebox.showinfo("GÜNCELLEME", "Programınız güncel.", parent=self)
 
             self.after(0, apply)
 
         threading.Thread(target=worker, name="test-kontrol-update-check", daemon=True).start()
+
+    def _manual_update_check(self) -> None:
+        """Run an immediate update check requested by the user."""
+        button = self._manual_update_button
+        if button is None or self._update_check_running or getattr(self, "_update_running", False):
+            return
+        button.configure(state="disabled")
+        self._check_for_update_async(manual=True)
 
     def _start_update(self) -> None:
         if not self._update_available or self._update_button is None:
@@ -130,9 +143,17 @@ class TestControlApp(tk.Tk):
         ttk.Label(title_box, text="TEST KONTROL", style="Title.TLabel").pack(anchor="w")
         ttk.Label(title_box, text="AHU test, devreye alma, kontrol ve raporlama", style="Muted.TLabel").pack(anchor="w")
 
-        # Update button is disabled until the VM reports a newer build.
+        # Manual update check stays available; the install button activates only when a newer build exists.
         self._update_button = ttk.Button(header, text="GÜNCELLE", style="Secondary.TButton", command=self._start_update, state="disabled")
         self._update_button.pack(side="right", padx=(6, 0))
+        self._manual_update_button = ttk.Button(
+            header,
+            text="↻",
+            style="Secondary.TButton",
+            width=2,
+            command=self._manual_update_check,
+        )
+        self._manual_update_button.pack(side="right", padx=(6, 0))
 
         # Main notebook uses the same clean white-card visual language.
         tabs = ttk.Notebook(self)
