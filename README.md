@@ -27,6 +27,10 @@ models.py / updater.py / build sistemi
 
 Arayüz, önceki Test Kontrol uygulamasındaki iş akışını koruyacak şekilde Python'a taşınacaktır.
 
+## PDF keşfi
+
+GENEL sekmesindeki PDF alanı Windows'ta PDF'nin sürükleyip bırakılmasını veya dosya seçilmesini kabul eder. İlk aşamada yalnızca PDF'den keşfedilen proje bilgileri ve ekipman adetleri görünür hale getirilir. Sonraki aşamada bu keşif sonucu Fan, Damper, Filtre, Modül ve Sensör sekmelerindeki kutuların dinamik oluşturulmasında kullanılacaktır. PDF'de bulunmayan ekipman için kutu oluşturulmayacaktır.
+
 ## Sekme modüler mimarisi
 
 Her ana sekme kendi Python modülünde tutulacaktır. `app.py` ana pencereyi, ortak durumu ve sekmelerin birleştirilmesini yönetir. Böylece bir sekmedeki geliştirme diğer sekmelerin koduna mümkün olduğunca dokunmaz.
