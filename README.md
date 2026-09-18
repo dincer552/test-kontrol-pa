@@ -11,10 +11,33 @@ Python / Tkinter
       ↓
 TEST KONTROL.exe
       ↓
-Genel / Fan / Damper / Filtre / Modüller / Sensorler / C600 / Rapor
+app.py — ana pencere / ortak durum
+      ↓
+tabs/
+├── connection.py — BAĞLANTI / C600
+├── general.py — GENEL
+├── fan.py — FAN KONTROL
+├── damper.py — DAMPER KONTROL
+├── filter.py — FİLTRE KONTROL
+├── modules.py — MODÜLLER
+├── sensors.py — SENSÖRLER
+└── user_report.py — USER / RAPOR
+      ↓
+models.py / updater.py / build sistemi
 ```
 
 Arayüz, önceki Test Kontrol uygulamasındaki iş akışını koruyacak şekilde Python'a taşınacaktır.
+
+## Sekme modüler mimarisi
+
+Her ana sekme kendi Python modülünde tutulacaktır. `app.py` ana pencereyi, ortak durumu ve sekmelerin birleştirilmesini yönetir. Böylece bir sekmedeki geliştirme diğer sekmelerin koduna mümkün olduğunca dokunmaz.
+
+Mevcut yapılandırma:
+- `connection.py` → BAĞLANTI / Climatix C600 / RainbowScope TCP Tunnel / GenericJSON
+- `app.py` → ana pencere, ortak tema, durum yönetimi ve sekme yerleşimi
+- Diğer sekmeler aynı yapı ile kademeli olarak ayrı modüllere taşınacaktır.
+
+C600 modülünde TCP 4242, Climatix `/json.html` okuma, cihaz kimliği ve System Clock işlemleri bulunur.
 
 ## Güncelleme mimarisi
 
@@ -39,7 +62,7 @@ TEST KONTROL → GÜNCELLE
    ↓
 manifest kontrolü → paralel parça indirme → SHA-256 doğrulama
    ↓
-EXE değiştirme → otomatik yeniden başlatma
+EXE değiştirme → kullanıcıya yeniden başlatma uyarısı → manuel yeniden başlatma
 ```
 
 Güncelleme manifest adresi:
@@ -70,7 +93,7 @@ Self-updater, güncelleme dosyasını dört paralel indirme hattıyla ve parça 
 
 1. PDF kW Selector'a kod bağımlılığı oluşturulmayacak.
 2. C# yalnızca davranış referansı olarak kullanılacak.
-3. C600 kimlik bilgileri kaynak koda gömülmeyecek.
+3. C600 bağlantı bilgileri ve API erişimi yalnızca `connection.py` içinde tutulacak.
 4. Her faz küçük ve test edilebilir olacak.
 5. Her başarılı fazdan sonra README güncellenecek.
 6. Windows EXE build ve startup smoke test geçmeden release yayınlanmayacak.
