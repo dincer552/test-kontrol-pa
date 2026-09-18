@@ -31,6 +31,26 @@ Arayüz, önceki Test Kontrol uygulamasındaki iş akışını koruyacak şekild
 
 GENEL sekmesindeki PDF alanı Windows'ta PDF'nin sürükleyip bırakılmasını veya dosya seçilmesini kabul eder. İlk aşamada yalnızca PDF'den keşfedilen proje bilgileri ve ekipman adetleri görünür hale getirilir. Sonraki aşamada bu keşif sonucu Fan, Damper, Filtre, Modül ve Sensör sekmelerindeki kutuların dinamik oluşturulmasında kullanılacaktır. PDF'de bulunmayan ekipman için kutu oluşturulmayacaktır.
 
+## Hedef modül yapısı
+
+Her ana sekme kendi Python dosyasında tutulacaktır. app.py yalnızca ana pencereyi, ortak durumu ve sekmelerin birleştirilmesini yönetecektir.
+
+- app.py → ana pencere, ortak tema, ortak durum ve sekme orkestrasyonu
+- general.py → GENEL + PDF alma / sürükle-bırak
+- fan.py → FAN KONTROL
+- damper.py → DAMPER KONTROL
+- filters.py → FİLTRE KONTROL
+- modules.py → MODÜLLER
+- sensors.py → SENSÖRLER
+- user_report.py → USER / RAPOR
+- connection.py → BAĞLANTI / C600
+- pdf_reader.py → PDF analiz ve ekipman keşfi
+- models.py → ortak veri modeli
+- updater.py → güncelleme sistemi
+- .github/workflows/build-windows.yml → Windows EXE build / release / deploy
+
+Sekmeye özel iş mantığı app.py içinde tutulmayacak. Modüllere taşıma sırasında mevcut UI, kayıt/temizleme, güncelleme ve build davranışları korunacaktır.
+
 ## Sekme modüler mimarisi
 
 Her ana sekme kendi Python modülünde tutulacaktır. `app.py` ana pencereyi, ortak durumu ve sekmelerin birleştirilmesini yönetir. Böylece bir sekmedeki geliştirme diğer sekmelerin koduna mümkün olduğunca dokunmaz.
