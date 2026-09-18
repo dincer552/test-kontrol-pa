@@ -218,60 +218,70 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
     def _add_general(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
         notebook.add(tab, text="GENEL")
-        body.columnconfigure(1, weight=1)
+        body.columnconfigure(0, weight=1)
 
         project = ttk.LabelFrame(body, text="Proje Bilgileri", style="Card.TLabelframe", padding=12)
-        project.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        project.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         project.columnconfigure(1, weight=1)
-        for i, (label, attr) in enumerate((("Order No", "order_no"), ("Proje Adı", "project_name"), ("AHU Adı", "ahu_name"))):
+        project.columnconfigure(2, weight=0)
+
+        for i, (label, attr) in enumerate((
+            ("Order No", "order_no"),
+            ("Proje Adı", "project_name"),
+            ("AHU Adı", "ahu_name"),
+        )):
             ttk.Label(project, text=label).grid(row=i, column=0, sticky="w", padx=(0, 12), pady=6)
             var = tk.StringVar(value=getattr(self.state, attr))
             setattr(self, f"_{attr}_var", var)
-            ttk.Entry(project, textvariable=var).grid(row=i, column=1, sticky="ew", pady=6)
+            ttk.Label(project, textvariable=var, style="White.TLabel").grid(
+                row=i, column=1, sticky="w", pady=6
+            )
 
-        pdf_card = ttk.LabelFrame(body, text="PDF Keşfi", style="Card.TLabelframe", padding=12)
-        pdf_card.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
-        pdf_card.columnconfigure(0, weight=1)
+        pdf_box = ttk.Frame(project, style="White.TFrame", padding=(12, 0, 0, 0))
+        pdf_box.grid(row=0, column=2, rowspan=3, sticky="e")
+        pdf_box.columnconfigure(0, weight=1)
 
         drop = tk.Label(
-            pdf_card,
-            text="PDF dosyasını buraya sürükleyip bırakın\nveya tıklayarak seçin",
+            pdf_box,
+            text="PDF\nBURAYA SÜRÜKLEYİN",
             bg="#f8fafc",
             fg="#475569",
             font=("Segoe UI", 10, "bold"),
             relief="solid",
             bd=1,
-            padx=18,
-            pady=18,
+            width=25,
+            height=4,
             cursor="hand2",
         )
-        drop.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        drop.grid(row=0, column=0, sticky="e")
         self._pdf_drop_label = drop
         drop.bind("<Button-1>", lambda _e: self._select_pdf())
         if DND_FILES is not None:
             drop.drop_target_register(DND_FILES)
             drop.dnd_bind("<<Drop>>", self._drop_pdf)
+            drop.dnd_bind("<<DragEnter>>", self._pdf_drag_enter)
+            drop.dnd_bind("<<DragLeave>>", self._pdf_drag_leave)
 
-        self._pdf_status_var = tk.StringVar(value="Henüz PDF yüklenmedi.")
-        ttk.Label(pdf_card, textvariable=self._pdf_status_var, style="Muted.TLabel").grid(
-            row=1, column=0, sticky="w", pady=(0, 8)
+        self._pdf_status_var = tk.StringVar(value="PDF bekleniyor.")
+        ttk.Label(project, textvariable=self._pdf_status_var, style="Muted.TLabel").grid(
+            row=3, column=0, columnspan=3, sticky="w", pady=(4, 0)
         )
 
         self._pdf_summary_var = tk.StringVar(value="")
-        ttk.Label(pdf_card, textvariable=self._pdf_summary_var, style="White.TLabel").grid(
-            row=2, column=0, sticky="w"
+        ttk.Label(project, textvariable=self._pdf_summary_var, style="White.TLabel").grid(
+            row=4, column=0, columnspan=3, sticky="w", pady=(4, 0)
         )
 
         self._pdf_components_var = tk.StringVar(value="")
         ttk.Label(
-            pdf_card,
+            project,
             textvariable=self._pdf_components_var,
             style="Muted.TLabel",
             justify="left",
-        ).grid(row=3, column=0, sticky="w", pady=(8, 0))
+        ).grid(row=5, column=0, columnspan=3, sticky="w", pady=(6, 0))
 
         checks = ttk.LabelFrame(body, text="Kontrol Durumu", style="Card.TLabelframe", padding=12)
-        checks.grid(row=2, column=0, columnspan=2, sticky="ew")
+        checks.grid(row=1, column=0, sticky="ew")
         names = ("Fan Kontrol", "Damper Kontrol", "Filtre Kontrol", "Modüller", "Sensorler", "C600 / GenericJSON", "User", "Rapor")
         for r, name in enumerate(names):
             ttk.Label(checks, text=name).grid(row=r, column=0, sticky="w", pady=4)
@@ -280,6 +290,12 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
             label = tk.Label(checks, textvariable=var, bg="#fef3c7", fg="#92400e", font=("Segoe UI", 9, "bold"), padx=8, pady=3)
             label.grid(row=r, column=1, sticky="w", padx=10, pady=3)
             self._status_labels[name] = label
+
+    def _pdf_drag_enter(self, _event) -> None:
+        self._pdf_drop_label.configure(bg="#dcfce7", fg="#166534", text="PDF\nBIRAKABİLİRSİNİZ")
+
+    def _pdf_drag_leave(self, _event) -> None:
+        self._pdf_drop_label.configure(bg="#f8fafc", fg="#475569", text="PDF\nBURAYA SÜRÜKLEYİN")
 
     def _select_pdf(self) -> None:
         from tkinter import filedialog
@@ -292,6 +308,7 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
             self._load_pdf(path)
 
     def _drop_pdf(self, event) -> None:
+        self._pdf_drag_leave(event)
         try:
             paths = self.tk.splitlist(event.data)
         except Exception:
@@ -310,6 +327,7 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
         except Exception as exc:
             self._pdf_status_var.set(f"PDF okunamadı: {exc}")
             self._pdf_summary_var.set("")
+            self._pdf_components_var.set("")
             return
 
         self._pdf_status_var.set(f"Okundu: {pdf_path.name} • {result.page_count} sayfa")
@@ -334,6 +352,11 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
         )
         self._pdf_components_var.set(
             "Keşfedilenler: " + "  |  ".join(f"{label}: {count}" for label, count in component_labels if count)
+        )
+        self._pdf_drop_label.configure(
+            bg="#dcfce7",
+            fg="#166534",
+            text="PDF OKUNDU",
         )
         if result.order_no:
             self._order_no_var.set(result.order_no)
