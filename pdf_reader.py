@@ -41,7 +41,7 @@ def _has_component(text: str, pattern: str) -> bool:
 
 
 def _numbered_components(text: str, prefix: str) -> set[str]:
-    return set(re.findall(rf"\\b{prefix}\\s*([1-9]\\d*)\\b", text, re.IGNORECASE))
+    return set(re.findall(rf"\\b{prefix}\s*([1-9]\d*)\b", text, re.IGNORECASE))
 
 
 def discover_pdf(path: str | Path) -> PdfDiscovery:
@@ -52,11 +52,11 @@ def discover_pdf(path: str | Path) -> PdfDiscovery:
     first_lines = [line.strip() for line in first_page.splitlines() if line.strip()]
 
     project_name = _first_nonempty_after(first_lines, "Appr")
-    order_match = re.search(r"\\b\\d{8,}\\b", first_page)
-    ahu_match = re.search(r"\\bFAHU_[A-Z0-9-]+\\b", first_page, re.IGNORECASE)
+    order_match = re.search(r"\b\d{8,}\b", first_page)
+    ahu_match = re.search(r"\bFAHU_[A-Z0-9-]+\b", first_page, re.IGNORECASE)
 
     supply_fan = 1 if _has_component(
-        text, r"VLT\\s*(?:®|R)?\\s*HVAC Basic Drive\\s*FC\\s*101"
+        text, r"VLT\s*(?:®|R)?\s*HVAC Basic Drive\s*FC\s*101"
     ) else 0
     return_fan = 1 if _has_component(
         text, r"Return Motor Connections"
@@ -74,12 +74,12 @@ def discover_pdf(path: str | Path) -> PdfDiscovery:
         "temperature_sensor": len(ts_ids),
         "pressure_sensor": len(dpt_ids),
         "filter_sensor": len(filter_ids),
-        "cooling_valve": 1 if _has_component(text, r"\\bVA2\\b|Cooling Valve Motor") else 0,
+        "cooling_valve": 1 if _has_component(text, r"\bVA2\b|Cooling Valve Motor") else 0,
         "emergency_button": 1 if _has_component(text, r"Emergency Button") else 0,
         "door_switch": 1 if _has_component(text, r"Supply Door Switch") else 0,
         "fire_alarm": 1 if _has_component(text, r"Fire Alarm") else 0,
         "plc": 1 if _has_component(text, r"PLC MAN MODULE\\s+POL648") else 0,
-        "hmi": 1 if _has_component(text, r"POL871\\.62/72") else 0,
+        "hmi": 1 if _has_component(text, r"POL871\.62/72") else 0,
     }
 
     module_count = components["plc"] + components["hmi"]
