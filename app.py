@@ -490,13 +490,13 @@ class TestControlApp(tk.Tk):
         if self._c600_connection_var.get() != "USB / SCOPE TCP Tunnel":
             raise OSError("Climatix JSON API yalnızca USB / SCOPE TCP Tunnel bağlantısında kullanılabilir")
 
-        query = urllib.parse.urlencode({
-            "fn": "Read",
-            "pin": C600_API_PIN,
-            "lng": "0",
-            "us": "2",
-            "id": point_id,
-        })
+        # The embedded Climatix web server expects spaces in IDs as %20.
+        # urllib.parse.urlencode() uses '+' for spaces, which works with normal
+        # web servers but is not handled correctly by this C600 endpoint.
+        query = (
+            f"fn=Read&pin={urllib.parse.quote(C600_API_PIN, safe='')}"
+            f"&lng=0&us=2&id={urllib.parse.quote(point_id, safe='')}"
+        )
         url = f"http://{host}:{port}/json.html?{query}"
         request = urllib.request.Request(url, method="GET")
         credentials = base64.b64encode(f"{C600_API_USERNAME}:{C600_API_PASSWORD}".encode("ascii")).decode("ascii")
