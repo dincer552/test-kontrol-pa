@@ -78,7 +78,7 @@ def discover_pdf(path: str | Path) -> PdfDiscovery:
         "emergency_button": 1 if _has_component(text, r"Emergency Button") else 0,
         "door_switch": 1 if _has_component(text, r"Supply Door Switch") else 0,
         "fire_alarm": 1 if _has_component(text, r"Fire Alarm") else 0,
-        "plc": 1 if _has_component(text, r"PLC MAN MODULE\\s+POL648") else 0,
+        "plc": 1 if _has_component(text, r"PLC MAN MODULE\s+POL648") else 0,
         "hmi": 1 if _has_component(text, r"POL871\.62/72") else 0,
     }
 
