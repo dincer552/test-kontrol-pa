@@ -542,7 +542,16 @@ class TestControlApp(tk.Tk):
                 except Exception as exc:
                     clock_errors.append(f"{point_id}: {exc}")
 
-            clock = " / ".join(clock_values) if clock_values else "—"
+            if len(clock_values) == 3:
+                try:
+                    hour = int(float(clock_values[0]))
+                    minute = int(float(clock_values[1]))
+                    second = int(float(clock_values[2]))
+                    clock = f"{hour:02d}:{minute:02d}:{second:02d}"
+                except ValueError:
+                    clock = " / ".join(clock_values)
+            else:
+                clock = " / ".join(clock_values) if clock_values else "—"
             self._c600_ui(lambda: self._c600_info_vars["clock"].set(clock))
             if clock_errors:
                 self._c600_ui(lambda: self._c600_log_write("Cihaz saati okunamadı; cihaz bilgileri başarıyla okundu.", "muted"))
