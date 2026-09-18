@@ -466,6 +466,9 @@ class TestControlApp(tk.Tk):
             data = sock.recv(512)
             if len(data) < 9 or data[7] != 0x2B:
                 raise OSError("Cihaz tanımlama yanıtı alınamadı")
+            # MBAP (7 bytes) + function/MEI header (6 bytes), then object count.
+            # The previous parser started at byte 13, which treated the object count
+            # as the first object's ID and left the device information blank.
             objects = {}
             pos = 13
             if len(data) > pos:
@@ -476,17 +479,26 @@ class TestControlApp(tk.Tk):
                         break
                     obj_id, obj_len = data[pos], data[pos + 1]
                     pos += 2
-                    value = data[pos:pos + obj_len].decode("utf-8", errors="replace")
+                    if pos + obj_len > len(data):
+                        break
+                    value = data[pos:pos + obj_len].decode("utf-8", errors="replace").strip()
                     pos += obj_len
                     objects[obj_id] = value
+
             vendor = objects.get(0, "—")
-            product = objects.get(1, "—")
+            product_code = objects.get(1, "")
             revision = objects.get(2, "—")
+            product_name = objects.get(4, "")
+            model_name = objects.get(5, "")
+            model = model_name or product_name or product_code or "—"
+
             def update() -> None:
-                self._c600_info_vars["model"].set(product if product != "—" else "—")
+                self._c600_info_vars["model"].set(model)
                 self._c600_info_vars["firmware"].set(revision)
                 self._c600_log_write(f"Üretici: {vendor}", "muted")
-                self._c600_log_write(f"Model: {product}", "muted")
+                self._c600_log_write(f"Model: {model}", "muted")
+                if product_code:
+                    self._c600_log_write(f"Ürün Kodu: {product_code}", "muted")
                 self._c600_log_write(f"Firmware: {revision}", "muted")
             self._c600_ui(update)
         except (OSError, ValueError) as exc:
