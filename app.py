@@ -307,14 +307,22 @@ class TestControlApp(tk.Tk):
 
         ttk.Label(conn, text="Bağlantı:").grid(row=0, column=0, sticky="w", pady=6, padx=(0, 12))
         self._c600_connection_var = tk.StringVar(value="USB / SCOPE TCP Tunnel")
-        ttk.Combobox(conn, textvariable=self._c600_connection_var, state="readonly", values=("USB / SCOPE TCP Tunnel", "Modbus TCP"), width=34).grid(row=0, column=1, sticky="ew", pady=6)
+        self._c600_connection_combo = ttk.Combobox(
+            conn,
+            textvariable=self._c600_connection_var,
+            state="readonly",
+            values=("USB / SCOPE TCP Tunnel", "Modbus TCP"),
+            width=34,
+        )
+        self._c600_connection_combo.grid(row=0, column=1, sticky="ew", pady=6)
+        self._c600_connection_combo.bind("<<ComboboxSelected>>", self._c600_connection_changed)
 
         ttk.Label(conn, text="Cihaz IP / Host:").grid(row=1, column=0, sticky="w", pady=6, padx=(0, 12))
         self._c600_host_var = tk.StringVar(value="127.0.0.1")
         ttk.Entry(conn, textvariable=self._c600_host_var).grid(row=1, column=1, sticky="ew", pady=6)
 
         ttk.Label(conn, text="Port:").grid(row=2, column=0, sticky="w", pady=6, padx=(0, 12))
-        self._c600_port_var = tk.StringVar(value="502")
+        self._c600_port_var = tk.StringVar(value="4242")
         ttk.Entry(conn, textvariable=self._c600_port_var, width=12).grid(row=2, column=1, sticky="w", pady=6)
 
         status = tk.Frame(conn, bg="#ecfdf3", highlightbackground="#bbf7d0", highlightthickness=1)
@@ -376,12 +384,22 @@ class TestControlApp(tk.Tk):
         except tk.TclError:
             pass
 
+    def _c600_connection_changed(self, _event=None) -> None:
+        """Use the correct local port for the selected C600 transport."""
+        if self._c600_connection_var.get() == "USB / SCOPE TCP Tunnel":
+            self._c600_port_var.set("4242")
+        else:
+            self._c600_port_var.set("502")
+
     def _c600_test(self) -> None:
         host = self._c600_host_var.get().strip()
         port_text = self._c600_port_var.get().strip()
         if not host:
             messagebox.showwarning("C600", "Cihaz IP / Host boş bırakılamaz.", parent=self)
             return
+        if self._c600_connection_var.get() == "USB / SCOPE TCP Tunnel":
+            port_text = "4242"
+            self._c600_port_var.set(port_text)
         try:
             port = int(port_text)
             if not 1 <= port <= 65535:
