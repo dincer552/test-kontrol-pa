@@ -262,6 +262,14 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
             row=2, column=0, sticky="w"
         )
 
+        self._pdf_components_var = tk.StringVar(value="")
+        ttk.Label(
+            pdf_card,
+            textvariable=self._pdf_components_var,
+            style="Muted.TLabel",
+            justify="left",
+        ).grid(row=3, column=0, sticky="w", pady=(8, 0))
+
         checks = ttk.LabelFrame(body, text="Kontrol Durumu", style="Card.TLabelframe", padding=12)
         checks.grid(row=2, column=0, columnspan=2, sticky="ew")
         names = ("Fan Kontrol", "Damper Kontrol", "Filtre Kontrol", "Modüller", "Sensorler", "C600 / GenericJSON", "User", "Rapor")
@@ -309,6 +317,23 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
             f"Fan: Supply {result.supply_fan_count} / Return {result.return_fan_count}   |   "
             f"Damper: {result.damper_count}   |   Sensör: {result.sensor_count}   |   "
             f"Filtre: {result.filter_count}   |   Modül: {result.module_count}"
+        )
+        component_labels = (
+            ("Supply fan", result.components.get("supply_fan", 0)),
+            ("Return fan", result.components.get("return_fan", 0)),
+            ("Fresh air damper", result.components.get("fresh_air_damper", 0)),
+            ("Temperature sensor", result.components.get("temperature_sensor", 0)),
+            ("Pressure sensor", result.components.get("pressure_sensor", 0)),
+            ("Filter sensor", result.components.get("filter_sensor", 0)),
+            ("Cooling valve", result.components.get("cooling_valve", 0)),
+            ("Emergency button", result.components.get("emergency_button", 0)),
+            ("Door switch", result.components.get("door_switch", 0)),
+            ("Fire alarm", result.components.get("fire_alarm", 0)),
+            ("PLC", result.components.get("plc", 0)),
+            ("HMI", result.components.get("hmi", 0)),
+        )
+        self._pdf_components_var.set(
+            "Keşfedilenler: " + "  |  ".join(f"{label}: {count}" for label, count in component_labels if count)
         )
         if result.order_no:
             self._order_no_var.set(result.order_no)
