@@ -13,15 +13,14 @@ TEST KONTROL.exe
       ↓
 app.py — ana pencere / ortak durum
       ↓
-tabs/
-├── connection.py — BAĞLANTI / C600
-├── general.py — GENEL
-├── fan.py — FAN KONTROL
-├── damper.py — DAMPER KONTROL
-├── filter.py — FİLTRE KONTROL
-├── modules.py — MODÜLLER
-├── sensors.py — SENSÖRLER
-└── user_report.py — USER / RAPOR
+connection.py — BAĞLANTI / C600
+general.py — GENEL
+fan.py — FAN KONTROL
+damper.py — DAMPER KONTROL
+filter.py — FİLTRE KONTROL
+modules.py — MODÜLLER
+sensors.py — SENSÖRLER
+user_report.py — USER / RAPOR
       ↓
 models.py / updater.py / build sistemi
 ```
