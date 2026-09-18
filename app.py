@@ -542,13 +542,22 @@ class TestControlApp(tk.Tk):
             clock_values: list[str] = []
             clock_errors: list[str] = []
             for point_id in ("1-SYSTEM CLOCK", "2-SYSTEM CLOCK", "3-SYSTEM CLOCK"):
-                try:
-                    result = self._c600_json_read(point_id)
-                    value = str(result.get("value", "")).strip()
-                    if value:
-                        clock_values.append(value)
-                except Exception as exc:
-                    clock_errors.append(f"{point_id}: {exc}")
+                value = ""
+                last_error: Exception | None = None
+                for attempt in range(3):
+                    try:
+                        result = self._c600_json_read(point_id)
+                        value = str(result.get("value", "")).strip()
+                        if value:
+                            break
+                    except Exception as exc:
+                        last_error = exc
+                    time.sleep(0.4)
+                if value:
+                    clock_values.append(value)
+                    self._c600_ui(lambda pid=point_id, val=value: self._c600_log_write(f"{pid}: {val}", "muted"))
+                elif last_error is not None:
+                    clock_errors.append(f"{point_id}: {last_error}")
 
             if len(clock_values) == 3:
                 try:
