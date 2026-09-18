@@ -5,18 +5,28 @@ import time
 import tkinter as tk
 from tkinter import messagebox, ttk
 import webbrowser
+from pathlib import Path
+
+try:
+    from tkinterdnd2 import DND_FILES, TkinterDnD
+except ImportError:
+    DND_FILES = None
+    TkinterDnD = None
 
 from models import DAMPER_NAMES, FILTER_IDS, SENSOR_NAMES, TestControlState
 from build_info import BUILD_VERSION, BUILD_SHA
 from updater import check_for_update, start_update
 from connection import C600ConnectionMixin
+from pdf_reader import discover_pdf
 
 
 VERSION = BUILD_VERSION
 UPDATE_CHECK_INTERVAL_MS = 2 * 60 * 1000
 UPDATE_URL = "https://github.com/dincer552/test-kontrol-pa/releases/latest"
 
-class TestControlApp(C600ConnectionMixin, tk.Tk):
+_TkBase = TkinterDnD.Tk if TkinterDnD is not None else tk.Tk
+
+class TestControlApp(C600ConnectionMixin, _TkBase):
     """Standalone Test Control desktop UI, visually aligned with PDF kW Selector."""
 
     def __init__(self) -> None:
@@ -219,8 +229,41 @@ class TestControlApp(C600ConnectionMixin, tk.Tk):
             setattr(self, f"_{attr}_var", var)
             ttk.Entry(project, textvariable=var).grid(row=i, column=1, sticky="ew", pady=6)
 
+        pdf_card = ttk.LabelFrame(body, text="PDF Keşfi", style="Card.TLabelframe", padding=12)
+        pdf_card.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        pdf_card.columnconfigure(0, weight=1)
+
+        drop = tk.Label(
+            pdf_card,
+            text="PDF dosyasını buraya sürükleyip bırakın\nveya tıklayarak seçin",
+            bg="#f8fafc",
+            fg="#475569",
+            font=("Segoe UI", 10, "bold"),
+            relief="solid",
+            bd=1,
+            padx=18,
+            pady=18,
+            cursor="hand2",
+        )
+        drop.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        self._pdf_drop_label = drop
+        drop.bind("<Button-1>", lambda _e: self._select_pdf())
+        if DND_FILES is not None:
+            drop.drop_target_register(DND_FILES)
+            drop.dnd_bind("<<Drop>>", self._drop_pdf)
+
+        self._pdf_status_var = tk.StringVar(value="Henüz PDF yüklenmedi.")
+        ttk.Label(pdf_card, textvariable=self._pdf_status_var, style="Muted.TLabel").grid(
+            row=1, column=0, sticky="w", pady=(0, 8)
+        )
+
+        self._pdf_summary_var = tk.StringVar(value="")
+        ttk.Label(pdf_card, textvariable=self._pdf_summary_var, style="White.TLabel").grid(
+            row=2, column=0, sticky="w"
+        )
+
         checks = ttk.LabelFrame(body, text="Kontrol Durumu", style="Card.TLabelframe", padding=12)
-        checks.grid(row=1, column=0, columnspan=2, sticky="ew")
+        checks.grid(row=2, column=0, columnspan=2, sticky="ew")
         names = ("Fan Kontrol", "Damper Kontrol", "Filtre Kontrol", "Modüller", "Sensorler", "C600 / GenericJSON", "User", "Rapor")
         for r, name in enumerate(names):
             ttk.Label(checks, text=name).grid(row=r, column=0, sticky="w", pady=4)
@@ -229,6 +272,53 @@ class TestControlApp(C600ConnectionMixin, tk.Tk):
             label = tk.Label(checks, textvariable=var, bg="#fef3c7", fg="#92400e", font=("Segoe UI", 9, "bold"), padx=8, pady=3)
             label.grid(row=r, column=1, sticky="w", padx=10, pady=3)
             self._status_labels[name] = label
+
+    def _select_pdf(self) -> None:
+        from tkinter import filedialog
+
+        path = filedialog.askopenfilename(
+            title="AHU PDF seç",
+            filetypes=[("PDF dosyaları", "*.pdf"), ("Tüm dosyalar", "*.*")],
+        )
+        if path:
+            self._load_pdf(path)
+
+    def _drop_pdf(self, event) -> None:
+        try:
+            paths = self.tk.splitlist(event.data)
+        except Exception:
+            paths = (event.data,)
+        pdfs = [Path(p).expanduser() for p in paths if str(p).lower().endswith(".pdf")]
+        if pdfs:
+            self._load_pdf(str(pdfs[0]))
+
+    def _load_pdf(self, path: str) -> None:
+        pdf_path = Path(path)
+        if not pdf_path.is_file():
+            self._pdf_status_var.set("PDF dosyası bulunamadı.")
+            return
+        try:
+            result = discover_pdf(pdf_path)
+        except Exception as exc:
+            self._pdf_status_var.set(f"PDF okunamadı: {exc}")
+            self._pdf_summary_var.set("")
+            return
+
+        self._pdf_status_var.set(f"Okundu: {pdf_path.name} • {result.page_count} sayfa")
+        self._pdf_summary_var.set(
+            f"Fan: Supply {result.supply_fan_count} / Return {result.return_fan_count}   |   "
+            f"Damper: {result.damper_count}   |   Sensör: {result.sensor_count}   |   "
+            f"Filtre: {result.filter_count}   |   Modül: {result.module_count}"
+        )
+        if result.order_no:
+            self._order_no_var.set(result.order_no)
+            self.state.order_no = result.order_no
+        if result.project_name:
+            self._project_name_var.set(result.project_name)
+            self.state.project_name = result.project_name
+        if result.ahu_name:
+            self._ahu_name_var.set(result.ahu_name)
+            self.state.ahu_name = result.ahu_name
 
     def _add_fan(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
