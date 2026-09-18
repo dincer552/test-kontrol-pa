@@ -190,13 +190,13 @@ class TestControlApp(tk.Tk):
         tabs = ttk.Notebook(self)
         tabs.pack(fill="both", expand=True, padx=10, pady=(0, 0))
         self.tabs = tabs
+        self._add_c600(tabs)
         self._add_general(tabs)
         self._add_fan(tabs)
         self._add_damper(tabs)
         self._add_filters(tabs)
         self._add_modules(tabs)
         self._add_sensors(tabs)
-        self._add_c600(tabs)
         self._add_user_report(tabs)
 
         self._build_bottom_dock()
@@ -325,7 +325,7 @@ class TestControlApp(tk.Tk):
 
     def _add_c600(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="C600")
+        notebook.add(tab, text="BAĞLANTI")
         body.columnconfigure(0, weight=3)
         body.columnconfigure(1, weight=2)
         body.rowconfigure(3, weight=1)
