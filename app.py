@@ -237,30 +237,82 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
                 row=i, column=1, sticky="w", pady=6
             )
 
+        # PDF kW Selector'daki PDF alma kutusunun ayni tasarim/drag davranisi.
         pdf_box = ttk.Frame(project, style="White.TFrame", padding=(12, 0, 0, 0))
-        pdf_box.grid(row=0, column=2, rowspan=3, sticky="e")
-        pdf_box.columnconfigure(0, weight=1)
+        pdf_box.grid(row=0, column=2, rowspan=3, sticky="ne")
 
-        drop = tk.Label(
-            pdf_box,
-            text="PDF\nBURAYA SÜRÜKLEYİN",
-            bg="#f8fafc",
-            fg="#475569",
-            font=("Segoe UI", 10, "bold"),
-            relief="solid",
-            bd=1,
-            width=25,
-            height=4,
-            cursor="hand2",
+        inner_box = tk.Frame(
+            pdf_box, bg="#ffffff", highlightbackground="#e2e8f0",
+            highlightthickness=1, padx=8, pady=8, width=360, height=150
         )
-        drop.grid(row=0, column=0, sticky="e")
-        self._pdf_drop_label = drop
-        drop.bind("<Button-1>", lambda _e: self._select_pdf())
+        inner_box.pack(fill="both", expand=True)
+        inner_box.pack_propagate(False)
+
+        head_row = tk.Frame(inner_box, bg="#ffffff")
+        head_row.pack(fill="x", pady=(0, 6))
+        tk.Label(
+            head_row, text=" PDF ", bg="#eff6ff", fg="#2563eb",
+            font=("Segoe UI", 9, "bold"), relief="flat"
+        ).pack(side="left", padx=(0, 6))
+
+        info_col = tk.Frame(head_row, bg="#ffffff")
+        info_col.pack(side="left")
+        tk.Label(
+            info_col, text="AHU PROJE PDF", bg="#ffffff", fg="#0f172a",
+            font=("Segoe UI", 10, "bold")
+        ).pack(anchor="w")
+        tk.Label(
+            info_col, text="Proje bilgileri PDF'den otomatik alınır",
+            bg="#ffffff", fg="#94a3b8", font=("Segoe UI", 8)
+        ).pack(anchor="w")
+
+        btn_col = tk.Frame(head_row, bg="#ffffff")
+        btn_col.pack(side="right")
+        self._pdf_count_label = tk.Label(
+            btn_col, text="0 PDF", bg="#ffffff", fg="#475569",
+            font=("Segoe UI", 8, "bold"), relief="solid", bd=1,
+            padx=6, pady=2
+        )
+        self._pdf_count_label.pack(side="left", padx=(0, 6))
+        ttk.Button(
+            btn_col, text="+ PDF EKLE", style="Secondary.TButton",
+            command=self._select_pdf
+        ).pack(side="left", padx=2)
+
+        drop_banner = tk.Frame(
+            inner_box, bg="#eff6ff", highlightbackground="#2563eb",
+            highlightthickness=2, padx=8, pady=6
+        )
+        self._pdf_banner_label = tk.Label(
+            drop_banner, text="⬇  PDF BURAYA BIRAKIN  ⬇",
+            bg="#eff6ff", fg="#1d4ed8", font=("Segoe UI", 9, "bold")
+        )
+        self._pdf_banner_label.pack(fill="both", expand=True)
+
+        list_container = tk.Frame(
+            inner_box, bg="#f8fafc",
+            highlightbackground="#e2e8f0", highlightthickness=1
+        )
+        list_container.pack(fill="both", expand=True, pady=(4, 0))
+        self._pdf_list_label = tk.Label(
+            list_container, text="PDF bekleniyor...", bg="#f8fafc",
+            fg="#94a3b8", font=("Segoe UI", 8), anchor="w"
+        )
+        self._pdf_list_label.pack(fill="both", expand=True, padx=8)
+
+        self._pdf_inner_box = inner_box
+        self._pdf_head_row = head_row
+        self._pdf_drop_banner = drop_banner
+        self._pdf_list_container = list_container
+        self._pdf_is_drag_active = False
+        self._pdf_anim_job = None
+
         if DND_FILES is not None:
-            drop.drop_target_register(DND_FILES)
-            drop.dnd_bind("<<Drop>>", self._drop_pdf)
-            drop.dnd_bind("<<DragEnter>>", self._pdf_drag_enter)
-            drop.dnd_bind("<<DragLeave>>", self._pdf_drag_leave)
+            inner_box.drop_target_register(DND_FILES)
+            inner_box.dnd_bind("<<DropEnter>>", self._pdf_drag_enter)
+            inner_box.dnd_bind("<<DropPosition>>", self._pdf_drag_position)
+            inner_box.dnd_bind("<<DropLeave>>", self._pdf_drag_leave)
+            inner_box.dnd_bind("<<Drop>>", self._drop_pdf)
 
         self._pdf_status_var = tk.StringVar(value="PDF bekleniyor.")
         ttk.Label(project, textvariable=self._pdf_status_var, style="Muted.TLabel").grid(
@@ -274,10 +326,8 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
 
         self._pdf_components_var = tk.StringVar(value="")
         ttk.Label(
-            project,
-            textvariable=self._pdf_components_var,
-            style="Muted.TLabel",
-            justify="left",
+            project, textvariable=self._pdf_components_var,
+            style="Muted.TLabel", justify="left"
         ).grid(row=5, column=0, columnspan=3, sticky="w", pady=(6, 0))
 
         checks = ttk.LabelFrame(body, text="Kontrol Durumu", style="Card.TLabelframe", padding=12)
@@ -291,29 +341,88 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
             label.grid(row=r, column=1, sticky="w", padx=10, pady=3)
             self._status_labels[name] = label
 
-    def _pdf_drag_enter(self, _event) -> None:
-        self._pdf_drop_label.configure(bg="#dcfce7", fg="#166534", text="PDF\nBIRAKABİLİRSİNİZ")
+    def _pdf_drag_enter(self, event):
+        self._set_pdf_drag_active(True)
+        return getattr(event, "action", "copy")
 
-    def _pdf_drag_leave(self, _event) -> None:
-        self._pdf_drop_label.configure(bg="#f8fafc", fg="#475569", text="PDF\nBURAYA SÜRÜKLEYİN")
+    def _pdf_drag_position(self, event):
+        self._set_pdf_drag_active(True)
+        return getattr(event, "action", "copy")
+
+    def _pdf_drag_leave(self, event):
+        self._set_pdf_drag_active(False)
+        return getattr(event, "action", "copy")
+
+    def _set_pdf_drag_active(self, active: bool) -> None:
+        if getattr(self, "_pdf_is_drag_active", False) == active:
+            return
+        self._pdf_is_drag_active = active
+        job = getattr(self, "_pdf_anim_job", None)
+        if job is not None:
+            try:
+                self.after_cancel(job)
+            except Exception:
+                pass
+            self._pdf_anim_job = None
+        if active:
+            self._pdf_drop_banner.pack(
+                fill="x", pady=(0, 6), before=self._pdf_list_container
+            )
+            self._run_pdf_drag_pulse(0)
+        else:
+            self._pdf_drop_banner.pack_forget()
+            self._pdf_inner_box.configure(
+                highlightbackground="#e2e8f0", highlightthickness=1, bg="#ffffff"
+            )
+            self._pdf_head_row.configure(bg="#ffffff")
+            self._pdf_banner_label.configure(
+                bg="#eff6ff", fg="#1d4ed8",
+                text="⬇  PDF BURAYA BIRAKIN  ⬇"
+            )
+
+    def _run_pdf_drag_pulse(self, step: int) -> None:
+        if not getattr(self, "_pdf_is_drag_active", False):
+            return
+        palette = ("#2563eb", "#3b82f6", "#60a5fa", "#3b82f6")
+        icons = ("⬇  PDF BURAYA BIRAKIN  ⬇", "⤓  PDF BURAYA BIRAKIN  ⤓")
+        color = palette[step % len(palette)]
+        try:
+            self._pdf_inner_box.configure(
+                highlightbackground=color, highlightthickness=2, bg="#eff6ff"
+            )
+            self._pdf_head_row.configure(bg="#eff6ff")
+            self._pdf_drop_banner.configure(
+                highlightbackground=color, bg="#eff6ff"
+            )
+            self._pdf_banner_label.configure(
+                bg="#eff6ff", fg="#1d4ed8",
+                text=icons[(step // 2) % len(icons)]
+            )
+        except Exception:
+            return
+        self._pdf_anim_job = self.after(
+            130, lambda: self._run_pdf_drag_pulse(step + 1)
+        )
 
     def _select_pdf(self) -> None:
         from tkinter import filedialog
-
         path = filedialog.askopenfilename(
             title="AHU PDF seç",
-            filetypes=[("PDF dosyaları", "*.pdf"), ("Tüm dosyalar", "*.*")],
+            filetypes=[("PDF dosyaları", "*.pdf"), ("Tüm dosyalar", "*.*")]
         )
         if path:
             self._load_pdf(path)
 
     def _drop_pdf(self, event) -> None:
-        self._pdf_drag_leave(event)
+        self._set_pdf_drag_active(False)
         try:
             paths = self.tk.splitlist(event.data)
         except Exception:
             paths = (event.data,)
-        pdfs = [Path(p).expanduser() for p in paths if str(p).lower().endswith(".pdf")]
+        pdfs = [
+            Path(p).expanduser() for p in paths
+            if str(p).lower().endswith(".pdf")
+        ]
         if pdfs:
             self._load_pdf(str(pdfs[0]))
 
@@ -330,7 +439,14 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
             self._pdf_components_var.set("")
             return
 
-        self._pdf_status_var.set(f"Okundu: {pdf_path.name} • {result.page_count} sayfa")
+        self._pdf_count_label.configure(text="1 PDF")
+        self._pdf_list_label.configure(
+            text=f"✓  {pdf_path.name}",
+            fg="#166534", font=("Segoe UI", 9, "bold")
+        )
+        self._pdf_status_var.set(
+            f"Okundu: {pdf_path.name} • {result.page_count} sayfa"
+        )
         self._pdf_summary_var.set(
             f"Fan: Supply {result.supply_fan_count} / Return {result.return_fan_count}   |   "
             f"Damper: {result.damper_count}   |   Sensör: {result.sensor_count}   |   "
@@ -351,12 +467,9 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
             ("HMI", result.components.get("hmi", 0)),
         )
         self._pdf_components_var.set(
-            "Keşfedilenler: " + "  |  ".join(f"{label}: {count}" for label, count in component_labels if count)
-        )
-        self._pdf_drop_label.configure(
-            bg="#dcfce7",
-            fg="#166534",
-            text="PDF OKUNDU",
+            "Keşfedilenler: " + "  |  ".join(
+                f"{label}: {count}" for label, count in component_labels if count
+            )
         )
         if result.order_no:
             self._order_no_var.set(result.order_no)
