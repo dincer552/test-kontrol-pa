@@ -496,17 +496,31 @@ class TestControlApp(tk.Tk):
             for point_id, key, _label in points:
                 results[key] = self._c600_json_read(point_id)
 
+            clock_points = (
+                ("1-SYSTEM CLOCK", "clock_1"),
+                ("2-SYSTEM CLOCK", "clock_2"),
+                ("3-SYSTEM CLOCK", "clock_3"),
+            )
+            for point_id, key in clock_points:
+                results[key] = self._c600_json_read(point_id)
+
             model = str(results["model"].get("value", "—")).strip() or "—"
             serial = str(results["serial"].get("value", "—")).strip() or "—"
             firmware = str(results["firmware"].get("value", "—")).strip() or "—"
             revision = str(results["revision"].get("value", "—")).strip() or "—"
+            clock_values = [
+                str(results[key].get("value", "")).strip()
+                for key in ("clock_1", "clock_2", "clock_3")
+            ]
+            clock_values = [value for value in clock_values if value]
+            clock = " / ".join(clock_values) if clock_values else "—"
 
             def update() -> None:
                 self._c600_info_vars["model"].set(model)
                 self._c600_info_vars["serial"].set(serial)
                 self._c600_info_vars["firmware"].set(firmware)
                 self._c600_info_vars["revision"].set(revision)
-                self._c600_info_vars["clock"].set("—")
+                self._c600_info_vars["clock"].set(clock)
                 self._c600_log_write(f"Model: {model}", "ok")
                 self._c600_log_write(f"Serial No: {serial}", "ok")
                 self._c600_log_write(f"Firmware: {firmware}", "ok")
