@@ -44,6 +44,7 @@ class TestControlApp(tk.Tk):
         self._update_available = False
         self._update_button: ttk.Button | None = None
         self._manual_update_button: ttk.Button | None = None
+        self._update_build_label: ttk.Label | None = None
         self._init_modern_theme()
         self._build_ui()
         self._update_statuses()
@@ -70,6 +71,7 @@ class TestControlApp(tk.Tk):
         style.configure("TLabel", background=bg_canvas, foreground=text, font=("Segoe UI", 9))
         style.configure("White.TLabel", background=card_bg, foreground=text, font=("Segoe UI", 9))
         style.configure("Muted.TLabel", background=card_bg, foreground=muted, font=("Segoe UI", 8))
+        style.configure("UpdateBuild.TLabel", background=card_bg, foreground="#16a34a", font=("Segoe UI", 8, "bold"))
         style.configure("Title.TLabel", background=card_bg, foreground=text, font=("Segoe UI", 13, "bold"))
         style.configure("Badge.TLabel", background="#eff6ff", foreground=primary, font=("Segoe UI", 8, "bold"), padding=(6, 2))
         style.configure("Primary.TButton", background=primary, foreground="#ffffff", font=("Segoe UI", 9, "bold"), borderwidth=0, padding=(12, 6))
@@ -105,6 +107,7 @@ class TestControlApp(tk.Tk):
 
         def worker() -> None:
             available = False
+            update = None
             try:
                 update = check_for_update()
                 available = bool(update.get("available"))
@@ -117,6 +120,15 @@ class TestControlApp(tk.Tk):
                 button = self._update_button
                 if button is not None:
                     button.configure(text="GÜNCELLE", state="normal" if available else "disabled")
+                build_label = self._update_build_label
+                if build_label is not None:
+                    if available and update:
+                        build = str(update.get("build") or "").strip()
+                        version = str(update.get("version") or "").strip()
+                        label = f"Build {build}" if build else (f"v{version.lstrip('vV')}" if version else "Yeni sürüm")
+                        build_label.configure(text=label)
+                    else:
+                        build_label.configure(text="")
                 manual_button = self._manual_update_button
                 if manual_button is not None:
                     manual_button.configure(state="normal")
@@ -151,8 +163,12 @@ class TestControlApp(tk.Tk):
         ttk.Label(title_box, text="AHU test, devreye alma, kontrol ve raporlama", style="Muted.TLabel").pack(anchor="w")
 
         # Manual update check stays available; the install button activates only when a newer build exists.
-        self._update_button = ttk.Button(header, text="GÜNCELLE", style="Secondary.TButton", command=self._start_update, state="disabled")
-        self._update_button.pack(side="right", padx=(6, 0))
+        update_box = ttk.Frame(header, style="White.TFrame")
+        update_box.pack(side="right", padx=(6, 0))
+        self._update_button = ttk.Button(update_box, text="GÜNCELLE", style="Secondary.TButton", command=self._start_update, state="disabled")
+        self._update_button.pack(side="top")
+        self._update_build_label = ttk.Label(update_box, text="", style="UpdateBuild.TLabel")
+        self._update_build_label.pack(side="top", pady=(2, 0))
         self._manual_update_button = ttk.Button(
             header,
             text="↻",
