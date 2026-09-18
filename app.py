@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import socket
 import tkinter as tk
 from tkinter import messagebox, ttk
 import webbrowser
@@ -22,6 +23,7 @@ class TestControlApp(tk.Tk):
         self.state = TestControlState()
         self._status_vars: dict[str, tk.StringVar] = {}
         self._status_labels: dict[str, tk.Label] = {}
+        self._c600_status_var = tk.StringVar(value="Bağlantı test edilmedi")
         self._init_modern_theme()
         self._build_ui()
         self._update_statuses()
@@ -226,9 +228,31 @@ class TestControlApp(tk.Tk):
         notebook.add(tab, text="C600")
         card = ttk.LabelFrame(body, text="Climatix C600 / GenericJSON", style="Card.TLabelframe", padding=14)
         card.pack(fill="x")
-        ttk.Label(card, text="Bağlantı: USB / SCOPE TCP Tunnel").grid(row=0, column=0, columnspan=2, sticky="w", pady=6)
-        ttk.Label(card, text="Durum: Henüz bağlanmadı").grid(row=1, column=0, columnspan=2, sticky="w", pady=6)
-        ttk.Button(card, text="BAĞLANTI TESTİ", style="Primary.TButton", command=self._c600_test).grid(row=2, column=0, sticky="w", pady=(12, 0))
+        card.columnconfigure(1, weight=1)
+
+        ttk.Label(card, text="Bağlantı:").grid(row=0, column=0, sticky="w", pady=6, padx=(0, 10))
+        ttk.Label(card, text="USB / SCOPE TCP Tunnel").grid(row=0, column=1, sticky="w", pady=6)
+
+        ttk.Label(card, text="Cihaz IP / Host:").grid(row=1, column=0, sticky="w", pady=6, padx=(0, 10))
+        self._c600_host_var = tk.StringVar(value="127.0.0.1")
+        ttk.Entry(card, textvariable=self._c600_host_var, width=28).grid(row=1, column=1, sticky="w", pady=6)
+
+        ttk.Label(card, text="Port:").grid(row=2, column=0, sticky="w", pady=6, padx=(0, 10))
+        self._c600_port_var = tk.StringVar(value="4242")
+        ttk.Entry(card, textvariable=self._c600_port_var, width=10).grid(row=2, column=1, sticky="w", pady=6)
+
+        ttk.Label(
+            card,
+            textvariable=self._c600_status_var,
+            style="Muted.TLabel",
+        ).grid(row=3, column=0, columnspan=2, sticky="w", pady=6)
+
+        ttk.Button(
+            card,
+            text="BAĞLANTI TESTİ",
+            style="Primary.TButton",
+            command=self._c600_test,
+        ).grid(row=4, column=0, sticky="w", pady=(12, 0))
 
     def _add_user_report(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
@@ -331,7 +355,47 @@ class TestControlApp(tk.Tk):
         messagebox.showinfo("RAPOR", "Rapor oluşturma modülü hazırlanıyor.", parent=self)
 
     def _c600_test(self) -> None:
-        messagebox.showinfo("C600", "C600 bağlantı testi henüz etkin değil.", parent=self)
+        """Test the SCOPE TCP tunnel without blocking the Tkinter UI."""
+        host = self._c600_host_var.get().strip()
+        port_text = self._c600_port_var.get().strip()
+
+        if not host:
+            messagebox.showwarning("C600", "Cihaz IP / Host boş bırakılamaz.", parent=self)
+            return
+
+        try:
+            port = int(port_text)
+            if not 1 <= port <= 65535:
+                raise ValueError
+        except ValueError:
+            messagebox.showwarning("C600", "Port 1-65535 arasında bir sayı olmalı.", parent=self)
+            return
+
+        self._c600_status_var.set(f"Bağlanıyor: {host}:{port} ...")
+        self.update_idletasks()
+
+        try:
+            with socket.create_connection((host, port), timeout=3.0):
+                pass
+        except OSError as exc:
+            self.state.c600_connected = False
+            self._c600_status_var.set(f"Bağlantı başarısız: {host}:{port} — {exc}")
+            self._update_statuses()
+            messagebox.showerror(
+                "C600",
+                f"C600 bağlantısı kurulamadı.\\n\\n{host}:{port}\\n{exc}",
+                parent=self,
+            )
+            return
+
+        self.state.c600_connected = True
+        self._c600_status_var.set(f"Bağlantı başarılı: {host}:{port}")
+        self._update_statuses()
+        messagebox.showinfo(
+            "C600",
+            f"C600 TCP bağlantısı başarılı.\\n\\n{host}:{port}",
+            parent=self,
+        )
 
 
 if __name__ == "__main__":
