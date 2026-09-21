@@ -81,7 +81,7 @@ class SensorTabMixin:
             card,
             text="KAYDET",
             style="Primary.TButton",
-            command=self._save,
+            command=lambda: self._save_and_unlock("USER / RAPOR"),
         )
         self._sensor_save_button.grid(row=row, column=1, sticky="w", pady=(12, 0))
 
