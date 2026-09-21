@@ -9,7 +9,7 @@ def test_model_shape():
     assert state.supply_fan_count == 1
     assert state.return_fan_count == 1
     assert state.airflow_control_ok is True
-    assert len(state.electrical_values) == 9
+    assert len(state.electrical_values) == 12
 
 
 def test_project_info():
