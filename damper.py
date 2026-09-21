@@ -58,8 +58,13 @@ class DamperTabMixin:
                     widget.grid_remove()
 
     def _apply_pdf_damper_visibility(self, damper_types: dict[str, bool]) -> None:
-        """PDF keşfine göre yalnızca projede bulunan damper kutularını göster."""
+        """PDF keşfine göre damperleri göster; bulunan tipleri varsayılan 1 adet başlat."""
         self._set_damper_visibility(damper_types)
+        for name, visible in damper_types.items():
+            if visible and self.state.damper_counts.get(name, 0) <= 0:
+                self.state.damper_counts[name] = 1
+                if name in self._damper_vars:
+                    self._damper_vars[name].set("1")
 
     def _save_damper_state(self) -> None:
         """Damper ekranındaki değerleri ortak state'e aktarır."""
