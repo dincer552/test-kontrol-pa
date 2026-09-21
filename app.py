@@ -513,29 +513,30 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 card, textvariable=var, width=34, style="Green.TEntry"
             ).grid(row=r, column=1, sticky="w", pady=6)
 
-        ttk.Label(card, text="Supply Debi").grid(row=3, column=0, sticky="w", pady=6)
+        ttk.Label(card, text="Supply Debi (%25)").grid(row=3, column=0, sticky="w", pady=6)
         self._supply_airflow_var = tk.StringVar(value=self.state.supply_airflow)
-        ttk.Entry(card, textvariable=self._supply_airflow_var, width=34, state="readonly").grid(
-            row=3, column=1, sticky="w", pady=6
+        self._supply_airflow_entry = ttk.Entry(
+            card, textvariable=self._supply_airflow_var, width=34, state="readonly"
         )
+        self._supply_airflow_entry.grid(row=3, column=1, sticky="w", pady=6)
+        ttk.Button(
+            card, text="MANUEL GİRİŞ", style="Secondary.TButton",
+            command=lambda: self._enable_manual_airflow("supply")
+        ).grid(row=3, column=2, sticky="w", padx=(8, 0), pady=6)
 
-        ttk.Label(card, text="Return Debi").grid(row=4, column=0, sticky="w", pady=6)
+        ttk.Label(card, text="Return Debi (%25)").grid(row=4, column=0, sticky="w", pady=6)
         self._return_airflow_var = tk.StringVar(value=self.state.return_airflow)
-        ttk.Entry(card, textvariable=self._return_airflow_var, width=34, state="readonly").grid(
-            row=4, column=1, sticky="w", pady=6
+        self._return_airflow_entry = ttk.Entry(
+            card, textvariable=self._return_airflow_var, width=34, state="readonly"
         )
-
-        self._airflow_var = tk.BooleanVar(value=self.state.airflow_control_ok)
-        self._pressure_var = tk.BooleanVar(value=self.state.pressure_control_ok)
-        ttk.Checkbutton(card, text="Debi Kontrol (%25)", variable=self._airflow_var, style="Green.TCheckbutton").grid(
-            row=5, column=0, columnspan=2, sticky="w", pady=6
-        )
-        ttk.Checkbutton(card, text="Basınç Kontrol", variable=self._pressure_var, style="Green.TCheckbutton").grid(
-            row=6, column=0, columnspan=2, sticky="w", pady=6
-        )
+        self._return_airflow_entry.grid(row=4, column=1, sticky="w", pady=6)
+        ttk.Button(
+            card, text="MANUEL GİRİŞ", style="Secondary.TButton",
+            command=lambda: self._enable_manual_airflow("return")
+        ).grid(row=4, column=2, sticky="w", padx=(8, 0), pady=6)
 
         buttons = ttk.Frame(card, style="White.TFrame")
-        buttons.grid(row=7, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        buttons.grid(row=5, column=0, columnspan=3, sticky="w", pady=(12, 0))
         self._fan_read_button = ttk.Button(
             buttons, text="VERİLERİ ÇEK", style="Secondary.TButton",
             command=self._read_fan_airflows
@@ -544,6 +545,13 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         ttk.Button(
             buttons, text="KAYDET", style="Primary.TButton", command=self._save
         ).pack(side="left")
+
+    def _enable_manual_airflow(self, side: str) -> None:
+        """Allow a PLC airflow field to be edited manually when requested."""
+        entry = self._supply_airflow_entry if side == "supply" else self._return_airflow_entry
+        entry.configure(state="normal", style="Green.TEntry")
+        entry.focus_set()
+        entry.selection_range(0, "end")
 
     def _read_fan_airflows(self) -> None:
         """Read Supply/Return airflow values from the C600 GenericJSON points."""
@@ -678,8 +686,6 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self.state.return_fan_count = int(self._return_fan_count_var.get() or 0)
         self.state.supply_airflow = self._supply_airflow_var.get()
         self.state.return_airflow = self._return_airflow_var.get()
-        self.state.airflow_control_ok = self._airflow_var.get()
-        self.state.pressure_control_ok = self._pressure_var.get()
         self._save_damper_state()
         for name, var in self._filter_vars.items():
             self.state.filters[name] = var.get()
