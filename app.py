@@ -205,7 +205,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._build_bottom_dock()
 
     def _configure_tab_flow(self) -> None:
-        """Create the sequential tab flow; only BAĞLANTI is visible initially."""
+        """Keep all workflow tabs visible for now."""
         self._tab_ids = {
             self.tabs.tab(i, "text"): self.tabs.tabs()[i]
             for i in range(len(self.tabs.tabs()))
@@ -220,26 +220,11 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             "SENSÖRLER",
             "USER / RAPOR",
         )
-        for tab_name in self._tab_sequence[1:]:
-            tab_id = self._tab_ids.get(tab_name)
-            if tab_id is not None:
-                self.tabs.hide(tab_id)
         self.tabs.select(self._tab_ids["BAĞLANTI"])
 
     def _set_tab_visible(self, tab_name: str, visible: bool = True) -> None:
-        tab_id = getattr(self, "_tab_ids", {}).get(tab_name)
-        if tab_id is None:
-            return
-        try:
-            if visible:
-                # A hidden ttk.Notebook tab must be re-added; changing its
-                # state alone does not make a hidden tab visible.
-                self.tabs.tab(tab_id, state="normal")
-                self.tabs.add(tab_id)
-            else:
-                self.tabs.hide(tab_id)
-        except tk.TclError:
-            return
+        """Tab visibility is temporarily unrestricted; keep this hook for later workflow rules."""
+        return
 
     def _on_c600_connection_success(self) -> None:
         """A successful C600 connection unlocks the project tab."""
