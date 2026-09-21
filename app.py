@@ -13,11 +13,12 @@ except ImportError:
     DND_FILES = None
     TkinterDnD = None
 
-from models import FILTER_IDS, SENSOR_NAMES, TestControlState
+from models import FILTER_IDS, TestControlState
 from build_info import BUILD_VERSION, BUILD_SHA
 from updater import check_for_update, start_update
 from connection import C600ConnectionMixin
 from damper import DamperTabMixin
+from sensors import SensorTabMixin
 from pdf_reader import discover_pdf
 
 
@@ -27,7 +28,7 @@ UPDATE_URL = "https://github.com/dincer552/test-kontrol-pa/releases/latest"
 
 _TkBase = TkinterDnD.Tk if TkinterDnD is not None else tk.Tk
 
-class TestControlApp(DamperTabMixin, C600ConnectionMixin, _TkBase):
+class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBase):
     """Standalone Test Control desktop UI, visually aligned with PDF kW Selector."""
 
     def __init__(self) -> None:
@@ -499,19 +500,6 @@ class TestControlApp(DamperTabMixin, C600ConnectionMixin, _TkBase):
         ttk.Entry(card, textvariable=self._hum_stage, width=12).grid(row=5, column=1, sticky="w")
         ttk.Button(card, text="KAYDET", style="Primary.TButton", command=self._save).grid(row=6, column=0, sticky="w", pady=(12, 0))
 
-    def _add_sensors(self, notebook: ttk.Notebook) -> None:
-        tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="SENSÖRLER")
-        card = ttk.LabelFrame(body, text="Sensör Değerleri", style="Card.TLabelframe", padding=14)
-        card.pack(fill="x")
-        self._sensor_vars: dict[str, tk.StringVar] = {}
-        for r, name in enumerate(SENSOR_NAMES):
-            ttk.Label(card, text=name).grid(row=r, column=0, sticky="w", pady=6, padx=(0, 20))
-            var = tk.StringVar(value=self.state.sensors[name])
-            self._sensor_vars[name] = var
-            ttk.Entry(card, textvariable=var, width=24).grid(row=r, column=1, sticky="w", pady=6)
-        ttk.Button(card, text="KAYDET", style="Primary.TButton", command=self._save).grid(row=len(SENSOR_NAMES), column=0, sticky="w", pady=(12, 0))
-
     def _add_user_report(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
         notebook.add(tab, text="USER / RAPOR")
@@ -572,8 +560,7 @@ class TestControlApp(DamperTabMixin, C600ConnectionMixin, _TkBase):
         self.state.temp_avg_en = self._avg_var.get()
         self.state.dx_stage = int(self._dx_stage.get() or 0)
         self.state.humidifier_stage = int(self._hum_stage.get() or 0)
-        for name, var in self._sensor_vars.items():
-            self.state.sensors[name] = var.get()
+        self._save_sensor_state()
         self.state.user_name = self._user_var.get()
         self.state.recalculate()
         self._update_statuses()
@@ -602,8 +589,7 @@ class TestControlApp(DamperTabMixin, C600ConnectionMixin, _TkBase):
         self._avg_var.set(self.state.temp_avg_en)
         self._dx_stage.set(str(self.state.dx_stage))
         self._hum_stage.set(str(self.state.humidifier_stage))
-        for name, var in self._sensor_vars.items():
-            var.set(self.state.sensors[name])
+        self._clear_sensor_ui()
         self._user_var.set("")
         self._update_statuses()
 
