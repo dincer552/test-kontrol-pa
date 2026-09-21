@@ -4,11 +4,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List
 
 
-FILTER_IDS = [
-    "FreshF7", "FreshG4", "ReturnG4", "SupplyF9", "FreshF9", "ReturnF7",
-    "FreshM5", "FreshG2", "FreshF4", "ReturnM5", "ReturnF9", "ReturnG2",
-    "SupplyM5", "SupplyG4", "SupplyF7", "SupplyG2", "HepaFilter", "H13Filter",
-]
+FILTER_IDS = ["Filtre 1", "Filtre 2", "Filtre 3", "Filtre 4", "Filtre 5"]
 
 DAMPER_NAMES = ["Fresh", "Supply", "Return", "Exhaust", "Mix", "Bypass"]
 SENSOR_NAMES = [
