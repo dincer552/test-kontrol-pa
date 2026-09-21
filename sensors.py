@@ -50,7 +50,7 @@ class SensorTabMixin:
         self._sensor_units: dict[str, str] = {}
         self._sensor_visibility: dict[str, dict[str, bool]] = {}
         self._manual_sensor_rows: dict[str, tuple[ttk.Label, ttk.Entry, ttk.Button]] = {}
-        self._manual_sensor_rows_frame: ttk.LabelFrame | None = None
+        self._manual_sensor_rows_frame: ttk.Frame | None = None
 
         row = 0
         for name in SENSOR_NAMES:
@@ -133,7 +133,7 @@ class SensorTabMixin:
             manual_card, text="+ SENSOR EKLE", style="Secondary.TButton",
             command=self._add_manual_sensor,
         ).grid(row=0, column=4, sticky="w")
-        self._manual_sensor_rows_frame = manual_card
+        self._manual_sensor_form = manual_card
 
         self._set_sensor_visibility({name: {"temperature": False, "humidity": False, "co2": False} for name in SENSOR_NAMES})
 
