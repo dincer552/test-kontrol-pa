@@ -15,6 +15,8 @@ SENSOR_POINTS = {
     "AfterCoil Air Sensor": ("1-TMPVAL", "°C"),
     "Mix Air Sensor": ("7-TMPVAL", "°C"),
     "Room Temp Sensor 1": ("ROOM_TEMP", "°C"),
+    "Room CO2 Sensor": ("ROOM_CO2", "ppm"),
+    "Room Hum Sensor": ("ROOM_HUM", "%RH"),
     "AfterDxUnit Air Sensor": ("2-TMPVAL", "°C"),
     "AfterHeatRec Air Sensor": ("4-TMPVAL", "°C"),
     "Exchngr Leave Temp Sensor": ("6-TMPVAL", "°C"),
