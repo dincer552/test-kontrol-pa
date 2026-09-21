@@ -15,19 +15,14 @@ SENSOR_POINTS = {
     "AfterCoil Air Sensor": ("AfterCoilAirSensorMB\\TmpVal", "°C"),
     "Mix Air Sensor": ("MixingAirSensorMB\\TmpVal", "°C"),
     "Room Temp Sensor 1": ("Room Temp\\Room Temp", "°C"),
-    "Room Temp Sensor 2": ("Room Temp\\Room Temp", "°C"),
     "Water Temp Sensor": ("Water Temp\\Water Temp", "°C"),
     "Return CO2 Sensor": ("ReturnAirSensorMB\\CO2Val", "ppm"),
     "Return CO2 Air Sensor": ("ReturnCO2AirSensorMB\\CO2Val", "ppm"),
 }
 
 HUMIDITY_POINTS = {
-    "Fresh Air Sensor": ("FreshAirSensorMB\\HumVal", "%RH"),
     "Supply Air Sensor": ("SupplyAirSensorMB\\HumVal", "%RH"),
     "Return Air Sensor": ("ReturnAirSensorMB\\HumVal", "%RH"),
-    "Exhaust Air Sensor": ("ExhaustAirSensorMB\\HumVal", "%RH"),
-    "AfterCoil Air Sensor": ("AfterCoilAirSensorMB\\HumVal", "%RH"),
-    "Mix Air Sensor": ("MixingAirSensorMB\\HumVal", "%RH"),
 }
 
 
