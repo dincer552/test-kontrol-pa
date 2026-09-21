@@ -232,9 +232,9 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             return
         try:
             if visible:
-                self.tabs.add(tab_id)
+                self.tabs.tab(tab_id, state="normal")
             else:
-                self.tabs.hide(tab_id)
+                self.tabs.tab(tab_id, state="hidden")
         except tk.TclError:
             return
 
@@ -543,7 +543,8 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         )
         self._fan_read_button.pack(side="left", padx=(0, 8))
         ttk.Button(
-            buttons, text="KAYDET", style="Primary.TButton", command=self._save
+            buttons, text="KAYDET", style="Primary.TButton",
+            command=lambda: self._save_and_unlock("DAMPER KONTROL")
         ).pack(side="left")
 
     def _enable_manual_airflow(self, side: str) -> None:
@@ -662,6 +663,11 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         for name, ok in mapping.items():
             self._status_vars[name].set("Kontrol Edildi" if ok else "Kontrol Edilmedi")
             self._status_labels[name].configure(bg="#dcfce7" if ok else "#fef3c7", fg="#166534" if ok else "#92400e")
+
+    def _save_and_unlock(self, tab_name: str) -> None:
+        """Save the current page and explicitly unlock its next workflow tab."""
+        self._save()
+        self._set_tab_visible(tab_name, True)
 
     def _unlock_next_tab_after_save(self) -> None:
         """Unlock the next tab according to the fixed workflow order."""
