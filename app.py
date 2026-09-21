@@ -494,6 +494,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._log(
             f"PROJE: keşif tamamlandı — damper={sum(result.damper_types.values())}, sensör={len(result.sensor_types)}"
         )
+        self._confirm_sensor_matches(result.sensor_match_candidates)
         self._apply_pdf_damper_visibility(result.damper_types)
         self._apply_pdf_sensor_visibility(result.sensor_types)
         # PDF is the approval/input point for opening the next sequential tab.
@@ -507,6 +508,29 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         if result.ahu_name:
             self._ahu_name_var.set(result.ahu_name)
             self.state.ahu_name = result.ahu_name
+
+    def _confirm_sensor_matches(self, candidates: dict[str, str]) -> None:
+        if not candidates:
+            return
+        self._sensor_pdf_matches = {}
+        for sensor_name, pdf_label in candidates.items():
+            accepted = messagebox.askyesno(
+                "SENSÖR EŞLEŞTİRME",
+                f"PDF'de benzer bir sensör adı bulundu:\n\n"
+                f"PDF: {pdf_label}\n\n"
+                f"'{sensor_name}' olarak eşleştirilsin mi?",
+                parent=self,
+            )
+            if accepted:
+                self._sensor_pdf_matches[sensor_name] = pdf_label
+                self._log(
+                    f"PROJE: sensör eşleştirildi — {pdf_label} → {sensor_name}",
+                    "ok",
+                )
+            else:
+                self._log(
+                    f"PROJE: sensör eşleştirmesi reddedildi — {pdf_label} ≠ {sensor_name}"
+                )
 
     def _add_fan(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
