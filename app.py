@@ -231,18 +231,18 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self.tabs.select(self._tab_ids["BAĞLANTI"])
 
     def _set_tab_visible(self, tab_name: str, visible: bool = True) -> None:
+        """Show/hide an already-created ttk.Notebook tab without changing its order."""
         tab_id = getattr(self, "_tab_ids", {}).get(tab_name)
         if tab_id is None:
             return
         try:
             if visible:
-                if tab_id not in self.tabs.tabs():
-                    self.tabs.insert(
-                        self._tab_positions.get(tab_name, len(self.tabs.tabs())),
-                        tab_id,
-                    )
+                # The tab remains in Notebook.tabs() even while hidden.
+                # Re-adding/inserting it is therefore unnecessary and can
+                # leave the tab hidden. Explicitly restore its state instead.
+                self.tabs.tab(tab_id, state="normal")
             else:
-                self.tabs.hide(tab_id)
+                self.tabs.tab(tab_id, state="hidden")
         except tk.TclError:
             return
 
