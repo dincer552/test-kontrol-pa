@@ -473,7 +473,7 @@ class TestControlApp(DamperTabMixin, C600ConnectionMixin, _TkBase):
             var = tk.BooleanVar(value=self.state.filters[name])
             self._filter_vars[name] = var
             ttk.Checkbutton(card, text=name, variable=var).grid(row=i // 3, column=i % 3, sticky="w", padx=12, pady=6)
-        ttk.Button(card, text="KAYDET", style="Primary.TButton", command=self._save).grid(row=6, column=0, sticky="w", pady=(12, 0))
+        ttk.Button(card, text="KAYDET", style="Primary.TButton", command=self._save).grid(row=2, column=0, sticky="w", pady=(12, 0))
 
     def _add_modules(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
