@@ -13,10 +13,11 @@ except ImportError:
     DND_FILES = None
     TkinterDnD = None
 
-from models import DAMPER_NAMES, FILTER_IDS, SENSOR_NAMES, TestControlState
+from models import FILTER_IDS, SENSOR_NAMES, TestControlState
 from build_info import BUILD_VERSION, BUILD_SHA
 from updater import check_for_update, start_update
 from connection import C600ConnectionMixin
+from damper import DamperTabMixin
 from pdf_reader import discover_pdf
 
 
@@ -26,7 +27,7 @@ UPDATE_URL = "https://github.com/dincer552/test-kontrol-pa/releases/latest"
 
 _TkBase = TkinterDnD.Tk if TkinterDnD is not None else tk.Tk
 
-class TestControlApp(C600ConnectionMixin, _TkBase):
+class TestControlApp(DamperTabMixin, C600ConnectionMixin, _TkBase):
     """Standalone Test Control desktop UI, visually aligned with PDF kW Selector."""
 
     def __init__(self) -> None:
@@ -461,19 +462,6 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
         ttk.Checkbutton(card, text="Basınç Kontrol", variable=self._pressure_var).grid(row=6, column=0, columnspan=2, sticky="w", pady=6)
         ttk.Button(card, text="KAYDET", style="Primary.TButton", command=self._save).grid(row=7, column=0, sticky="w", pady=(12, 0))
 
-    def _add_damper(self, notebook: ttk.Notebook) -> None:
-        tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="DAMPER KONTROL")
-        card = ttk.LabelFrame(body, text="Damper Kontrol", style="Card.TLabelframe", padding=12)
-        card.pack(fill="x")
-        self._damper_vars: dict[str, tk.StringVar] = {}
-        for r, name in enumerate(DAMPER_NAMES):
-            ttk.Label(card, text=f"{name} Damper Sayısı").grid(row=r, column=0, sticky="w", pady=7)
-            var = tk.StringVar(value=str(self.state.damper_counts[name]))
-            self._damper_vars[name] = var
-            ttk.Entry(card, textvariable=var, width=20).grid(row=r, column=1, sticky="w", pady=7)
-        ttk.Button(card, text="KAYDET", style="Primary.TButton", command=self._save).grid(row=len(DAMPER_NAMES), column=0, sticky="w", pady=(12, 0))
-
     def _add_filters(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
         notebook.add(tab, text="FİLTRE KONTROL")
@@ -570,8 +558,7 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
         self.state.return_airflow = self._return_airflow_var.get()
         self.state.airflow_control_ok = self._airflow_var.get()
         self.state.pressure_control_ok = self._pressure_var.get()
-        for name, var in self._damper_vars.items():
-            self.state.damper_counts[name] = int(var.get() or 0)
+        self._save_damper_state()
         for name, var in self._filter_vars.items():
             self.state.filters[name] = var.get()
         self.state.rotor_enabled = self._rotor_var.get()
@@ -601,8 +588,7 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
         self._return_airflow_var.set(self.state.return_airflow)
         self._airflow_var.set(self.state.airflow_control_ok)
         self._pressure_var.set(self.state.pressure_control_ok)
-        for name, var in self._damper_vars.items():
-            var.set(str(self.state.damper_counts[name]))
+        self._clear_damper_ui()
         for name, var in self._filter_vars.items():
             var.set(str(self.state.filters[name]))
         self._rotor_var.set(self.state.rotor_enabled)
