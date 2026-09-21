@@ -435,6 +435,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         )
         self._pdf_status_var.set(f"Okundu: {pdf_path.stem}")
         self._apply_pdf_damper_visibility(result.damper_types)
+        self._apply_pdf_sensor_visibility(result.sensor_types)
         if result.order_no:
             self._order_no_var.set(result.order_no)
             self.state.order_no = result.order_no
