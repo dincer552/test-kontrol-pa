@@ -470,11 +470,14 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         pdf_path = Path(path)
         if not pdf_path.is_file():
             self._pdf_status_var.set("PDF dosyası bulunamadı.")
+            self._log(f"PROJE: PDF bulunamadı: {path}", "error")
             return
+        self._log(f"PROJE: PDF okunuyor: {pdf_path.name}")
         try:
             result = discover_pdf(pdf_path)
         except Exception as exc:
             self._pdf_status_var.set("")
+            self._log(f"PROJE: PDF okuma hatası: {exc}", "error")
             return
 
         self._pdf_count_label.configure(text="1 PDF")
@@ -483,6 +486,10 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             fg="#166534", font=("Segoe UI", 9, "bold")
         )
         self._pdf_status_var.set(f"Okundu: {pdf_path.stem}")
+        self._log(f"PROJE: PDF okundu: {pdf_path.name}", "ok")
+        self._log(
+            f"PROJE: keşif tamamlandı — damper={sum(result.damper_types.values())}, sensör={len(result.sensor_types)}"
+        )
         self._apply_pdf_damper_visibility(result.damper_types)
         self._apply_pdf_sensor_visibility(result.sensor_types)
         # PDF is the approval/input point for opening the next sequential tab.
@@ -566,7 +573,9 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         """Read Supply/Return airflow values from the C600 GenericJSON points."""
         if not self.state.c600_connected:
             messagebox.showwarning("FAN KONTROL", "Önce C600 bağlantısı kurulmalı.", parent=self)
+            self._log("FAN KONTROL: Veri çekme isteği reddedildi; C600 bağlı değil.", "error")
             return
+        self._log("FAN KONTROL: Supply/Return debi okunuyor...")
         self._fan_read_button.configure(state="disabled")
         threading.Thread(target=self._fan_airflow_worker, daemon=True).start()
 
@@ -590,12 +599,15 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         def apply() -> None:
             self._fan_read_button.configure(state="normal")
             if error is not None:
+                self._log(f"FAN KONTROL: Debi okuma hatası: {error}", "error")
                 messagebox.showerror("FAN KONTROL", f"Debi verileri okunamadı:\n{error}", parent=self)
                 return
             self._supply_airflow_var.set(results["AIR_FLOW"])
             self._return_airflow_var.set(results["1-AIR_FLOW"])
             self.state.supply_airflow = results["AIR_FLOW"]
             self.state.return_airflow = results["1-AIR_FLOW"]
+            self._log(f"FAN KONTROL: AIR_FLOW={results['AIR_FLOW']}", "ok")
+            self._log(f"FAN KONTROL: 1-AIR_FLOW={results['1-AIR_FLOW']}", "ok")
             self._update_statuses()
 
         self._c600_ui(apply)
@@ -656,6 +668,12 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             ttk.Label(dock, text=f"• {name}", style="Badge.TLabel").pack(side="right", padx=2)
         ttk.Label(dock, text="Hazır", style="Muted.TLabel").pack(side="right", padx=(8, 0))
 
+    def _log(self, message: str, tag: str = "muted") -> None:
+        """Write every user-visible operation to the central process log."""
+        writer = getattr(self, "_c600_log_write", None)
+        if writer:
+            writer(message, tag)
+
     def _update_statuses(self) -> None:
         mapping = {
             "Fan Kontrol": self.state.fan_control_ok,
@@ -681,14 +699,21 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             self.state.return_airflow = self._return_airflow_var.get()
             self.state.recalculate()
             self._update_statuses()
+            self._log(
+                f"FAN KONTROL: KAYDET — fan={self.state.fan_type}, supply_fan={self.state.supply_fan_count}, return_fan={self.state.return_fan_count}, supply_airflow={self.state.supply_airflow}, return_airflow={self.state.return_airflow}",
+                "ok",
+            )
             self._set_tab_visible("DAMPER KONTROL", True)
+            self._log("İŞ AKIŞI: DAMPER KONTROL sekmesi açıldı.", "ok")
         except (TypeError, ValueError) as exc:
             messagebox.showwarning("FAN KONTROL", f"Fan bilgileri kontrol edilmeli:\n{exc}", parent=self)
 
     def _save_and_unlock(self, tab_name: str) -> None:
         """Save the current page and explicitly unlock its next workflow tab."""
         self._save()
+        self._log(f"{self.tabs.tab(self.tabs.select(), 'text')}: KAYDET", "ok")
         self._set_tab_visible(tab_name, True)
+        self._log(f"İŞ AKIŞI: {tab_name} sekmesi açıldı.", "ok")
 
     def _unlock_next_tab_after_save(self) -> None:
         """Unlock the next tab according to the fixed workflow order."""
