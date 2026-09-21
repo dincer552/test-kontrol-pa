@@ -97,7 +97,9 @@ class SensorTabMixin:
         self._manual_sensor_rows_frame.grid(
             row=row, column=0, columnspan=3, sticky="ew"
         )
-        self._manual_sensor_rows_frame.grid_columnconfigure(0, minsize=172)
+        # Ana sensör satırlarındaki kolon başlangıçlarıyla aynı hizada olsun.
+        # Normal değer kutusu kolon 1'de yaklaşık 188 px'den başlıyor.
+        self._manual_sensor_rows_frame.grid_columnconfigure(0, minsize=188)
         self._manual_sensor_rows_frame.grid_columnconfigure(1, minsize=193)
         row += 1
 
