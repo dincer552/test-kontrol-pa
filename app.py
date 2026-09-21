@@ -633,24 +633,92 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         notebook.add(tab, text="MODÜLLER")
         card = ttk.LabelFrame(body, text="Modül Konfigürasyonu", style="Card.TLabelframe", padding=14)
         card.pack(fill="x")
+        card.columnconfigure(1, weight=1)
+
         self._rotor_var = tk.BooleanVar(value=self.state.rotor_enabled)
         self._run_var = tk.BooleanVar(value=self.state.run_around)
         self._dx_var = tk.BooleanVar(value=self.state.dx_enabled)
         self._hum_var = tk.BooleanVar(value=self.state.humidifier_enabled)
         self._heater_var = tk.BooleanVar(value=self.state.electrical_heater)
-        self._co_var = tk.BooleanVar(value=self.state.change_over)
         self._bms_var = tk.BooleanVar(value=self.state.room_bms)
-        self._avg_var = tk.BooleanVar(value=self.state.temp_avg_en)
-        checks = (("Rotor", self._rotor_var), ("Run Around", self._run_var), ("DX", self._dx_var), ("Nemlendirici", self._hum_var), ("Elektrikli Isıtıcı", self._heater_var), ("ChangeOver", self._co_var), ("Room BMS", self._bms_var), ("Temp Average", self._avg_var))
+
+        # Only the requested module options are shown here.
+        checks = (
+            ("Rotor", self._rotor_var),
+            ("Run Around", self._run_var),
+            ("DX", self._dx_var),
+            ("Nemlendirici", self._hum_var),
+            ("Elektrikli Isıtıcı", self._heater_var),
+            ("Room BMS", self._bms_var),
+        )
         for i, (text, var) in enumerate(checks):
-            ttk.Checkbutton(card, text=text, variable=var).grid(row=i // 2, column=i % 2, sticky="w", padx=12, pady=7)
-        ttk.Label(card, text="DX Kademe (0-5)").grid(row=4, column=0, sticky="w", pady=7)
+            ttk.Checkbutton(card, text=text, variable=var).grid(
+                row=i // 2, column=i % 2, sticky="w", padx=12, pady=7
+            )
+
+        # DX/Nemlendirici kademe sorguları are only visible while the module is enabled.
         self._dx_stage = tk.StringVar(value=str(self.state.dx_stage))
-        ttk.Entry(card, textvariable=self._dx_stage, width=12).grid(row=4, column=1, sticky="w")
-        ttk.Label(card, text="Nemlendirici Kademe (0-8)").grid(row=5, column=0, sticky="w", pady=7)
         self._hum_stage = tk.StringVar(value=str(self.state.humidifier_stage))
-        ttk.Entry(card, textvariable=self._hum_stage, width=12).grid(row=5, column=1, sticky="w")
-        ttk.Button(card, text="KAYDET", style="Primary.TButton", command=lambda: self._save_and_unlock("SENSÖRLER")).grid(row=6, column=0, sticky="w", pady=(12, 0))
+
+        self._dx_stage_frame = ttk.Frame(card, style="White.TFrame")
+        ttk.Label(self._dx_stage_frame, text="DX Kademe Sorgu (0-5)").pack(side="left", padx=(0, 8))
+        ttk.Entry(self._dx_stage_frame, textvariable=self._dx_stage, width=12).pack(side="left")
+        self._dx_stage_frame.grid(row=3, column=0, sticky="w", padx=12, pady=5)
+
+        self._hum_stage_frame = ttk.Frame(card, style="White.TFrame")
+        ttk.Label(self._hum_stage_frame, text="Nemlendirici Kademe Sorgu (0-8)").pack(side="left", padx=(0, 8))
+        ttk.Entry(self._hum_stage_frame, textvariable=self._hum_stage, width=12).pack(side="left")
+        self._hum_stage_frame.grid(row=3, column=1, sticky="w", padx=12, pady=5)
+
+        # 4 rows (R/S/T/X) x 3 stages. Values are entered as current measurements.
+        self._heater_values = {}
+        self._heater_frame = ttk.LabelFrame(
+            card, text="Elektrikli Isıtıcı Akım Bilgileri", style="Card.TLabelframe", padding=10
+        )
+        ttk.Label(self._heater_frame, text="").grid(row=0, column=0, padx=8, pady=4)
+        for col, stage in enumerate(("Kademe 1", "Kademe 2", "Kademe 3"), start=1):
+            ttk.Label(self._heater_frame, text=stage).grid(
+                row=0, column=col, padx=10, pady=4, sticky="w"
+            )
+        for row, phase in enumerate(("R", "S", "T", "X"), start=1):
+            ttk.Label(self._heater_frame, text=phase).grid(
+                row=row, column=0, padx=8, pady=4, sticky="w"
+            )
+            for col, stage in enumerate((1, 2, 3), start=1):
+                var = tk.StringVar(value=str(self.state.electrical_values[(row - 1) * 3 + (col - 1)]))
+                self._heater_values[(phase, stage)] = var
+                ttk.Entry(self._heater_frame, textvariable=var, width=12, style="Green.TEntry").grid(
+                    row=row, column=col, padx=8, pady=4, sticky="w"
+                )
+
+        self._sync_module_controls()
+
+        ttk.Button(
+            card, text="KAYDET", style="Primary.TButton",
+            command=lambda: self._save_and_unlock("SENSÖRLER")
+        ).grid(row=5, column=0, sticky="w", pady=(12, 0))
+
+        # Reposition the optional frames after their initial grid calls.
+        self._sync_module_controls()
+
+    def _sync_module_controls(self) -> None:
+        """Show optional module inputs only when their module checkbox is enabled."""
+        if not hasattr(self, "_dx_stage_frame"):
+            return
+        if self._dx_var.get():
+            self._dx_stage_frame.grid()
+        else:
+            self._dx_stage_frame.grid_remove()
+
+        if self._hum_var.get():
+            self._hum_stage_frame.grid()
+        else:
+            self._hum_stage_frame.grid_remove()
+
+        if self._heater_var.get():
+            self._heater_frame.grid(row=4, column=0, columnspan=2, sticky="w", padx=12, pady=(8, 2))
+        else:
+            self._heater_frame.grid_remove()
 
     def _add_user_report(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
@@ -749,11 +817,27 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self.state.dx_enabled = self._dx_var.get()
         self.state.humidifier_enabled = self._hum_var.get()
         self.state.electrical_heater = self._heater_var.get()
-        self.state.change_over = self._co_var.get()
         self.state.room_bms = self._bms_var.get()
-        self.state.temp_avg_en = self._avg_var.get()
         self.state.dx_stage = int(self._dx_stage.get() or 0)
         self.state.humidifier_stage = int(self._hum_stage.get() or 0)
+        self.state.electrical_values = [
+            float(self._heater_values[key].get() or 0)
+            for key in (
+                ("R", 1), ("R", 2), ("R", 3),
+                ("S", 1), ("S", 2), ("S", 3),
+                ("T", 1), ("T", 2), ("T", 3),
+                ("X", 1), ("X", 2), ("X", 3),
+            )
+        ]
+        self._log(
+            "MODÜLLER: "
+            f"rotor={self.state.rotor_enabled}, run_around={self.state.run_around}, "
+            f"dx={self.state.dx_enabled}, dx_kademe={self.state.dx_stage}, "
+            f"nemlendirici={self.state.humidifier_enabled}, nemlendirici_kademe={self.state.humidifier_stage}, "
+            f"elektrikli_isitici={self.state.electrical_heater}, room_bms={self.state.room_bms}, "
+            f"isitici_akim={self.state.electrical_values}",
+            "ok",
+        )
         self._save_sensor_state()
         self.state.user_name = self._user_var.get()
         self._update_statuses()
@@ -777,11 +861,17 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._dx_var.set(self.state.dx_enabled)
         self._hum_var.set(self.state.humidifier_enabled)
         self._heater_var.set(self.state.electrical_heater)
-        self._co_var.set(self.state.change_over)
         self._bms_var.set(self.state.room_bms)
-        self._avg_var.set(self.state.temp_avg_en)
         self._dx_stage.set(str(self.state.dx_stage))
         self._hum_stage.set(str(self.state.humidifier_stage))
+        for index, key in enumerate((
+            ("R", 1), ("R", 2), ("R", 3),
+            ("S", 1), ("S", 2), ("S", 3),
+            ("T", 1), ("T", 2), ("T", 3),
+            ("X", 1), ("X", 2), ("X", 3),
+        )):
+            self._heater_values[key].set(str(self.state.electrical_values[index]))
+        self._sync_module_controls()
         self._clear_sensor_ui()
         self._user_var.set("")
         self._update_statuses()
