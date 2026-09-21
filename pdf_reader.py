@@ -21,6 +21,7 @@ class PdfDiscovery:
     filter_count: int = 0
     module_count: int = 0
     components: dict[str, int] = field(default_factory=dict)
+    damper_types: dict[str, bool] = field(default_factory=dict)
 
 
 
@@ -102,6 +103,15 @@ def discover_pdf(path: str | Path) -> PdfDiscovery:
     dpt_ids = _numbered_components(text, "DPT")
     filter_ids = _numbered_components(text, "P")
 
+    damper_types = {
+        "Fresh": _has_component(text, r"Fresh Air Damper Actuator"),
+        "Supply": _has_component(text, r"Supply Damper Actuator"),
+        "Return": _has_component(text, r"Return Damper Actuator"),
+        "Exhaust": _has_component(text, r"Exhaust Damper"),
+        "Mix": _has_component(text, r"Mixing Damper Actuator"),
+        "Bypass": _has_component(text, r"Bypass damper"),
+    }
+
     components = {
         "supply_fan": supply_fan,
         "return_fan": return_fan,
@@ -131,4 +141,5 @@ def discover_pdf(path: str | Path) -> PdfDiscovery:
         filter_count=len(filter_ids),
         module_count=module_count,
         components=components,
+        damper_types=damper_types,
     )
