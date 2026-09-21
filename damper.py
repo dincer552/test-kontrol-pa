@@ -63,6 +63,7 @@ class DamperTabMixin:
 
     def _save_damper_state(self) -> None:
         """Damper ekranındaki değerleri ortak state'e aktarır."""
+        changed = []
         for name, var in self._damper_vars.items():
             try:
                 value = int(var.get() or 0)
@@ -70,6 +71,9 @@ class DamperTabMixin:
                 value = 0
                 var.set("0")
             self.state.damper_counts[name] = max(0, value)
+            changed.append(f"{name}={self.state.damper_counts[name]}")
+        if changed and hasattr(self, "_log"):
+            self._log("DAMPER KONTROL: " + ", ".join(changed), "ok")
 
     def _clear_damper_ui(self) -> None:
         """Damper ekranını ortak state'teki varsayılan değerlere döndürür."""
