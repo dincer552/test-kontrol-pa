@@ -48,6 +48,7 @@ class SensorTabMixin:
         self._sensor_units: dict[str, str] = {}
         self._sensor_visibility: dict[str, dict[str, bool]] = {}
         self._manual_sensor_rows: dict[str, tuple[ttk.Label, ttk.Entry]] = {}
+        self._manual_sensor_rows_frame: ttk.LabelFrame | None = None
 
         row = 0
         for name in SENSOR_NAMES:
@@ -121,18 +122,11 @@ class SensorTabMixin:
 
     def _toggle_sensor_manual(self, name: str) -> None:
         entry = self._sensor_widgets[name][1]
-        button = self._sensor_manual_buttons[name]
-        if str(entry.cget("state")) == "readonly":
-            entry.configure(state="normal", style="Green.TEntry")
-            button.configure(text="PLC OKU")
-            if hasattr(self, "_log"):
-                self._log(f"SENSÖRLER: {name} manuel değer girişi açıldı.")
-        else:
-            entry.configure(state="readonly", style="TEntry")
-            button.configure(text="MANUEL GİRİŞ")
-            self.state.sensors[name] = self._sensor_vars[name].get()
-            if hasattr(self, "_log"):
-                self._log(f"SENSÖRLER: {name} manuel değer = {self._sensor_vars[name].get()}", "ok")
+        entry.configure(state="normal", style="Green.TEntry")
+        entry.focus_set()
+        entry.selection_range(0, "end")
+        if hasattr(self, "_log"):
+            self._log(f"SENSÖRLER: {name} manuel değer girişi açıldı.")
 
     def _add_manual_sensor(self) -> None:
         name = self._manual_sensor_name_var.get().strip()
@@ -142,12 +136,15 @@ class SensorTabMixin:
         if name in self._sensor_vars or name in self._manual_sensor_rows:
             return
 
-        row = len(self._sensor_vars) + len(self._sensor_humidity_vars) + len(self._manual_sensor_rows) + 1
-        label = ttk.Label(self._sensor_card, text=name)
-        label.grid(row=row, column=0, sticky="w", pady=6, padx=(0, 20))
-        entry = ttk.Entry(self._sensor_card, width=24, style="Green.TEntry")
+        frame = self._manual_sensor_rows_frame
+        if frame is None:
+            return
+        row = len(self._manual_sensor_rows) + 1
+        label = ttk.Label(frame, text=name)
+        label.grid(row=row, column=0, sticky="w", pady=5, padx=(0, 8))
+        entry = ttk.Entry(frame, width=24, style="Green.TEntry")
         entry.insert(0, value)
-        entry.grid(row=row, column=1, sticky="w", pady=6)
+        entry.grid(row=row, column=1, sticky="w", pady=5)
         self._manual_sensor_rows[name] = (label, entry)
         self.state.manual_sensors[name] = value
         self._manual_sensor_name_var.set("")
