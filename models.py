@@ -42,7 +42,7 @@ class TestControlState:
     humidifier_enabled: bool = False
     humidifier_stage: int = 0
     electrical_heater: bool = False
-    electrical_values: List[float] = field(default_factory=lambda: [0.0] * 9)
+    electrical_values: List[float] = field(default_factory=lambda: [0.0] * 12)
     valves: Dict[str, bool] = field(default_factory=dict)
     components: Dict[str, bool] = field(default_factory=dict)
     change_over: bool = False
