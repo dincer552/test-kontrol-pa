@@ -22,6 +22,7 @@ class PdfDiscovery:
     module_count: int = 0
     components: dict[str, int] = field(default_factory=dict)
     damper_types: dict[str, bool] = field(default_factory=dict)
+    sensor_types: dict[str, dict[str, bool]] = field(default_factory=dict)
 
 
 
@@ -112,6 +113,55 @@ def discover_pdf(path: str | Path) -> PdfDiscovery:
         "Bypass": _has_component(text, r"Bypass damper"),
     }
 
+    sensor_types = {
+        "Fresh Air Sensor": {
+            "temperature": _has_component(text, r"Fresh\s+Air\s+(?:Humidity\s+And\s+)?Temperature\s+Sensor|Fresh\s+Air\s+Sensor"),
+            "humidity": _has_component(text, r"Fresh\s+Air\s+Humidity\s+And\s+Temperature\s+Sensor"),
+        },
+        "Supply Air Sensor": {
+            "temperature": _has_component(text, r"Supply\s+Air\s+(?:Humidity\s+And\s+)?Temperature\s+Sensor|Supply\s+Air\s+Sensor"),
+            "humidity": _has_component(text, r"Supply\s+Air\s+Humidity\s+And\s+Temperature\s+Sensor"),
+        },
+        "Return Air Sensor": {
+            "temperature": _has_component(text, r"Return\s+Air\s+(?:Humidity\s+And\s+)?Temperature\s+Sensor|Return\s+Air\s+Sensor"),
+            "humidity": _has_component(text, r"Return\s+Air\s+Humidity\s+And\s+Temperature\s+Sensor"),
+        },
+        "Exhaust Air Sensor": {
+            "temperature": _has_component(text, r"Exhaust\s+Air\s+(?:Humidity\s+And\s+)?Temperature\s+Sensor|Exhaust\s+Air\s+Sensor"),
+            "humidity": _has_component(text, r"Exhaust\s+Air\s+Humidity\s+And\s+Temperature\s+Sensor"),
+        },
+        "AfterCoil Air Sensor": {
+            "temperature": _has_component(text, r"After\s*Coil\s+Air\s+(?:Humidity\s+And\s+)?Temperature\s+Sensor|AfterCoil\s+Air\s+Sensor"),
+            "humidity": _has_component(text, r"After\s*Coil\s+Air\s+Humidity\s+And\s+Temperature\s+Sensor"),
+        },
+        "Mix Air Sensor": {
+            "temperature": _has_component(text, r"(?:Mixing|Mix)\s+Air\s+(?:Humidity\s+And\s+)?Temperature\s+Sensor|Mixing\s+Air\s+Sensor"),
+            "humidity": _has_component(text, r"(?:Mixing|Mix)\s+Air\s+Humidity\s+And\s+Temperature\s+Sensor"),
+        },
+        "Room Temp Sensor 1": {
+            "temperature": _has_component(text, r"Room\s+Temp(?:erature)?\s+Sensor(?:\s+1)?|Room\s+Temperature"),
+            "humidity": False,
+        },
+        "Room Temp Sensor 2": {
+            "temperature": _has_component(text, r"Room\s+Temp(?:erature)?\s+Sensor\s+2"),
+            "humidity": False,
+        },
+        "Return CO2 Sensor": {
+            "temperature": False,
+            "humidity": False,
+            "co2": _has_component(text, r"Return\s+CO2\s+Sensor"),
+        },
+        "Water Temp Sensor": {
+            "temperature": _has_component(text, r"Water\s+Temperature\s+Sensor|Water\s+Temp\s+Sensor"),
+            "humidity": False,
+        },
+        "Return CO2 Air Sensor": {
+            "temperature": False,
+            "humidity": False,
+            "co2": _has_component(text, r"Return\s+CO2\s+Air\s+Sensor"),
+        },
+    }
+
     components = {
         "supply_fan": supply_fan,
         "return_fan": return_fan,
@@ -142,4 +192,5 @@ def discover_pdf(path: str | Path) -> PdfDiscovery:
         module_count=module_count,
         components=components,
         damper_types=damper_types,
+        sensor_types=sensor_types,
     )
