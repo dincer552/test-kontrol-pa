@@ -22,21 +22,19 @@ class DamperTabMixin:
         card.pack(fill="x")
 
         self._damper_vars: dict[str, tk.StringVar] = {}
+        self._damper_widgets: dict[str, tuple[ttk.Label, ttk.Entry]] = {}
         for row, name in enumerate(DAMPER_NAMES):
-            ttk.Label(card, text=f"{name} Damper Sayısı").grid(
-                row=row,
-                column=0,
-                sticky="w",
-                pady=7,
-            )
+            label = ttk.Label(card, text=f"{name} Damper Sayısı")
+            label.grid(row=row, column=0, sticky="w", pady=7)
             var = tk.StringVar(value=str(self.state.damper_counts[name]))
             self._damper_vars[name] = var
-            ttk.Entry(card, textvariable=var, width=20).grid(
-                row=row,
-                column=1,
-                sticky="w",
-                pady=7,
-            )
+            entry = ttk.Entry(card, textvariable=var, width=20)
+            entry.grid(row=row, column=1, sticky="w", pady=7)
+            self._damper_widgets[name] = (label, entry)
+
+        # PDF okunana kadar damper türleri görünmez; görünürlük PDF'deki
+        # gerçek actuator/damper metinlerine göre belirlenir.
+        self._set_damper_visibility({name: False for name in DAMPER_NAMES})
 
         ttk.Button(
             card,
@@ -49,6 +47,19 @@ class DamperTabMixin:
             sticky="w",
             pady=(12, 0),
         )
+
+    def _set_damper_visibility(self, visibility: dict[str, bool]) -> None:
+        for name, widgets in self._damper_widgets.items():
+            visible = bool(visibility.get(name, False))
+            for widget in widgets:
+                if visible:
+                    widget.grid()
+                else:
+                    widget.grid_remove()
+
+    def _apply_pdf_damper_visibility(self, damper_types: dict[str, bool]) -> None:
+        """PDF keşfine göre yalnızca projede bulunan damper kutularını göster."""
+        self._set_damper_visibility(damper_types)
 
     def _save_damper_state(self) -> None:
         """Damper ekranındaki değerleri ortak state'e aktarır."""
