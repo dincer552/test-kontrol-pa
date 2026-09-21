@@ -127,7 +127,11 @@ class SensorTabMixin:
 
     def _read_sensors_from_plc(self) -> None:
         if not self.state.c600_connected:
+            if hasattr(self, "_log"):
+                self._log("SENSÖRLER: Veri çekme isteği reddedildi; C600 bağlı değil.", "error")
             return
+        if hasattr(self, "_log"):
+            self._log("SENSÖRLER: Görünür sensör verileri PLC'den okunuyor...")
         threading.Thread(target=self._sensor_plc_worker, daemon=True).start()
 
     def _sensor_plc_worker(self) -> None:
@@ -168,7 +172,10 @@ class SensorTabMixin:
                 else:
                     self._sensor_vars[name].set(value)
                     self.state.sensors[name] = value
-            if errors and hasattr(self, "_c600_log_write"):
-                self._c600_log_write(f"Sensör PLC okuma hatası: {len(errors)} adet.", "error")
+            if hasattr(self, "_log"):
+                for kind, name, value in readings:
+                    self._log(f"SENSÖRLER: {name} [{kind}] = {value}", "ok")
+                if errors:
+                    self._log(f"SENSÖRLER: PLC okuma hatası: {len(errors)} adet.", "error")
 
         self._c600_ui(apply)
