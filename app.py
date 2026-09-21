@@ -701,7 +701,6 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             self.state.return_fan_count = int(self._return_fan_count_var.get() or 0)
             self.state.supply_airflow = self._supply_airflow_var.get()
             self.state.return_airflow = self._return_airflow_var.get()
-            self.state.recalculate()
             self._update_statuses()
             self._log(
                 f"FAN KONTROL: KAYDET — fan={self.state.fan_type}, supply_fan={self.state.supply_fan_count}, return_fan={self.state.return_fan_count}, supply_airflow={self.state.supply_airflow}, return_airflow={self.state.return_airflow}",
@@ -757,7 +756,6 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self.state.humidifier_stage = int(self._hum_stage.get() or 0)
         self._save_sensor_state()
         self.state.user_name = self._user_var.get()
-        self.state.recalculate()
         self._update_statuses()
 
     def _clear(self) -> None:
