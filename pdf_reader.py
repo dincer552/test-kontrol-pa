@@ -176,6 +176,15 @@ def discover_pdf(path: str | Path) -> PdfDiscovery:
             "temperature": _has_component(text, r"Room\s+Temp(?:erature)?\s+Sensor\s+2"),
             "humidity": False,
         },
+        "Room CO2 Sensor": {
+            "temperature": False,
+            "humidity": False,
+            "co2": _has_component(text, r"Room\s+CO2(?:\s+Sensor)?"),
+        },
+        "Room Hum Sensor": {
+            "temperature": False,
+            "humidity": _has_component(text, r"Room\s+Hum(?:idity)?(?:\s+Sensor)?"),
+        },
         "Return CO2 Sensor": {
             "temperature": False,
             "humidity": False,
