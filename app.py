@@ -236,15 +236,9 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         except tk.TclError:
             return
 
-    def _open_tab(self, tab_name: str) -> None:
-        tab_id = getattr(self, "_tab_ids", {}).get(tab_name)
-        if tab_id is not None:
-            self.tabs.select(tab_id)
-
     def _on_c600_connection_success(self) -> None:
         """A successful C600 connection unlocks the project tab."""
         self._set_tab_visible("PROJE", True)
-        self._open_tab("PROJE")
 
     def _tab_frame(self, notebook: ttk.Notebook) -> tuple[ttk.Frame, ttk.Frame]:
         outer = ttk.Frame(notebook, style="White.TFrame")
@@ -483,7 +477,6 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._apply_pdf_sensor_visibility(result.sensor_types)
         # PDF is the approval/input point for opening the next sequential tab.
         self._set_tab_visible("FAN KONTROL", True)
-        self._open_tab("FAN KONTROL")
         if result.order_no:
             self._order_no_var.set(result.order_no)
             self.state.order_no = result.order_no
