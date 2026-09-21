@@ -232,9 +232,9 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             return
         try:
             if visible:
-                self.tabs.add(tab_id)
+                self.tabs.tab(tab_id, state="normal")
             else:
-                self.tabs.hide(tab_id)
+                self.tabs.tab(tab_id, state="hidden")
         except tk.TclError:
             return
 
