@@ -47,6 +47,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._update_build_label: ttk.Label | None = None
         self._init_modern_theme()
         self._build_ui()
+        self._configure_tab_flow()
         self._update_statuses()
         self.after(2000, self._schedule_update_check)
 
@@ -201,6 +202,50 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
         self._build_bottom_dock()
 
+    def _configure_tab_flow(self) -> None:
+        """Create the sequential tab flow; only BAĞLANTI is visible initially."""
+        self._tab_ids = {
+            self.tabs.tab(i, "text"): self.tabs.tabs()[i]
+            for i in range(len(self.tabs.tabs()))
+        }
+        self._tab_sequence = (
+            "BAĞLANTI",
+            "PROJE",
+            "FAN KONTROL",
+            "DAMPER KONTROL",
+            "FİLTRE KONTROL",
+            "MODÜLLER",
+            "SENSÖRLER",
+            "USER / RAPOR",
+        )
+        for tab_name in self._tab_sequence[1:]:
+            tab_id = self._tab_ids.get(tab_name)
+            if tab_id is not None:
+                self.tabs.hide(tab_id)
+        self.tabs.select(self._tab_ids["BAĞLANTI"])
+
+    def _set_tab_visible(self, tab_name: str, visible: bool = True) -> None:
+        tab_id = getattr(self, "_tab_ids", {}).get(tab_name)
+        if tab_id is None:
+            return
+        try:
+            if visible:
+                self.tabs.add(tab_id)
+            else:
+                self.tabs.hide(tab_id)
+        except tk.TclError:
+            return
+
+    def _open_tab(self, tab_name: str) -> None:
+        tab_id = getattr(self, "_tab_ids", {}).get(tab_name)
+        if tab_id is not None:
+            self.tabs.select(tab_id)
+
+    def _on_c600_connection_success(self) -> None:
+        """A successful C600 connection unlocks the project tab."""
+        self._set_tab_visible("PROJE", True)
+        self._open_tab("PROJE")
+
     def _tab_frame(self, notebook: ttk.Notebook) -> tuple[ttk.Frame, ttk.Frame]:
         outer = ttk.Frame(notebook, style="White.TFrame")
         outer.columnconfigure(0, weight=1)
@@ -219,7 +264,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
     def _add_general(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="GENEL")
+        notebook.add(tab, text="PROJE")
         body.columnconfigure(0, weight=1)
 
         project = ttk.LabelFrame(body, text="Proje Bilgileri", style="Card.TLabelframe", padding=12)
@@ -436,6 +481,9 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._pdf_status_var.set(f"Okundu: {pdf_path.stem}")
         self._apply_pdf_damper_visibility(result.damper_types)
         self._apply_pdf_sensor_visibility(result.sensor_types)
+        # PDF is the approval/input point for opening the next sequential tab.
+        self._set_tab_visible("FAN KONTROL", True)
+        self._open_tab("FAN KONTROL")
         if result.order_no:
             self._order_no_var.set(result.order_no)
             self.state.order_no = result.order_no
