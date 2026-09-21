@@ -492,19 +492,92 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         notebook.add(tab, text="FAN KONTROL")
         card = ttk.LabelFrame(body, text="Fan Kontrol", style="Card.TLabelframe", padding=12)
         card.pack(fill="x")
+
         self._fan_var = tk.StringVar(value=self.state.fan_type)
         ttk.Label(card, text="Fan Tipi").grid(row=0, column=0, sticky="w", pady=6)
-        ttk.Combobox(card, textvariable=self._fan_var, state="readonly", values=("Danfoss Ziehl-Abegg", "EC Ziehl-Abegg", "EC EBM-Papst"), width=34).grid(row=0, column=1, sticky="w", pady=6)
-        for r, label, attr in ((1, "Supply Fan Sayısı", "supply_fan_count"), (2, "Return Fan Sayısı", "return_fan_count"), (3, "Supply Debi", "supply_airflow"), (4, "Return Debi", "return_airflow")):
+        ttk.Combobox(
+            card, textvariable=self._fan_var, state="readonly",
+            values=("Danfoss Ziehl-Abegg", "EC Ziehl-Abegg", "EC EBM-Papst"), width=34
+        ).grid(row=0, column=1, sticky="w", pady=6)
+
+        for r, label, attr in (
+            (1, "Supply Fan Sayısı", "supply_fan_count"),
+            (2, "Return Fan Sayısı", "return_fan_count"),
+        ):
             ttk.Label(card, text=label).grid(row=r, column=0, sticky="w", pady=6)
             var = tk.StringVar(value=str(getattr(self.state, attr)))
             setattr(self, f"_{attr}_var", var)
             ttk.Entry(card, textvariable=var, width=34).grid(row=r, column=1, sticky="w", pady=6)
+
+        ttk.Label(card, text="Supply Debi").grid(row=3, column=0, sticky="w", pady=6)
+        self._supply_airflow_var = tk.StringVar(value=self.state.supply_airflow)
+        ttk.Entry(card, textvariable=self._supply_airflow_var, width=34, state="readonly").grid(
+            row=3, column=1, sticky="w", pady=6
+        )
+
+        ttk.Label(card, text="Return Debi").grid(row=4, column=0, sticky="w", pady=6)
+        self._return_airflow_var = tk.StringVar(value=self.state.return_airflow)
+        ttk.Entry(card, textvariable=self._return_airflow_var, width=34, state="readonly").grid(
+            row=4, column=1, sticky="w", pady=6
+        )
+
         self._airflow_var = tk.BooleanVar(value=self.state.airflow_control_ok)
         self._pressure_var = tk.BooleanVar(value=self.state.pressure_control_ok)
-        ttk.Checkbutton(card, text="Debi Kontrol (%25)", variable=self._airflow_var).grid(row=5, column=0, columnspan=2, sticky="w", pady=6)
-        ttk.Checkbutton(card, text="Basınç Kontrol", variable=self._pressure_var).grid(row=6, column=0, columnspan=2, sticky="w", pady=6)
-        ttk.Button(card, text="KAYDET", style="Primary.TButton", command=self._save).grid(row=7, column=0, sticky="w", pady=(12, 0))
+        ttk.Checkbutton(card, text="Debi Kontrol (%25)", variable=self._airflow_var).grid(
+            row=5, column=0, columnspan=2, sticky="w", pady=6
+        )
+        ttk.Checkbutton(card, text="Basınç Kontrol", variable=self._pressure_var).grid(
+            row=6, column=0, columnspan=2, sticky="w", pady=6
+        )
+
+        buttons = ttk.Frame(card, style="White.TFrame")
+        buttons.grid(row=7, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        self._fan_read_button = ttk.Button(
+            buttons, text="VERİLERİ ÇEK", style="Secondary.TButton",
+            command=self._read_fan_airflows
+        )
+        self._fan_read_button.pack(side="left", padx=(0, 8))
+        ttk.Button(
+            buttons, text="KAYDET", style="Primary.TButton", command=self._save
+        ).pack(side="left")
+
+    def _read_fan_airflows(self) -> None:
+        """Read Supply/Return airflow values from the C600 GenericJSON points."""
+        if not self.state.c600_connected:
+            messagebox.showwarning("FAN KONTROL", "Önce C600 bağlantısı kurulmalı.", parent=self)
+            return
+        self._fan_read_button.configure(state="disabled")
+        threading.Thread(target=self._fan_airflow_worker, daemon=True).start()
+
+    def _fan_airflow_worker(self) -> None:
+        points = (
+            ("AIR_FLOW", self._supply_airflow_var, "Supply Debi"),
+            ("1-AIR_FLOW", self._return_airflow_var, "Return Debi"),
+        )
+        results: dict[str, str] = {}
+        error: Exception | None = None
+        try:
+            for point_id, _var, _label in points:
+                result = self._c600_json_read(point_id)
+                value = str(result.get("value", "")).strip()
+                if not value:
+                    raise ValueError(f"{point_id}: değer boş")
+                results[point_id] = value
+        except Exception as exc:
+            error = exc
+
+        def apply() -> None:
+            self._fan_read_button.configure(state="normal")
+            if error is not None:
+                messagebox.showerror("FAN KONTROL", f"Debi verileri okunamadı:\n{error}", parent=self)
+                return
+            self._supply_airflow_var.set(results["AIR_FLOW"])
+            self._return_airflow_var.set(results["1-AIR_FLOW"])
+            self.state.supply_airflow = results["AIR_FLOW"]
+            self.state.return_airflow = results["1-AIR_FLOW"]
+            self._update_statuses()
+
+        self._c600_ui(apply)
 
     def _add_filters(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
@@ -578,6 +651,20 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             self._status_vars[name].set("Kontrol Edildi" if ok else "Kontrol Edilmedi")
             self._status_labels[name].configure(bg="#dcfce7" if ok else "#fef3c7", fg="#166534" if ok else "#92400e")
 
+    def _unlock_next_tab_after_save(self) -> None:
+        """Unlock the next tab according to the fixed workflow order."""
+        current = self.tabs.tab(self.tabs.select(), "text")
+        next_tabs = {
+            "FAN KONTROL": "DAMPER KONTROL",
+            "DAMPER KONTROL": "FİLTRE KONTROL",
+            "FİLTRE KONTROL": "MODÜLLER",
+            "MODÜLLER": "SENSÖRLER",
+            "SENSÖRLER": "USER / RAPOR",
+        }
+        next_tab = next_tabs.get(current)
+        if next_tab:
+            self._set_tab_visible(next_tab, True)
+
     def _save(self) -> None:
         self.state.order_no = self._order_no_var.get()
         self.state.project_name = self._project_name_var.get()
@@ -606,6 +693,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self.state.user_name = self._user_var.get()
         self.state.recalculate()
         self._update_statuses()
+        self._unlock_next_tab_after_save()
 
     def _clear(self) -> None:
         self.state = TestControlState()
