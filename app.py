@@ -232,9 +232,12 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             return
         try:
             if visible:
+                # A hidden ttk.Notebook tab must be re-added; changing its
+                # state alone does not make a hidden tab visible.
                 self.tabs.tab(tab_id, state="normal")
+                self.tabs.add(tab_id)
             else:
-                self.tabs.tab(tab_id, state="hidden")
+                self.tabs.hide(tab_id)
         except tk.TclError:
             return
 
@@ -722,7 +725,6 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self.state.user_name = self._user_var.get()
         self.state.recalculate()
         self._update_statuses()
-        self._unlock_next_tab_after_save()
 
     def _clear(self) -> None:
         self.state = TestControlState()
