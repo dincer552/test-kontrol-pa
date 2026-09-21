@@ -40,7 +40,7 @@ class DamperTabMixin:
             card,
             text="KAYDET",
             style="Primary.TButton",
-            command=self._save,
+            command=lambda: self._save_and_unlock("FİLTRE KONTROL"),
         ).grid(
             row=len(DAMPER_NAMES),
             column=0,
