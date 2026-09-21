@@ -162,6 +162,7 @@ class C600ConnectionMixin:
                 self._c600_read_device_info()
                 self._read_sensors_from_plc()
                 self._update_statuses()
+                self._on_c600_connection_success()
             self._c600_ui(success)
         except OSError as exc:
             self.state.c600_connected = False
