@@ -650,25 +650,31 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             row=0, column=1, sticky="w", padx=12, pady=7
         )
 
+        # DX ve nemlendirici kademe sorgu alanları yalnızca ilgili modül seçilince görünür.
+        # Alanlar checkbox'ın hemen karşısında tutulur.
         self._dx_stage = tk.StringVar(value=str(self.state.dx_stage))
         self._dx_stage_frame = ttk.Frame(card, style="White.TFrame")
-        ttk.Label(self._dx_stage_frame, text="DX Kademe Sorgu (0-5)").pack(side="left", padx=(0, 8))
-        ttk.Entry(self._dx_stage_frame, textvariable=self._dx_stage, width=12).pack(side="left")
+        ttk.Label(self._dx_stage_frame, text="Kademe Sorgu (0-5)").pack(side="left", padx=(0, 8))
+        ttk.Entry(
+            self._dx_stage_frame, textvariable=self._dx_stage, width=10, style="Green.TEntry"
+        ).pack(side="left")
         ttk.Checkbutton(
             card, text="DX", variable=self._dx_var,
             command=self._sync_module_controls
         ).grid(row=1, column=0, sticky="w", padx=12, pady=7)
-        self._dx_stage_frame.grid(row=1, column=1, sticky="w", padx=12, pady=5)
+        self._dx_stage_frame.grid(row=1, column=1, sticky="w", padx=12, pady=7)
 
         self._hum_stage = tk.StringVar(value=str(self.state.humidifier_stage))
         self._hum_stage_frame = ttk.Frame(card, style="White.TFrame")
-        ttk.Label(self._hum_stage_frame, text="Nemlendirici Kademe Sorgu (0-8)").pack(side="left", padx=(0, 8))
-        ttk.Entry(self._hum_stage_frame, textvariable=self._hum_stage, width=12).pack(side="left")
+        ttk.Label(self._hum_stage_frame, text="Kademe Sorgu (0-8)").pack(side="left", padx=(0, 8))
+        ttk.Entry(
+            self._hum_stage_frame, textvariable=self._hum_stage, width=10, style="Green.TEntry"
+        ).pack(side="left")
         ttk.Checkbutton(
             card, text="Nemlendirici", variable=self._hum_var,
             command=self._sync_module_controls
         ).grid(row=2, column=0, sticky="w", padx=12, pady=7)
-        self._hum_stage_frame.grid(row=2, column=1, sticky="w", padx=12, pady=5)
+        self._hum_stage_frame.grid(row=2, column=1, sticky="w", padx=12, pady=7)
 
         ttk.Checkbutton(
             card, text="Elektrikli Isıtıcı", variable=self._heater_var,
@@ -678,26 +684,30 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             row=3, column=1, sticky="w", padx=12, pady=7
         )
 
-        # 4 rows (R/S/T/X) x 3 stages. Values are entered as current measurements.
+        # Elektrikli ısıtıcı: R/S/T/X fazları ve Kademe 1/2/3 için 4x3 akım tablosu.
         self._heater_values = {}
         self._heater_frame = ttk.LabelFrame(
             card, text="Elektrikli Isıtıcı Akım Bilgileri", style="Card.TLabelframe", padding=10
         )
-        ttk.Label(self._heater_frame, text="").grid(row=0, column=0, padx=8, pady=4)
+        ttk.Label(self._heater_frame, text="Faz / Kademe").grid(
+            row=0, column=0, padx=10, pady=5, sticky="w"
+        )
         for col, stage in enumerate(("Kademe 1", "Kademe 2", "Kademe 3"), start=1):
             ttk.Label(self._heater_frame, text=stage).grid(
-                row=0, column=col, padx=10, pady=4, sticky="w"
+                row=0, column=col, padx=10, pady=5, sticky="w"
             )
         for row, phase in enumerate(("R", "S", "T", "X"), start=1):
             ttk.Label(self._heater_frame, text=phase).grid(
-                row=row, column=0, padx=8, pady=4, sticky="w"
+                row=row, column=0, padx=10, pady=5, sticky="w"
             )
             for col, stage in enumerate((1, 2, 3), start=1):
-                var = tk.StringVar(value=str(self.state.electrical_values[(row - 1) * 3 + (col - 1)]))
-                self._heater_values[(phase, stage)] = var
-                ttk.Entry(self._heater_frame, textvariable=var, width=12, style="Green.TEntry").grid(
-                    row=row, column=col, padx=8, pady=4, sticky="w"
+                var = tk.StringVar(
+                    value=str(self.state.electrical_values[(row - 1) * 3 + (col - 1)])
                 )
+                self._heater_values[(phase, stage)] = var
+                ttk.Entry(
+                    self._heater_frame, textvariable=var, width=12, style="Green.TEntry"
+                ).grid(row=row, column=col, padx=10, pady=5, sticky="w")
 
         self._sync_module_controls()
 
@@ -714,17 +724,19 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         if not hasattr(self, "_dx_stage_frame"):
             return
         if self._dx_var.get():
-            self._dx_stage_frame.grid()
+            self._dx_stage_frame.grid(row=1, column=1, sticky="w", padx=12, pady=7)
         else:
             self._dx_stage_frame.grid_remove()
 
         if self._hum_var.get():
-            self._hum_stage_frame.grid()
+            self._hum_stage_frame.grid(row=2, column=1, sticky="w", padx=12, pady=7)
         else:
             self._hum_stage_frame.grid_remove()
 
         if self._heater_var.get():
-            self._heater_frame.grid(row=4, column=0, columnspan=2, sticky="w", padx=12, pady=(8, 2))
+            self._heater_frame.grid(
+                row=4, column=0, columnspan=2, sticky="w", padx=12, pady=(8, 2)
+            )
         else:
             self._heater_frame.grid_remove()
 
