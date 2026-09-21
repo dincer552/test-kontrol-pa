@@ -20,6 +20,7 @@ from connection import C600ConnectionMixin
 from damper import DamperTabMixin
 from sensors import SensorTabMixin
 from pdf_reader import discover_pdf
+from report import save_report_dialog
 
 
 VERSION = BUILD_VERSION
@@ -219,7 +220,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             "FİLTRE KONTROL",
             "MODÜLLER",
             "SENSÖRLER",
-            "USER / RAPOR",
+            "RAPOR",
         )
         self._tab_positions = {
             name: index for index, name in enumerate(self._tab_sequence)
@@ -766,13 +767,19 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
     def _add_user_report(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="USER / RAPOR")
-        card = ttk.LabelFrame(body, text="User / Rapor", style="Card.TLabelframe", padding=14)
+        notebook.add(tab, text="RAPOR")
+        card = ttk.LabelFrame(body, text="Rapor", style="Card.TLabelframe", padding=14)
         card.pack(fill="x")
         ttk.Label(card, text="Kullanıcı").grid(row=0, column=0, sticky="w", pady=6)
         self._user_var = tk.StringVar(value="")
         ttk.Entry(card, textvariable=self._user_var, width=40).grid(row=0, column=1, sticky="w", pady=6)
         ttk.Button(card, text="KAYDET", style="Primary.TButton", command=self._save).grid(row=1, column=0, sticky="w", pady=(12, 0))
+        ttk.Button(
+            card,
+            text="TEST RAPORU OLUŞTUR",
+            style="Primary.TButton",
+            command=self._generate_test_report,
+        ).grid(row=2, column=0, sticky="w", pady=(12, 0))
 
     def _build_bottom_dock(self) -> None:
         dock = ttk.Frame(self, style="White.TFrame", padding=(10, 6))
@@ -911,7 +918,6 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             ("R", 1), ("R", 2), ("R", 3),
             ("S", 1), ("S", 2), ("S", 3),
             ("T", 1), ("T", 2), ("T", 3),
-            ("X", 1), ("X", 2), ("X", 3),
         )):
             self._heater_values[key].set(str(self.state.electrical_values[index]))
         self._sync_module_controls()
@@ -919,8 +925,19 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._user_var.set("")
         self._update_statuses()
 
+    def _generate_test_report(self) -> None:
+        try:
+            self._save()
+            path = save_report_dialog(self, self.state)
+            if path:
+                self._log(f"RAPOR: test raporu oluşturuldu — {path}", "ok")
+                messagebox.showinfo("RAPOR", f"Test raporu oluşturuldu:\n{path}", parent=self)
+        except Exception as exc:
+            self._log(f"RAPOR: PDF oluşturma hatası: {exc}", "error")
+            messagebox.showerror("RAPOR", f"Test raporu oluşturulamadı:\n{exc}", parent=self)
+
     def _report(self) -> None:
-        messagebox.showinfo("RAPOR", "Rapor oluşturma modülü hazırlanıyor.", parent=self)
+        self._generate_test_report()
 
 if __name__ == "__main__":
     TestControlApp().mainloop()
