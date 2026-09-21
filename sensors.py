@@ -8,21 +8,20 @@ from models import SENSOR_NAMES
 
 
 SENSOR_POINTS = {
-    "Fresh Air Sensor": ("FreshAirSensorMB\\TmpVal", "°C"),
-    "Supply Air Sensor": ("SupplyAirSensorMB\\TmpVal", "°C"),
-    "Return Air Sensor": ("ReturnAirSensorMB\\TmpVal", "°C"),
-    "Exhaust Air Sensor": ("ExhaustAirSensorMB\\TmpVal", "°C"),
-    "AfterCoil Air Sensor": ("AfterCoilAirSensorMB\\TmpVal", "°C"),
-    "Mix Air Sensor": ("MixingAirSensorMB\\TmpVal", "°C"),
-    "Room Temp Sensor 1": ("Room Temp\\Room Temp", "°C"),
-    "Water Temp Sensor": ("Water Temp\\Water Temp", "°C"),
-    "Return CO2 Sensor": ("ReturnAirSensorMB\\CO2Val", "ppm"),
-    "Return CO2 Air Sensor": ("ReturnCO2AirSensorMB\\CO2Val", "ppm"),
+    "Fresh Air Sensor": ("5-TMPVAL", "°C"),
+    "Supply Air Sensor": ("SUPPLY_AIR_TEMP", "°C"),
+    "Return Air Sensor": ("3-TMPVAL", "°C"),
+    "Exhaust Air Sensor": ("TMPVAL", "°C"),
+    "AfterCoil Air Sensor": ("1-TMPVAL", "°C"),
+    "Mix Air Sensor": ("7-TMPVAL", "°C"),
+    "AfterDxUnit Air Sensor": ("2-TMPVAL", "°C"),
+    "AfterHeatRec Air Sensor": ("4-TMPVAL", "°C"),
+    "Exchngr Leave Temp Sensor": ("6-TMPVAL", "°C"),
 }
 
 HUMIDITY_POINTS = {
-    "Supply Air Sensor": ("SupplyAirSensorMB\\HumVal", "%RH"),
-    "Return Air Sensor": ("ReturnAirSensorMB\\HumVal", "%RH"),
+    "Supply Air Sensor": ("1-HUMVAL", "%RH"),
+    "Return Air Sensor": ("HUMVAL", "%RH"),
 }
 
 
