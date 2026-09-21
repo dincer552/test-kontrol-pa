@@ -433,6 +433,7 @@ class TestControlApp(DamperTabMixin, C600ConnectionMixin, _TkBase):
             fg="#166534", font=("Segoe UI", 9, "bold")
         )
         self._pdf_status_var.set(f"Okundu: {pdf_path.stem}")
+        self._apply_pdf_damper_visibility(result.damper_types)
         if result.order_no:
             self._order_no_var.set(result.order_no)
             self.state.order_no = result.order_no
