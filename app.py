@@ -205,10 +205,11 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._build_bottom_dock()
 
     def _configure_tab_flow(self) -> None:
-        """Keep all workflow tabs visible for now."""
+        """Unlock workflow tabs in order; BAĞLANTI is the only initial tab."""
+        tab_ids = self.tabs.tabs()
         self._tab_ids = {
-            self.tabs.tab(i, "text"): self.tabs.tabs()[i]
-            for i in range(len(self.tabs.tabs()))
+            self.tabs.tab(i, "text"): tab_ids[i]
+            for i in range(len(tab_ids))
         }
         self._tab_sequence = (
             "BAĞLANTI",
@@ -220,11 +221,30 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             "SENSÖRLER",
             "USER / RAPOR",
         )
+        self._tab_positions = {
+            name: index for index, name in enumerate(self._tab_sequence)
+        }
+        for tab_name in self._tab_sequence[1:]:
+            tab_id = self._tab_ids.get(tab_name)
+            if tab_id is not None:
+                self.tabs.hide(tab_id)
         self.tabs.select(self._tab_ids["BAĞLANTI"])
 
     def _set_tab_visible(self, tab_name: str, visible: bool = True) -> None:
-        """Tab visibility is temporarily unrestricted; keep this hook for later workflow rules."""
-        return
+        tab_id = getattr(self, "_tab_ids", {}).get(tab_name)
+        if tab_id is None:
+            return
+        try:
+            if visible:
+                if tab_id not in self.tabs.tabs():
+                    self.tabs.insert(
+                        self._tab_positions.get(tab_name, len(self.tabs.tabs())),
+                        tab_id,
+                    )
+            else:
+                self.tabs.hide(tab_id)
+        except tk.TclError:
+            return
 
     def _on_c600_connection_success(self) -> None:
         """A successful C600 connection unlocks the project tab."""
@@ -590,7 +610,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             var = tk.BooleanVar(value=self.state.filters[name])
             self._filter_vars[name] = var
             ttk.Checkbutton(card, text=name, variable=var).grid(row=i // 3, column=i % 3, sticky="w", padx=12, pady=6)
-        ttk.Button(card, text="KAYDET", style="Primary.TButton", command=self._save).grid(row=2, column=0, sticky="w", pady=(12, 0))
+        ttk.Button(card, text="KAYDET", style="Primary.TButton", command=lambda: self._save_and_unlock("MODÜLLER")).grid(row=2, column=0, sticky="w", pady=(12, 0))
 
     def _add_modules(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
@@ -614,7 +634,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         ttk.Label(card, text="Nemlendirici Kademe (0-8)").grid(row=5, column=0, sticky="w", pady=7)
         self._hum_stage = tk.StringVar(value=str(self.state.humidifier_stage))
         ttk.Entry(card, textvariable=self._hum_stage, width=12).grid(row=5, column=1, sticky="w")
-        ttk.Button(card, text="KAYDET", style="Primary.TButton", command=self._save).grid(row=6, column=0, sticky="w", pady=(12, 0))
+        ttk.Button(card, text="KAYDET", style="Primary.TButton", command=lambda: self._save_and_unlock("SENSÖRLER")).grid(row=6, column=0, sticky="w", pady=(12, 0))
 
     def _add_user_report(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
