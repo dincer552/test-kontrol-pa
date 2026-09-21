@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 import re
+import difflib
 
 import fitz
 from pypdf import PdfReader
@@ -23,6 +24,7 @@ class PdfDiscovery:
     components: dict[str, int] = field(default_factory=dict)
     damper_types: dict[str, bool] = field(default_factory=dict)
     sensor_types: dict[str, dict[str, bool]] = field(default_factory=dict)
+    sensor_match_candidates: dict[str, str] = field(default_factory=dict)
 
 
 
@@ -78,6 +80,34 @@ def _has_component(text: str, pattern: str) -> bool:
 
 def _numbered_components(text: str, prefix: str) -> set[str]:
     return set(re.findall(rf"\b{prefix}\s*([1-9]\d*)\b", text, re.IGNORECASE))
+
+
+def _normalize_sensor_text(value: str) -> str:
+    value = value.lower().replace("ı", "i").replace("ö", "o").replace("ü", "u")
+    return re.sub(r"[^a-z0-9]+", "", value)
+
+
+def _find_sensor_match_candidates(text: str) -> dict[str, str]:
+    targets = {
+        "Room CO2 Sensor": "room co2",
+        "Room Temp Sensor 1": "room temp",
+        "Room Hum Sensor": "room hum",
+    }
+    candidates: dict[str, str] = {}
+    for raw_line in text.splitlines():
+        line = raw_line.strip().strip("'").strip('"')
+        if not line:
+            continue
+        normalized = _normalize_sensor_text(line)
+        for name, target in targets.items():
+            target_norm = _normalize_sensor_text(target)
+            if target_norm in normalized:
+                candidates[name] = line
+                continue
+            score = difflib.SequenceMatcher(None, target_norm, normalized[:max(len(target_norm), 1)]).ratio()
+            if score >= 0.78:
+                candidates.setdefault(name, line)
+    return candidates
 
 
 def discover_pdf(path: str | Path) -> PdfDiscovery:
@@ -178,6 +208,7 @@ def discover_pdf(path: str | Path) -> PdfDiscovery:
     }
 
     module_count = components["plc"] + components["hmi"]
+    sensor_match_candidates = _find_sensor_match_candidates(text)
 
     return PdfDiscovery(
         page_count=len(reader.pages),
@@ -193,4 +224,5 @@ def discover_pdf(path: str | Path) -> PdfDiscovery:
         components=components,
         damper_types=damper_types,
         sensor_types=sensor_types,
+        sensor_match_candidates=sensor_match_candidates,
     )
