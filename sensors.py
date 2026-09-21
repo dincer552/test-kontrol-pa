@@ -117,6 +117,7 @@ class SensorTabMixin:
             manual_card, text="+ SENSOR EKLE", style="Secondary.TButton",
             command=self._add_manual_sensor,
         ).grid(row=0, column=4, sticky="w")
+        self._manual_sensor_rows_frame = manual_card
 
         self._set_sensor_visibility({name: {"temperature": False, "humidity": False, "co2": False} for name in SENSOR_NAMES})
 
@@ -188,10 +189,13 @@ class SensorTabMixin:
             var.set(self.state.sensors[name])
         for var in self._sensor_humidity_vars.values():
             var.set("-")
-        for label, entry in self._manual_sensor_rows.values():
+        for name, (label, entry) in self._manual_sensor_rows.items():
             label.destroy()
             entry.destroy()
         self._manual_sensor_rows.clear()
+        for name, entry_pair in self._sensor_widgets.items():
+            entry_pair[1].configure(state="readonly", style="TEntry")
+            self._sensor_manual_buttons[name].configure(text="MANUEL GİRİŞ")
         self.state.manual_sensors.clear()
         self._set_sensor_visibility(
             {name: {"temperature": False, "humidity": False, "co2": False} for name in SENSOR_NAMES}
