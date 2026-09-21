@@ -314,21 +314,10 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
             inner_box.dnd_bind("<<DropLeave>>", self._pdf_drag_leave)
             inner_box.dnd_bind("<<Drop>>", self._drop_pdf)
 
-        self._pdf_status_var = tk.StringVar(value="PDF bekleniyor.")
+        self._pdf_status_var = tk.StringVar(value="")
         ttk.Label(project, textvariable=self._pdf_status_var, style="Muted.TLabel").grid(
             row=3, column=0, columnspan=3, sticky="w", pady=(4, 0)
         )
-
-        self._pdf_summary_var = tk.StringVar(value="")
-        ttk.Label(project, textvariable=self._pdf_summary_var, style="White.TLabel").grid(
-            row=4, column=0, columnspan=3, sticky="w", pady=(4, 0)
-        )
-
-        self._pdf_components_var = tk.StringVar(value="")
-        ttk.Label(
-            project, textvariable=self._pdf_components_var,
-            style="Muted.TLabel", justify="left"
-        ).grid(row=5, column=0, columnspan=3, sticky="w", pady=(6, 0))
 
         checks = ttk.LabelFrame(body, text="Kontrol Durumu", style="Card.TLabelframe", padding=12)
         checks.grid(row=1, column=0, sticky="ew")
@@ -434,9 +423,7 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
         try:
             result = discover_pdf(pdf_path)
         except Exception as exc:
-            self._pdf_status_var.set(f"PDF okunamadı: {exc}")
-            self._pdf_summary_var.set("")
-            self._pdf_components_var.set("")
+            self._pdf_status_var.set("")
             return
 
         self._pdf_count_label.configure(text="1 PDF")
@@ -444,33 +431,7 @@ class TestControlApp(C600ConnectionMixin, _TkBase):
             text=f"✓  {pdf_path.name}",
             fg="#166534", font=("Segoe UI", 9, "bold")
         )
-        self._pdf_status_var.set(
-            f"Okundu: {pdf_path.name} • {result.page_count} sayfa"
-        )
-        self._pdf_summary_var.set(
-            f"Fan: Supply {result.supply_fan_count} / Return {result.return_fan_count}   |   "
-            f"Damper: {result.damper_count}   |   Sensör: {result.sensor_count}   |   "
-            f"Filtre: {result.filter_count}   |   Modül: {result.module_count}"
-        )
-        component_labels = (
-            ("Supply fan", result.components.get("supply_fan", 0)),
-            ("Return fan", result.components.get("return_fan", 0)),
-            ("Fresh air damper", result.components.get("fresh_air_damper", 0)),
-            ("Temperature sensor", result.components.get("temperature_sensor", 0)),
-            ("Pressure sensor", result.components.get("pressure_sensor", 0)),
-            ("Filter sensor", result.components.get("filter_sensor", 0)),
-            ("Cooling valve", result.components.get("cooling_valve", 0)),
-            ("Emergency button", result.components.get("emergency_button", 0)),
-            ("Door switch", result.components.get("door_switch", 0)),
-            ("Fire alarm", result.components.get("fire_alarm", 0)),
-            ("PLC", result.components.get("plc", 0)),
-            ("HMI", result.components.get("hmi", 0)),
-        )
-        self._pdf_components_var.set(
-            "Keşfedilenler: " + "  |  ".join(
-                f"{label}: {count}" for label, count in component_labels if count
-            )
-        )
+        self._pdf_status_var.set(f"Okundu: {pdf_path.stem}")
         if result.order_no:
             self._order_no_var.set(result.order_no)
             self.state.order_no = result.order_no
