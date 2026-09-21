@@ -40,11 +40,14 @@ class SensorTabMixin:
             padding=14,
         )
         card.pack(fill="x")
+        self._sensor_card = card
 
         self._sensor_vars: dict[str, tk.StringVar] = {}
         self._sensor_widgets: dict[str, tuple[ttk.Label, ttk.Entry]] = {}
+        self._sensor_manual_buttons: dict[str, ttk.Button] = {}
         self._sensor_units: dict[str, str] = {}
         self._sensor_visibility: dict[str, dict[str, bool]] = {}
+        self._manual_sensor_rows: dict[str, tuple[ttk.Label, ttk.Entry]] = {}
 
         row = 0
         for name in SENSOR_NAMES:
@@ -56,6 +59,14 @@ class SensorTabMixin:
             entry.grid(row=row, column=1, sticky="w", pady=6)
             self._sensor_widgets[name] = (label, entry)
             self._sensor_units[name] = "°C" if "CO2" not in name else "ppm"
+            button = ttk.Button(
+                card,
+                text="MANUEL GİRİŞ",
+                style="Secondary.TButton",
+                command=lambda sensor_name=name: self._toggle_sensor_manual(sensor_name),
+            )
+            button.grid(row=row, column=2, sticky="w", padx=(8, 0), pady=6)
+            self._sensor_manual_buttons[name] = button
             row += 1
 
         self._sensor_humidity_vars: dict[str, tk.StringVar] = {}
@@ -86,7 +97,63 @@ class SensorTabMixin:
         )
         self._sensor_save_button.grid(row=row, column=1, sticky="w", pady=(12, 0))
 
+        row += 1
+        manual_card = ttk.LabelFrame(
+            card, text="Manuel Sensör Ekle", style="Card.TLabelframe", padding=10
+        )
+        manual_card.grid(row=row, column=0, columnspan=3, sticky="ew", pady=(14, 0))
+        ttk.Label(manual_card, text="Sensör Adı").grid(row=0, column=0, sticky="w", padx=(0, 8))
+        self._manual_sensor_name_var = tk.StringVar()
+        ttk.Entry(manual_card, textvariable=self._manual_sensor_name_var, width=28).grid(
+            row=0, column=1, sticky="w", padx=(0, 10)
+        )
+        ttk.Label(manual_card, text="Değer").grid(row=0, column=2, sticky="w", padx=(0, 8))
+        self._manual_sensor_value_var = tk.StringVar()
+        ttk.Entry(
+            manual_card, textvariable=self._manual_sensor_value_var, width=16, style="Green.TEntry"
+        ).grid(row=0, column=3, sticky="w", padx=(0, 10))
+        ttk.Button(
+            manual_card, text="+ SENSOR EKLE", style="Secondary.TButton",
+            command=self._add_manual_sensor,
+        ).grid(row=0, column=4, sticky="w")
+
         self._set_sensor_visibility({name: {"temperature": False, "humidity": False, "co2": False} for name in SENSOR_NAMES})
+
+    def _toggle_sensor_manual(self, name: str) -> None:
+        entry = self._sensor_widgets[name][1]
+        button = self._sensor_manual_buttons[name]
+        if str(entry.cget("state")) == "readonly":
+            entry.configure(state="normal", style="Green.TEntry")
+            button.configure(text="PLC OKU")
+            if hasattr(self, "_log"):
+                self._log(f"SENSÖRLER: {name} manuel değer girişi açıldı.")
+        else:
+            entry.configure(state="readonly", style="TEntry")
+            button.configure(text="MANUEL GİRİŞ")
+            self.state.sensors[name] = self._sensor_vars[name].get()
+            if hasattr(self, "_log"):
+                self._log(f"SENSÖRLER: {name} manuel değer = {self._sensor_vars[name].get()}", "ok")
+
+    def _add_manual_sensor(self) -> None:
+        name = self._manual_sensor_name_var.get().strip()
+        value = self._manual_sensor_value_var.get().strip()
+        if not name or not value:
+            return
+        if name in self._sensor_vars or name in self._manual_sensor_rows:
+            return
+
+        row = len(self._sensor_vars) + len(self._sensor_humidity_vars) + len(self._manual_sensor_rows) + 1
+        label = ttk.Label(self._sensor_card, text=name)
+        label.grid(row=row, column=0, sticky="w", pady=6, padx=(0, 20))
+        entry = ttk.Entry(self._sensor_card, width=24, style="Green.TEntry")
+        entry.insert(0, value)
+        entry.grid(row=row, column=1, sticky="w", pady=6)
+        self._manual_sensor_rows[name] = (label, entry)
+        self.state.manual_sensors[name] = value
+        self._manual_sensor_name_var.set("")
+        self._manual_sensor_value_var.set("")
+        if hasattr(self, "_log"):
+            self._log(f"SENSÖRLER: Manuel sensör eklendi — {name} = {value}", "ok")
 
     def _set_widget_visible(self, widgets: tuple[ttk.Label, ttk.Entry], visible: bool) -> None:
         for widget in widgets:
@@ -116,12 +183,19 @@ class SensorTabMixin:
             self.state.sensors[name] = var.get()
         for name, var in self._sensor_humidity_vars.items():
             self.state.sensors[f"{name} Humidity"] = var.get()
+        for name, (_label, entry) in self._manual_sensor_rows.items():
+            self.state.manual_sensors[name] = entry.get()
 
     def _clear_sensor_ui(self) -> None:
         for name, var in self._sensor_vars.items():
             var.set(self.state.sensors[name])
         for var in self._sensor_humidity_vars.values():
             var.set("-")
+        for label, entry in self._manual_sensor_rows.values():
+            label.destroy()
+            entry.destroy()
+        self._manual_sensor_rows.clear()
+        self.state.manual_sensors.clear()
         self._set_sensor_visibility(
             {name: {"temperature": False, "humidity": False, "co2": False} for name in SENSOR_NAMES}
         )
