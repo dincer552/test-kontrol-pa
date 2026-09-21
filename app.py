@@ -88,6 +88,8 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         style.configure("Card.TLabelframe.Label", background=card_bg, foreground=text, font=("Segoe UI", 9, "bold"))
         style.configure("Treeview", background="#ffffff", foreground=text, fieldbackground="#ffffff", rowheight=26, font=("Segoe UI", 9), borderwidth=1, bordercolor=border)
         style.configure("Treeview.Heading", background="#f8fafc", foreground=text, font=("Segoe UI", 9, "bold"), borderwidth=1, bordercolor=border, padding=6)
+        style.configure("Green.TEntry", fieldbackground="#dcfce7", foreground="#166534")
+        style.configure("Green.TCheckbutton", background=card_bg, foreground="#166534")
 
     def _open_update_page(self) -> None:
         """Open this project's latest release page."""
@@ -507,7 +509,9 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             ttk.Label(card, text=label).grid(row=r, column=0, sticky="w", pady=6)
             var = tk.StringVar(value=str(getattr(self.state, attr)))
             setattr(self, f"_{attr}_var", var)
-            ttk.Entry(card, textvariable=var, width=34).grid(row=r, column=1, sticky="w", pady=6)
+            ttk.Entry(
+                card, textvariable=var, width=34, style="Green.TEntry"
+            ).grid(row=r, column=1, sticky="w", pady=6)
 
         ttk.Label(card, text="Supply Debi").grid(row=3, column=0, sticky="w", pady=6)
         self._supply_airflow_var = tk.StringVar(value=self.state.supply_airflow)
@@ -523,10 +527,10 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
         self._airflow_var = tk.BooleanVar(value=self.state.airflow_control_ok)
         self._pressure_var = tk.BooleanVar(value=self.state.pressure_control_ok)
-        ttk.Checkbutton(card, text="Debi Kontrol (%25)", variable=self._airflow_var).grid(
+        ttk.Checkbutton(card, text="Debi Kontrol (%25)", variable=self._airflow_var, style="Green.TCheckbutton").grid(
             row=5, column=0, columnspan=2, sticky="w", pady=6
         )
-        ttk.Checkbutton(card, text="Basınç Kontrol", variable=self._pressure_var).grid(
+        ttk.Checkbutton(card, text="Basınç Kontrol", variable=self._pressure_var, style="Green.TCheckbutton").grid(
             row=6, column=0, columnspan=2, sticky="w", pady=6
         )
 
