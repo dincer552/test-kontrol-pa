@@ -641,7 +641,6 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
     def _build_bottom_dock(self) -> None:
         dock = ttk.Frame(self, style="White.TFrame", padding=(10, 6))
         dock.pack(side="bottom", fill="x", padx=10, pady=(6, 0))
-        ttk.Button(dock, text="✓ KAYDET", style="Primary.TButton", command=self._save).pack(side="left", padx=(0, 6))
         ttk.Button(dock, text="↻ TEMİZLE", style="Secondary.TButton", command=self._clear).pack(side="left", padx=3)
         ttk.Button(dock, text="▣ RAPOR", style="Secondary.TButton", command=self._report).pack(side="left", padx=3)
         ttk.Label(dock, text="DURUM", style="Muted.TLabel").pack(side="right", padx=(20, 4))
