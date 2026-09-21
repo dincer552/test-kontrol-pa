@@ -9,7 +9,8 @@ FILTER_IDS = ["Filtre 1", "Filtre 2", "Filtre 3", "Filtre 4", "Filtre 5"]
 DAMPER_NAMES = ["Fresh", "Supply", "Return", "Exhaust", "Mix", "Bypass"]
 SENSOR_NAMES = [
     "Fresh Air Sensor", "Supply Air Sensor", "Return Air Sensor", "Exhaust Air Sensor",
-    "AfterCoil Air Sensor", "Mix Air Sensor", "Room Temp Sensor 1", "Room Temp Sensor 2",
+    "AfterCoil Air Sensor", "Mix Air Sensor", "AfterDxUnit Air Sensor", "AfterHeatRec Air Sensor",
+    "Exchngr Leave Temp Sensor", "Room Temp Sensor 1", "Room Temp Sensor 2",
     "Return CO2 Sensor", "Water Temp Sensor", "Return CO2 Air Sensor",
 ]
 
@@ -33,6 +34,7 @@ class TestControlState:
     damper_counts: Dict[str, int] = field(default_factory=lambda: {name: 0 for name in DAMPER_NAMES})
     filters: Dict[str, bool] = field(default_factory=lambda: {name: False for name in FILTER_IDS})
     sensors: Dict[str, str] = field(default_factory=lambda: {name: "-" for name in SENSOR_NAMES})
+    manual_sensors: Dict[str, str] = field(default_factory=dict)
 
     rotor_enabled: bool = False
     rotor_mode: str = "Oransal"
