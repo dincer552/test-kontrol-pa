@@ -39,12 +39,12 @@ jobs:
           ) -Encoding UTF8
           python -c "import build_info; assert build_info.BUILD_VERSION == '$env:APP_VERSION'; print(build_info.BUILD_VERSION, build_info.BUILD_SHA)"
       - name: Compile sources
-        run: python -m py_compile app.py models.py updater.py webbrowser.py build_info.py connection.py pdf_reader.py
+        run: python -m py_compile app.py models.py updater.py webbrowser.py build_info.py connection.py pdf_reader.py damper.py sensors.py report.py
       - name: Build EXE
         shell: pwsh
         env:
           APP_VERSION: v0.1.0.${{ github.run_number }}
-        run: pyinstaller --noconfirm --clean --onefile --windowed --collect-all tkinterdnd2 --name "Test_Kontrol_$env:APP_VERSION" app.py
+        run: pyinstaller --noconfirm --clean --onefile --windowed --collect-all tkinterdnd2 --add-data "SYSR.ST.png;." --name "Test_Kontrol_$env:APP_VERSION" app.py
       - name: Smoke test packaged EXE startup
         shell: pwsh
         env:
