@@ -11,7 +11,7 @@ SENSOR_NAMES = [
     "Fresh Air Sensor", "Supply Air Sensor", "Return Air Sensor", "Exhaust Air Sensor",
     "AfterCoil Air Sensor", "Mix Air Sensor", "AfterDxUnit Air Sensor", "AfterHeatRec Air Sensor",
     "Exchngr Leave Temp Sensor", "Room Temp Sensor 1", "Room Temp Sensor 2",
-    "Return CO2 Sensor", "Water Temp Sensor", "Return CO2 Air Sensor",
+    "Room CO2 Sensor", "Room Hum Sensor", "Return CO2 Sensor", "Water Temp Sensor", "Return CO2 Air Sensor",
 ]
 
 
