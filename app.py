@@ -232,9 +232,9 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             return
         try:
             if visible:
-                self.tabs.tab(tab_id, state="normal")
+                self.tabs.add(tab_id)
             else:
-                self.tabs.tab(tab_id, state="hidden")
+                self.tabs.hide(tab_id)
         except tk.TclError:
             return
 
@@ -544,7 +544,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._fan_read_button.pack(side="left", padx=(0, 8))
         ttk.Button(
             buttons, text="KAYDET", style="Primary.TButton",
-            command=lambda: self._save_and_unlock("DAMPER KONTROL")
+            command=self._save_fan_and_unlock_damper
         ).pack(side="left")
 
     def _enable_manual_airflow(self, side: str) -> None:
@@ -663,6 +663,20 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         for name, ok in mapping.items():
             self._status_vars[name].set("Kontrol Edildi" if ok else "Kontrol Edilmedi")
             self._status_labels[name].configure(bg="#dcfce7" if ok else "#fef3c7", fg="#166534" if ok else "#92400e")
+
+    def _save_fan_and_unlock_damper(self) -> None:
+        """Save Fan Control fields and then reveal the Damper Control tab."""
+        try:
+            self.state.fan_type = self._fan_var.get()
+            self.state.supply_fan_count = int(self._supply_fan_count_var.get() or 0)
+            self.state.return_fan_count = int(self._return_fan_count_var.get() or 0)
+            self.state.supply_airflow = self._supply_airflow_var.get()
+            self.state.return_airflow = self._return_airflow_var.get()
+            self.state.recalculate()
+            self._update_statuses()
+            self._set_tab_visible("DAMPER KONTROL", True)
+        except (TypeError, ValueError) as exc:
+            messagebox.showwarning("FAN KONTROL", f"Fan bilgileri kontrol edilmeli:\n{exc}", parent=self)
 
     def _save_and_unlock(self, tab_name: str) -> None:
         """Save the current page and explicitly unlock its next workflow tab."""
