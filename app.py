@@ -224,10 +224,14 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._tab_positions = {
             name: index for index, name in enumerate(self._tab_sequence)
         }
+        # Use the notebook tab state consistently. `hide()` removes a tab from
+        # the visible tab bar but is not restored by `tab(..., state="normal")`.
+        # The workflow unlocker below restores tabs via the state API, so the
+        # initial lock must use the same mechanism.
         for tab_name in self._tab_sequence[1:]:
             tab_id = self._tab_ids.get(tab_name)
             if tab_id is not None:
-                self.tabs.hide(tab_id)
+                self.tabs.tab(tab_id, state="hidden")
         self.tabs.select(self._tab_ids["BAĞLANTI"])
 
     def _set_tab_visible(self, tab_name: str, visible: bool = True) -> None:
