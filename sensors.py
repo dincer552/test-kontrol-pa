@@ -69,13 +69,21 @@ class SensorTabMixin:
             self._sensor_humidity_widgets[name] = (label, entry)
             row += 1
 
+        self._sensor_read_button = ttk.Button(
+            card,
+            text="VERİLERİ ÇEK",
+            style="Primary.TButton",
+            command=self._read_sensors_from_plc,
+        )
+        self._sensor_read_button.grid(row=row, column=0, sticky="w", pady=(12, 0), padx=(0, 8))
+
         self._sensor_save_button = ttk.Button(
             card,
             text="KAYDET",
             style="Primary.TButton",
             command=self._save,
         )
-        self._sensor_save_button.grid(row=row, column=0, sticky="w", pady=(12, 0))
+        self._sensor_save_button.grid(row=row, column=1, sticky="w", pady=(12, 0))
 
         self._set_sensor_visibility({name: {"temperature": False, "humidity": False, "co2": False} for name in SENSOR_NAMES})
 
