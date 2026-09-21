@@ -160,6 +160,7 @@ class C600ConnectionMixin:
                 self._c600_test_btn.configure(state="normal")
                 self._c600_log_write("Bağlantı başarılı.", "ok")
                 self._c600_read_device_info()
+                self._read_sensors_from_plc()
                 self._update_statuses()
             self._c600_ui(success)
         except OSError as exc:
