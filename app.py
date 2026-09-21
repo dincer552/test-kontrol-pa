@@ -696,7 +696,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             ttk.Label(self._heater_frame, text=stage).grid(
                 row=0, column=col, padx=10, pady=5, sticky="w"
             )
-        for row, phase in enumerate(("R", "S", "T", "X"), start=1):
+        for row, phase in enumerate(("R", "S", "T"), start=1):
             ttk.Label(self._heater_frame, text=phase).grid(
                 row=row, column=0, padx=10, pady=5, sticky="w"
             )
@@ -846,7 +846,6 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 ("R", 1), ("R", 2), ("R", 3),
                 ("S", 1), ("S", 2), ("S", 3),
                 ("T", 1), ("T", 2), ("T", 3),
-                ("X", 1), ("X", 2), ("X", 3),
             )
         ]
         self._log(
