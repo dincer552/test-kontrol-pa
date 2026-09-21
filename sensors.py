@@ -49,7 +49,7 @@ class SensorTabMixin:
         self._sensor_manual_buttons: dict[str, ttk.Button] = {}
         self._sensor_units: dict[str, str] = {}
         self._sensor_visibility: dict[str, dict[str, bool]] = {}
-        self._manual_sensor_rows: dict[str, tuple[ttk.Label, ttk.Entry, ttk.Button]] = {}
+        self._manual_sensor_rows: dict[str, tuple[ttk.Label, ttk.Entry]] = {}
         self._manual_sensor_rows_frame: ttk.Frame | None = None
 
         row = 0
@@ -97,6 +97,8 @@ class SensorTabMixin:
         self._manual_sensor_rows_frame.grid(
             row=row, column=0, columnspan=3, sticky="ew"
         )
+        self._manual_sensor_rows_frame.grid_columnconfigure(0, minsize=172)
+        self._manual_sensor_rows_frame.grid_columnconfigure(1, minsize=193)
         row += 1
 
         self._sensor_read_button = ttk.Button(
@@ -142,8 +144,6 @@ class SensorTabMixin:
             entry = self._sensor_widgets[name][1]
         elif name.endswith(" Humidity") and name[:-9] in self._sensor_humidity_widgets:
             entry = self._sensor_humidity_widgets[name[:-9]][1]
-        elif name in self._manual_sensor_rows:
-            entry = self._manual_sensor_rows[name][1]
         else:
             return
         entry.configure(state="normal", style="Green.TEntry")
@@ -169,14 +169,7 @@ class SensorTabMixin:
         entry = ttk.Entry(frame, width=24, style="Green.TEntry")
         entry.insert(0, value)
         entry.grid(row=row, column=1, sticky="w", pady=6)
-        button = ttk.Button(
-            frame,
-            text="MANUEL GİRİŞ",
-            style="Secondary.TButton",
-            command=lambda sensor_name=name: self._toggle_sensor_manual(sensor_name),
-        )
-        button.grid(row=row, column=2, sticky="w", padx=(8, 0), pady=6)
-        self._manual_sensor_rows[name] = (label, entry, button)
+        self._manual_sensor_rows[name] = (label, entry)
         self.state.manual_sensors[name] = value
         self._manual_sensor_name_var.set("")
         self._manual_sensor_value_var.set("")
@@ -230,10 +223,9 @@ class SensorTabMixin:
             var.set(self.state.sensors[name])
         for var in self._sensor_humidity_vars.values():
             var.set("-")
-        for name, (label, entry, button) in self._manual_sensor_rows.items():
+        for name, (label, entry) in self._manual_sensor_rows.items():
             label.destroy()
             entry.destroy()
-            button.destroy()
         self._manual_sensor_rows.clear()
         for name, entry_pair in self._sensor_widgets.items():
             entry_pair[1].configure(state="readonly", style="TEntry")
