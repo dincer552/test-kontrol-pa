@@ -643,32 +643,40 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._bms_var = tk.BooleanVar(value=self.state.room_bms)
 
         # Only the requested module options are shown here.
-        checks = (
-            ("Rotor", self._rotor_var),
-            ("Run Around", self._run_var),
-            ("DX", self._dx_var),
-            ("Nemlendirici", self._hum_var),
-            ("Elektrikli Isıtıcı", self._heater_var),
-            ("Room BMS", self._bms_var),
+        ttk.Checkbutton(card, text="Rotor", variable=self._rotor_var).grid(
+            row=0, column=0, sticky="w", padx=12, pady=7
         )
-        for i, (text, var) in enumerate(checks):
-            ttk.Checkbutton(card, text=text, variable=var).grid(
-                row=i // 2, column=i % 2, sticky="w", padx=12, pady=7
-            )
+        ttk.Checkbutton(card, text="Run Around", variable=self._run_var).grid(
+            row=0, column=1, sticky="w", padx=12, pady=7
+        )
 
-        # DX/Nemlendirici kademe sorguları are only visible while the module is enabled.
         self._dx_stage = tk.StringVar(value=str(self.state.dx_stage))
-        self._hum_stage = tk.StringVar(value=str(self.state.humidifier_stage))
-
         self._dx_stage_frame = ttk.Frame(card, style="White.TFrame")
         ttk.Label(self._dx_stage_frame, text="DX Kademe Sorgu (0-5)").pack(side="left", padx=(0, 8))
         ttk.Entry(self._dx_stage_frame, textvariable=self._dx_stage, width=12).pack(side="left")
-        self._dx_stage_frame.grid(row=3, column=0, sticky="w", padx=12, pady=5)
+        ttk.Checkbutton(
+            card, text="DX", variable=self._dx_var,
+            command=self._sync_module_controls
+        ).grid(row=1, column=0, sticky="w", padx=12, pady=7)
+        self._dx_stage_frame.grid(row=1, column=1, sticky="w", padx=12, pady=5)
 
+        self._hum_stage = tk.StringVar(value=str(self.state.humidifier_stage))
         self._hum_stage_frame = ttk.Frame(card, style="White.TFrame")
         ttk.Label(self._hum_stage_frame, text="Nemlendirici Kademe Sorgu (0-8)").pack(side="left", padx=(0, 8))
         ttk.Entry(self._hum_stage_frame, textvariable=self._hum_stage, width=12).pack(side="left")
-        self._hum_stage_frame.grid(row=3, column=1, sticky="w", padx=12, pady=5)
+        ttk.Checkbutton(
+            card, text="Nemlendirici", variable=self._hum_var,
+            command=self._sync_module_controls
+        ).grid(row=2, column=0, sticky="w", padx=12, pady=7)
+        self._hum_stage_frame.grid(row=2, column=1, sticky="w", padx=12, pady=5)
+
+        ttk.Checkbutton(
+            card, text="Elektrikli Isıtıcı", variable=self._heater_var,
+            command=self._sync_module_controls
+        ).grid(row=3, column=0, sticky="w", padx=12, pady=7)
+        ttk.Checkbutton(card, text="Room BMS", variable=self._bms_var).grid(
+            row=3, column=1, sticky="w", padx=12, pady=7
+        )
 
         # 4 rows (R/S/T/X) x 3 stages. Values are entered as current measurements.
         self._heater_values = {}
