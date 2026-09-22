@@ -496,7 +496,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             f"PROJE: keşif tamamlandı — damper={sum(result.damper_types.values())}, sensör={len(result.sensor_types)}"
         )
         self._confirm_sensor_matches(result.sensor_match_candidates)
-        self._apply_pdf_damper_visibility(result.damper_types)
+        # Damper visibility is now driven by controller registers, not PDF discovery.
         self._apply_pdf_sensor_visibility(result.sensor_types)
         # PDF is the approval/input point for opening the next sequential tab.
         self._set_tab_visible("FAN KONTROL", True)
