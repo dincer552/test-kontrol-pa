@@ -38,6 +38,16 @@ FAN_TYPE_REGISTERS = {
     ),
 }
 
+MODULE_REGISTER_POINTS = {
+    "electrical_heater": "ELECHEATERENB",
+    "pre_electrical_heater": "PREELECHEATEREN",
+    "run_around": "RUNAROUNDENB",
+    "dx_capacity": "DXCAPACITY",
+    "change_over": "COVERCONTSELECT",
+    "humidifier_capacity": "HUMIFIERCAPACIT",
+    "rotor_mode": "ROTORCONTSELECT",
+}
+
 
 VERSION = BUILD_VERSION
 UPDATE_CHECK_INTERVAL_MS = 2 * 60 * 1000
@@ -709,110 +719,232 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         card.pack(fill="x")
         card.columnconfigure(1, weight=1)
 
-        self._rotor_var = tk.BooleanVar(value=self.state.rotor_enabled)
-        self._run_var = tk.BooleanVar(value=self.state.run_around)
-        self._dx_var = tk.BooleanVar(value=self.state.dx_enabled)
-        self._hum_var = tk.BooleanVar(value=self.state.humidifier_enabled)
-        self._heater_var = tk.BooleanVar(value=self.state.electrical_heater)
-        self._bms_var = tk.BooleanVar(value=self.state.room_bms)
-
-        # Only the requested module options are shown here.
-        ttk.Checkbutton(card, text="Rotor", variable=self._rotor_var).grid(
-            row=0, column=0, sticky="w", padx=12, pady=7
+        self._module_vars = {}
+        self._module_rows = {}
+        module_specs = (
+            ("Rotor", "rotor", 0),
+            ("Run Around", "run_around", 1),
+            ("DX", "dx", 2),
+            ("ChangeOverValve", "change_over", 3),
+            ("Nemlendirici", "humidifier", 4),
         )
-        ttk.Checkbutton(card, text="Run Around", variable=self._run_var).grid(
-            row=0, column=1, sticky="w", padx=12, pady=7
+        for label, key, row in module_specs:
+            ttk.Label(card, text=label).grid(row=row, column=0, sticky="w", padx=12, pady=7)
+            var = tk.StringVar(value="—")
+            self._module_vars[key] = var
+            entry = ttk.Entry(card, textvariable=var, width=28, state="readonly")
+            entry.grid(row=row, column=1, sticky="w", pady=7)
+            self._module_rows[key] = (entry,)
+
+        self._heater_stage_vars = {
+            "electrical": tk.StringVar(value=str(max(1, min(3, self.state.electrical_stage_count)))),
+            "pre_electrical": tk.StringVar(value=str(max(1, min(3, self.state.pre_electrical_stage_count)))),
+        }
+        self._heater_table_frames = {}
+        self._heater_table_values = {"electrical": {}, "pre_electrical": {}}
+
+        self._create_heater_table(card, "electrical", "Elektrikli Isıtıcı R/S/T Akım", row=5)
+        self._create_heater_table(card, "pre_electrical", "Pre Elektrikli Isıtıcı R/S/T Akım", row=6)
+
+        buttons = ttk.Frame(card, style="White.TFrame")
+        buttons.grid(row=7, column=0, columnspan=3, sticky="w", pady=(12, 0))
+        self._module_read_button = ttk.Button(
+            buttons, text="VERİLERİ ÇEK", style="Secondary.TButton", command=self._read_module_data
         )
-
-        # DX ve nemlendirici kademe sorgu alanları yalnızca ilgili modül seçilince görünür.
-        # Alanlar checkbox'ın hemen karşısında tutulur.
-        self._dx_stage = tk.StringVar(value=str(self.state.dx_stage))
-        self._dx_stage_frame = ttk.Frame(card, style="White.TFrame")
-        ttk.Label(self._dx_stage_frame, text="Kademe Sorgu (0-5)").pack(side="left", padx=(0, 8))
-        ttk.Entry(
-            self._dx_stage_frame, textvariable=self._dx_stage, width=10, style="Green.TEntry"
-        ).pack(side="left")
-        ttk.Checkbutton(
-            card, text="DX", variable=self._dx_var,
-            command=self._sync_module_controls
-        ).grid(row=1, column=0, sticky="w", padx=12, pady=7)
-        self._dx_stage_frame.grid(row=1, column=1, sticky="w", padx=12, pady=7)
-
-        self._hum_stage = tk.StringVar(value=str(self.state.humidifier_stage))
-        self._hum_stage_frame = ttk.Frame(card, style="White.TFrame")
-        ttk.Label(self._hum_stage_frame, text="Kademe Sorgu (0-8)").pack(side="left", padx=(0, 8))
-        ttk.Entry(
-            self._hum_stage_frame, textvariable=self._hum_stage, width=10, style="Green.TEntry"
-        ).pack(side="left")
-        ttk.Checkbutton(
-            card, text="Nemlendirici", variable=self._hum_var,
-            command=self._sync_module_controls
-        ).grid(row=2, column=0, sticky="w", padx=12, pady=7)
-        self._hum_stage_frame.grid(row=2, column=1, sticky="w", padx=12, pady=7)
-
-        ttk.Checkbutton(
-            card, text="Elektrikli Isıtıcı", variable=self._heater_var,
-            command=self._sync_module_controls
-        ).grid(row=3, column=0, sticky="w", padx=12, pady=7)
-        ttk.Checkbutton(card, text="Room BMS", variable=self._bms_var).grid(
-            row=3, column=1, sticky="w", padx=12, pady=7
-        )
-
-        # Elektrikli ısıtıcı: R/S/T/X fazları ve Kademe 1/2/3 için 4x3 akım tablosu.
-        self._heater_values = {}
-        self._heater_frame = ttk.LabelFrame(
-            card, text="Elektrikli Isıtıcı Akım Bilgileri", style="Card.TLabelframe", padding=10
-        )
-        ttk.Label(self._heater_frame, text="Faz / Kademe").grid(
-            row=0, column=0, padx=10, pady=5, sticky="w"
-        )
-        for col, stage in enumerate(("Kademe 1", "Kademe 2", "Kademe 3"), start=1):
-            ttk.Label(self._heater_frame, text=stage).grid(
-                row=0, column=col, padx=10, pady=5, sticky="w"
-            )
-        for row, phase in enumerate(("R", "S", "T"), start=1):
-            ttk.Label(self._heater_frame, text=phase).grid(
-                row=row, column=0, padx=10, pady=5, sticky="w"
-            )
-            for col, stage in enumerate((1, 2, 3), start=1):
-                var = tk.StringVar(
-                    value=str(self.state.electrical_values[(row - 1) * 3 + (col - 1)])
-                )
-                self._heater_values[(phase, stage)] = var
-                ttk.Entry(
-                    self._heater_frame, textvariable=var, width=12, style="Green.TEntry"
-                ).grid(row=row, column=col, padx=10, pady=5, sticky="w")
-
-        self._sync_module_controls()
-
+        self._module_read_button.pack(side="left", padx=(0, 8))
         ttk.Button(
-            card, text="KAYDET", style="Primary.TButton",
+            buttons, text="KAYDET", style="Primary.TButton",
             command=lambda: self._save_and_unlock("SENSÖRLER")
-        ).grid(row=5, column=0, sticky="w", pady=(12, 0))
+        ).pack(side="left")
 
-        # Reposition the optional frames after their initial grid calls.
-        self._sync_module_controls()
+        self._set_module_visibility({
+            "electrical_heater": self.state.electrical_heater,
+            "pre_electrical_heater": self.state.pre_electrical_heater,
+            "run_around": self.state.run_around,
+            "dx": self.state.dx_enabled,
+            "change_over": self.state.change_over,
+            "humidifier": self.state.humidifier_enabled,
+            "rotor": True,
+        })
 
-    def _sync_module_controls(self) -> None:
-        """Show optional module inputs only when their module checkbox is enabled."""
-        if not hasattr(self, "_dx_stage_frame"):
+    def _create_heater_table(self, parent: ttk.Frame, kind: str, title: str, row: int) -> None:
+        frame = ttk.LabelFrame(parent, text=title, style="Card.TLabelframe", padding=10)
+        frame.grid(row=row, column=0, columnspan=3, sticky="w", padx=12, pady=(6, 2))
+        self._heater_table_frames[kind] = frame
+
+        header = ttk.Frame(frame, style="White.TFrame")
+        header.grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 6))
+        ttk.Label(header, text="Kademe Sayısı").pack(side="left", padx=(0, 8))
+        spin = ttk.Spinbox(
+            header, from_=1, to=3, width=5, textvariable=self._heater_stage_vars[kind],
+            command=lambda k=kind: self._rebuild_heater_table(k)
+        )
+        spin.pack(side="left")
+        spin.bind("<FocusOut>", lambda _e, k=kind: self._rebuild_heater_table(k))
+        spin.bind("<Return>", lambda _e, k=kind: self._rebuild_heater_table(k))
+        self._heater_table_frames[kind + "_header"] = header
+        self._rebuild_heater_table(kind)
+
+    def _capture_heater_values(self, kind: str) -> list[float]:
+        values = [0.0] * 9
+        for (phase, stage), var in self._heater_table_values.get(kind, {}).items():
+            try:
+                value = float(var.get().replace(",", ".") or 0)
+            except ValueError:
+                value = 0.0
+            index = {"R": 0, "S": 3, "T": 6}[phase] + (stage - 1)
+            if index < len(values):
+                values[index] = value
+        return values
+
+    def _rebuild_heater_table(self, kind: str) -> None:
+        frame = self._heater_table_frames.get(kind)
+        if frame is None:
             return
-        if self._dx_var.get():
-            self._dx_stage_frame.grid(row=1, column=1, sticky="w", padx=12, pady=7)
-        else:
-            self._dx_stage_frame.grid_remove()
+        old_values = self._capture_heater_values(kind)
+        try:
+            stage_count = max(1, min(3, int(self._heater_stage_vars[kind].get() or 3)))
+        except ValueError:
+            stage_count = 3
+        self._heater_stage_vars[kind].set(str(stage_count))
 
-        if self._hum_var.get():
-            self._hum_stage_frame.grid(row=2, column=1, sticky="w", padx=12, pady=7)
-        else:
-            self._hum_stage_frame.grid_remove()
+        header = self._heater_table_frames.get(kind + "_header")
+        for child in tuple(frame.winfo_children()):
+            if child is not header:
+                child.destroy()
 
-        if self._heater_var.get():
-            self._heater_frame.grid(
-                row=4, column=0, columnspan=2, sticky="w", padx=12, pady=(8, 2)
+        self._heater_table_values[kind] = {}
+        ttk.Label(frame, text="Faz / Kademe").grid(row=1, column=0, padx=10, pady=5, sticky="w")
+        for col in range(1, stage_count + 1):
+            ttk.Label(frame, text=f"Kademe {col}").grid(row=1, column=col, padx=10, pady=5, sticky="w")
+
+        for row, phase in enumerate(("R", "S", "T"), start=2):
+            ttk.Label(frame, text=phase).grid(row=row, column=0, padx=10, pady=5, sticky="w")
+            for col in range(1, stage_count + 1):
+                index = {"R": 0, "S": 3, "T": 6}[phase] + (col - 1)
+                var = tk.StringVar(value=str(old_values[index]))
+                self._heater_table_values[kind][(phase, col)] = var
+                ttk.Entry(frame, textvariable=var, width=12, style="Green.TEntry").grid(
+                    row=row, column=col, padx=10, pady=5, sticky="w"
+                )
+
+    def _set_module_visibility(self, visibility: dict[str, bool]) -> None:
+        mapping = {
+            "run_around": "run_around",
+            "dx": "dx",
+            "change_over": "change_over",
+            "humidifier": "humidifier",
+            "rotor": "rotor",
+        }
+        for key, frame_key in mapping.items():
+            row = self._module_rows.get(frame_key)
+            if row:
+                if visibility.get(key, False):
+                    row[0].master.grid()
+                else:
+                    row[0].master.grid_remove()
+
+        for key, frame_key in (
+            ("electrical_heater", "electrical"),
+            ("pre_electrical_heater", "pre_electrical"),
+        ):
+            frame = self._heater_table_frames.get(frame_key)
+            if frame:
+                if visibility.get(key, False):
+                    frame.grid()
+                else:
+                    frame.grid_remove()
+
+    def _read_module_data(self) -> None:
+        if not self.state.c600_connected:
+            messagebox.showwarning("MODÜLLER", "Önce C600 bağlantısı kurulmalı.", parent=self)
+            self._log("MODÜLLER: Veri çekme isteği reddedildi; C600 bağlı değil.", "error")
+            return
+        self._module_read_button.configure(state="disabled")
+        self._log("MODÜLLER: Register değerleri okunuyor...")
+        threading.Thread(target=self._module_data_worker, daemon=True).start()
+
+    def _module_data_worker(self) -> None:
+        values: dict[str, float] = {}
+        error: Exception | None = None
+        try:
+            for key, point_id in MODULE_REGISTER_POINTS.items():
+                result = self._c600_json_read(point_id)
+                raw = str(result.get("value", "")).strip().replace(",", ".")
+                if not raw:
+                    raise ValueError(f"{point_id}: değer boş")
+                values[key] = float(raw)
+        except Exception as exc:
+            error = exc
+
+        def apply() -> None:
+            self._module_read_button.configure(state="normal")
+            if error is not None:
+                self._log(f"MODÜLLER: Register okuma hatası: {error}", "error")
+                messagebox.showerror("MODÜLLER", f"Modül verileri okunamadı:\n{error}", parent=self)
+                return
+
+            elec = values["electrical_heater"] > 0
+            pre_elec = values["pre_electrical_heater"] > 0
+            run = values["run_around"] > 0
+            dx_count = max(0, int(values["dx_capacity"]))
+            cover = values["change_over"] > 0
+            hum_count = max(0, int(values["humidifier_capacity"]))
+            rotor = int(values["rotor_mode"])
+
+            self.state.electrical_heater = elec
+            self.state.electrical_stage_count = 3
+            self.state.pre_electrical_heater = pre_elec
+            self.state.pre_electrical_stage_count = 3
+            self.state.run_around = run
+            self.state.dx_enabled = dx_count > 0
+            self.state.dx_stage = dx_count
+            self.state.change_over = cover
+            self.state.humidifier_enabled = hum_count > 0
+            self.state.humidifier_stage = hum_count
+            self.state.rotor_enabled = rotor in (1, 2)
+            self.state.rotor_mode = {0: "Yok", 1: "Oransal", 2: "On/Off"}.get(rotor, f"Bilinmiyor ({rotor})")
+
+            self._module_vars["rotor"].set(self.state.rotor_mode)
+            self._module_vars["run_around"].set("Runa" if run else "Yok")
+            self._module_vars["dx"].set(str(dx_count))
+            self._module_vars["change_over"].set("ChangeOverValve" if cover else "Yok")
+            self._module_vars["humidifier"].set(str(hum_count))
+            self._heater_stage_vars["electrical"].set("3")
+            self._heater_stage_vars["pre_electrical"].set("3")
+
+            self._set_module_visibility({
+                "electrical_heater": elec,
+                "pre_electrical_heater": pre_elec,
+                "run_around": run,
+                "dx": dx_count > 0,
+                "change_over": cover,
+                "humidifier": hum_count > 0,
+                "rotor": True,
+            })
+            self._rebuild_heater_table("electrical")
+            self._rebuild_heater_table("pre_electrical")
+            self._log(
+                "MODÜLLER: "
+                f"ELECHEATERENB={values['electrical_heater']}, "
+                f"PREELECHEATEREN={values['pre_electrical_heater']}, "
+                f"RUNAROUNDENB={values['run_around']}, "
+                f"DXCAPACITY={values['dx_capacity']}, "
+                f"COVERCONTSELECT={values['change_over']}, "
+                f"HUMIFIERCAPACIT={values['humidifier_capacity']}, "
+                f"ROTORCONTSELECT={values['rotor_mode']}",
+                "ok",
             )
-        else:
-            self._heater_frame.grid_remove()
+            self._update_statuses()
+
+        self._c600_ui(apply)
+
+    def _save_module_state(self) -> None:
+        self.state.electrical_stage_count = max(1, min(3, int(self._heater_stage_vars["electrical"].get() or 3)))
+        self.state.pre_electrical_stage_count = max(1, min(3, int(self._heater_stage_vars["pre_electrical"].get() or 3)))
+        self.state.electrical_values = self._capture_heater_values("electrical")
+        self.state.pre_electrical_values = self._capture_heater_values("pre_electrical")
+        self._update_statuses()
 
     def _add_user_report(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
@@ -921,31 +1053,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._save_damper_state()
         for name, var in self._filter_vars.items():
             self.state.filters[name] = var.get()
-        self.state.rotor_enabled = self._rotor_var.get()
-        self.state.run_around = self._run_var.get()
-        self.state.dx_enabled = self._dx_var.get()
-        self.state.humidifier_enabled = self._hum_var.get()
-        self.state.electrical_heater = self._heater_var.get()
-        self.state.room_bms = self._bms_var.get()
-        self.state.dx_stage = int(self._dx_stage.get() or 0)
-        self.state.humidifier_stage = int(self._hum_stage.get() or 0)
-        self.state.electrical_values = [
-            float(self._heater_values[key].get() or 0)
-            for key in (
-                ("R", 1), ("R", 2), ("R", 3),
-                ("S", 1), ("S", 2), ("S", 3),
-                ("T", 1), ("T", 2), ("T", 3),
-            )
-        ]
-        self._log(
-            "MODÜLLER: "
-            f"rotor={self.state.rotor_enabled}, run_around={self.state.run_around}, "
-            f"dx={self.state.dx_enabled}, dx_kademe={self.state.dx_stage}, "
-            f"nemlendirici={self.state.humidifier_enabled}, nemlendirici_kademe={self.state.humidifier_stage}, "
-            f"elektrikli_isitici={self.state.electrical_heater}, room_bms={self.state.room_bms}, "
-            f"isitici_akim={self.state.electrical_values}",
-            "ok",
-        )
+        self._save_module_state()
         self._save_sensor_state()
         self.state.user_name = self._user_var.get()
         self._update_statuses()
@@ -966,21 +1074,25 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._clear_damper_ui()
         for name, var in self._filter_vars.items():
             var.set(str(self.state.filters[name]))
-        self._rotor_var.set(self.state.rotor_enabled)
-        self._run_var.set(self.state.run_around)
-        self._dx_var.set(self.state.dx_enabled)
-        self._hum_var.set(self.state.humidifier_enabled)
-        self._heater_var.set(self.state.electrical_heater)
-        self._bms_var.set(self.state.room_bms)
-        self._dx_stage.set(str(self.state.dx_stage))
-        self._hum_stage.set(str(self.state.humidifier_stage))
-        for index, key in enumerate((
-            ("R", 1), ("R", 2), ("R", 3),
-            ("S", 1), ("S", 2), ("S", 3),
-            ("T", 1), ("T", 2), ("T", 3),
-        )):
-            self._heater_values[key].set(str(self.state.electrical_values[index]))
-        self._sync_module_controls()
+        if hasattr(self, "_module_vars"):
+            self._module_vars["rotor"].set("Yok")
+            self._module_vars["run_around"].set("Yok")
+            self._module_vars["dx"].set("0")
+            self._module_vars["change_over"].set("Yok")
+            self._module_vars["humidifier"].set("0")
+            self._heater_stage_vars["electrical"].set("3")
+            self._heater_stage_vars["pre_electrical"].set("3")
+            self._rebuild_heater_table("electrical")
+            self._rebuild_heater_table("pre_electrical")
+            self._set_module_visibility({
+                "electrical_heater": False,
+                "pre_electrical_heater": False,
+                "run_around": False,
+                "dx": False,
+                "change_over": False,
+                "humidifier": False,
+                "rotor": True,
+            })
         self._clear_sensor_ui()
         self._user_var.set("")
         self._update_statuses()
