@@ -10,29 +10,29 @@ from models import DAMPER_NAMES
 # C600 GenericJSON point names for the damper-count registers.
 # The numeric register mapping supplied for this project is kept here as
 # metadata so the UI is driven by the controller values rather than PDF data.
-DAMPER_REGISTER_POINTS: dict[str, dict[str, str]] = {
+DAMPER_REGISTER_POINTS: dict[str, dict[str, object]] = {
     "Fresh": {
-        "json_id": "FRESHDAMPNUM",
+        "json_ids": ("FRESHDAMPNUM", "50-24", "48-0"),
         "register": "0x2303 0x000024CD",
     },
     "Exhaust": {
-        "json_id": "EXTDAMPNUM",
+        "json_ids": ("EXTDAMPNUM", "50-25", "48-1"),
         "register": "0x2303 0x0000742F",
     },
     "Mix": {
-        "json_id": "MIXDAMPNUM",
+        "json_ids": ("MIXDAMPNUM", "50-26", "48-2"),
         "register": "0x2303 0x0000970E",
     },
     "Supply": {
-        "json_id": "SUPPLYDAMPNUM",
+        "json_ids": ("SUPPLYDAMPNUM", "50-27", "48-3"),
         "register": "0x2303 0x0000A3D8",
     },
     "Return": {
-        "json_id": "RETURNDAMPNUM",
+        "json_ids": ("RETURNDAMPNUM", "50-28", "48-4"),
         "register": "0x2303 0x000098F9",
     },
     "Bypass": {
-        "json_id": "BYPASSDAMPNUM",
+        "json_ids": ("BYPASSDAMPNUM", "50-29", "48-5"),
         "register": "0x2303 0x00004776",
     },
 }
@@ -96,7 +96,7 @@ class DamperTabMixin:
             buttons,
             text="KAYDET",
             style="Primary.TButton",
-            command=self._save_damper_state,
+            command=lambda: self._save_and_unlock("FİLTRE KONTROL"),
         )
         self._damper_save_button.pack(side="left")
 
@@ -160,9 +160,18 @@ class DamperTabMixin:
         for name in DAMPER_NAMES:
             point = DAMPER_REGISTER_POINTS[name]
             try:
-                result = self._c600_json_read(point["json_id"])
-                raw = result.get("value", 0)
-                value = int(float(str(raw).strip() or "0"))
+                last_error: Exception | None = None
+                value: int | None = None
+                for json_id in point["json_ids"]:
+                    try:
+                        result = self._c600_json_read(str(json_id))
+                        raw = result.get("value", 0)
+                        value = int(float(str(raw).strip() or "0"))
+                        break
+                    except Exception as exc:
+                        last_error = exc
+                if value is None:
+                    raise last_error or ValueError(f"{name}: register değeri okunamadı")
                 values[name] = max(0, value)
             except Exception as exc:
                 errors.append(f"{name}: {exc}")
