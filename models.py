@@ -44,7 +44,11 @@ class TestControlState:
     humidifier_enabled: bool = False
     humidifier_stage: int = 0
     electrical_heater: bool = False
+    electrical_stage_count: int = 3
     electrical_values: List[float] = field(default_factory=lambda: [0.0] * 12)
+    pre_electrical_heater: bool = False
+    pre_electrical_stage_count: int = 3
+    pre_electrical_values: List[float] = field(default_factory=lambda: [0.0] * 12)
     valves: Dict[str, bool] = field(default_factory=dict)
     components: Dict[str, bool] = field(default_factory=dict)
     change_over: bool = False
@@ -77,6 +81,7 @@ class TestControlState:
             self.dx_enabled,
             self.humidifier_enabled,
             self.electrical_heater,
+            self.pre_electrical_heater,
             self.change_over,
             self.room_bms,
             self.temp_avg_en,
