@@ -889,11 +889,12 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 messagebox.showerror("MODÜLLER", f"Modül verileri okunamadı:\n{error}", parent=self)
                 return
 
-            elec = values["electrical_heater"] > 0
-            pre_elec = values["pre_electrical_heater"] > 0
-            run = values["run_around"] > 0
+            elec = values["electrical_heater"] > 1
+            pre_elec = values["pre_electrical_heater"] > 1
+            run = int(values["run_around"]) == 1
             dx_count = max(0, int(values["dx_capacity"]))
-            cover = values["change_over"] > 0
+            dx_visible = dx_count > 1
+            cover = int(values["change_over"]) == 1
             hum_count = max(0, int(values["humidifier_capacity"]))
             rotor = int(values["rotor_mode"])
 
@@ -902,7 +903,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             self.state.pre_electrical_heater = pre_elec
             self.state.pre_electrical_stage_count = 3
             self.state.run_around = run
-            self.state.dx_enabled = dx_count > 0
+            self.state.dx_enabled = dx_visible
             self.state.dx_stage = dx_count
             self.state.change_over = cover
             self.state.humidifier_enabled = hum_count > 0
@@ -922,7 +923,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 "electrical_heater": elec,
                 "pre_electrical_heater": pre_elec,
                 "run_around": run,
-                "dx": dx_count > 0,
+                "dx": dx_visible,
                 "change_over": cover,
                 "humidifier": hum_count > 0,
                 "rotor": rotor in (1, 2),
