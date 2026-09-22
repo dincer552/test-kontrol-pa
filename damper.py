@@ -54,43 +54,43 @@ class DamperTabMixin:
         card.pack(fill="x")
 
         self._damper_vars: dict[str, tk.StringVar] = {}
-        self._damper_widgets: dict[str, tuple[ttk.Label, ttk.Entry]] = {}
+        self._damper_widgets: dict[str, tuple[ttk.Label, ttk.Entry, ttk.Button]] = {}
         for row, name in enumerate(DAMPER_NAMES):
             label = ttk.Label(card, text=f"{name} Damper Sayısı")
             label.grid(row=row, column=0, sticky="w", pady=7)
             var = tk.StringVar(value=str(self.state.damper_counts[name]))
             self._damper_vars[name] = var
-            entry = ttk.Entry(card, textvariable=var, width=20)
+            entry = ttk.Entry(card, textvariable=var, width=20, state="readonly")
             entry.grid(row=row, column=1, sticky="w", pady=7)
-            self._damper_widgets[name] = (label, entry)
+
+            manual_button = ttk.Button(
+                card,
+                text="MANUEL GİRİŞ",
+                style="Secondary.TButton",
+                command=lambda damper=name: self._enable_manual_damper(damper),
+            )
+            manual_button.grid(row=row, column=2, sticky="w", padx=(8, 0), pady=7)
+            self._damper_widgets[name] = (label, entry, manual_button)
 
         # Controller values determine visibility during normal operation.
         self._set_damper_visibility({name: False for name in DAMPER_NAMES})
-        self._damper_manual_mode = False
 
         buttons = ttk.Frame(card, style="White.TFrame")
         buttons.grid(
             row=len(DAMPER_NAMES),
             column=0,
-            columnspan=2,
+            columnspan=3,
             sticky="w",
             pady=(12, 0),
         )
 
-        ttk.Button(
+        self._damper_read_button = ttk.Button(
             buttons,
             text="VERİLERİ ÇEK",
             style="Primary.TButton",
             command=self._fetch_damper_registers,
-        ).pack(side="left", padx=(0, 8))
-
-        self._damper_manual_button = ttk.Button(
-            buttons,
-            text="MANUEL",
-            style="Secondary.TButton",
-            command=self._toggle_damper_manual,
         )
-        self._damper_manual_button.pack(side="left", padx=(0, 8))
+        self._damper_read_button.pack(side="left", padx=(0, 8))
 
         self._damper_save_button = ttk.Button(
             buttons,
@@ -112,23 +112,22 @@ class DamperTabMixin:
                     widget.grid_remove()
 
     def _set_damper_entries_state(self, editable: bool) -> None:
-        state = "normal" if editable else "readonly"
-        for _name, (_label, entry) in self._damper_widgets.items():
-            entry.configure(state=state)
+        for _name, (_label, entry, _button) in self._damper_widgets.items():
+            if editable:
+                entry.configure(state="normal", style="Green.TEntry")
+            else:
+                entry.configure(state="readonly", style="TEntry")
 
-    def _toggle_damper_manual(self) -> None:
-        self._damper_manual_mode = not self._damper_manual_mode
-        if self._damper_manual_mode:
-            # Manual mode exposes all six fields so a hidden controller damper
-            # can also be entered manually with a value greater than zero.
-            self._set_damper_visibility({name: True for name in DAMPER_NAMES})
-            self._set_damper_entries_state(True)
-            self._damper_manual_button.configure(text="OTOMATİK")
-            self._log("DAMPER KONTROL: Manuel giriş açıldı.", "muted")
-        else:
-            self._set_damper_entries_state(False)
-            self._damper_manual_button.configure(text="MANUEL")
-            self._apply_damper_visibility_from_values()
+    def _enable_manual_damper(self, name: str) -> None:
+        """Enable manual entry for one damper, matching the fan airflow behavior."""
+        widgets = self._damper_widgets.get(name)
+        if widgets is None:
+            return
+        _label, entry, _button = widgets
+        entry.configure(state="normal", style="Green.TEntry")
+        entry.focus_set()
+        entry.selection_range(0, "end")
+        self._log(f"DAMPER KONTROL: {name} manuel girişi açıldı.", "muted")
 
     def _apply_damper_visibility_from_values(self) -> None:
         visibility = {}
@@ -145,9 +144,6 @@ class DamperTabMixin:
         if not self.state.c600_connected:
             self._log("DAMPER: Önce C600 bağlantısı kurulmalı.", "error")
             return
-
-        if self._damper_manual_mode:
-            self._toggle_damper_manual()
 
         self._log("DAMPER: Register değerleri okunuyor...", "muted")
         self._damper_manual_button.configure(state="disabled")
@@ -177,7 +173,7 @@ class DamperTabMixin:
                 errors.append(f"{name}: {exc}")
 
         def apply() -> None:
-            self._damper_manual_button.configure(state="normal")
+            self._damper_read_button.configure(state="normal")
             if errors:
                 self._log(
                     "DAMPER: Register okuma hatası: " + " | ".join(errors),
@@ -193,8 +189,6 @@ class DamperTabMixin:
                 {name: value > 0 for name, value in values.items()}
             )
             self._set_damper_entries_state(False)
-            self._damper_manual_mode = False
-            self._damper_manual_button.configure(text="MANUEL")
             self._log(
                 "DAMPER: Register değerleri alındı: "
                 + ", ".join(f"{name}={value}" for name, value in values.items()),
@@ -219,8 +213,6 @@ class DamperTabMixin:
             changed.append(f"{name}={value}")
 
         self._set_damper_entries_state(False)
-        self._damper_manual_mode = False
-        self._damper_manual_button.configure(text="MANUEL")
         self._apply_damper_visibility_from_values()
 
         if changed and hasattr(self, "_log"):
