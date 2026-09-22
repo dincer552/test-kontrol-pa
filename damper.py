@@ -12,30 +12,41 @@ from models import DAMPER_NAMES
 # metadata so the UI is driven by the controller values rather than PDF data.
 DAMPER_REGISTER_POINTS: dict[str, dict[str, object]] = {
     "Fresh": {
-        "json_ids": ("FRESHDAMPNUM", "50-24", "48-0"),
+        "json_ids": ("FRESHDAMPNUM",),
         "register": "0x2303 0x000024CD",
     },
     "Exhaust": {
-        "json_ids": ("EXTDAMPNUM", "50-25", "48-1"),
+        "json_ids": ("EXTDAMPNUM",),
         "register": "0x2303 0x0000742F",
     },
     "Mix": {
-        "json_ids": ("MIXDAMPNUM", "50-26", "48-2"),
+        "json_ids": ("MIXDAMPNUM",),
         "register": "0x2303 0x0000970E",
     },
     "Supply": {
-        "json_ids": ("SUPPLYDAMPNUM", "50-27", "48-3"),
+        "json_ids": ("SUPPLYDAMPNUM",),
         "register": "0x2303 0x0000A3D8",
     },
     "Return": {
-        "json_ids": ("RETURNDAMPNUM", "50-28", "48-4"),
+        "json_ids": ("RETURNDAMPNUM",),
         "register": "0x2303 0x000098F9",
     },
     "Bypass": {
-        "json_ids": ("BYPASSDAMPNUM", "50-29", "48-5"),
+        "json_ids": ("BYPASSDAMPNUM",),
         "register": "0x2303 0x00004776",
     },
 }
+
+
+def _parse_damper_count(raw: object) -> int:
+    """Convert a GenericJSON numeric value to a non-negative damper count."""
+    text = str(raw).strip().replace(",", ".")
+    if not text:
+        raise ValueError("değer boş")
+    value = float(text)
+    if not value.is_integer():
+        raise ValueError(f"tam sayı olmayan değer: {text}")
+    return max(0, int(value))
 
 
 class DamperTabMixin:
@@ -161,8 +172,10 @@ class DamperTabMixin:
                 for json_id in point["json_ids"]:
                     try:
                         result = self._c600_json_read(str(json_id))
-                        raw = result.get("value", 0)
-                        value = int(float(str(raw).strip() or "0"))
+                        if not isinstance(result, dict):
+                            raise ValueError(f"{json_id}: JSON nesnesi bekleniyor")
+                        raw = result.get("value", "")
+                        value = _parse_damper_count(raw)
                         break
                     except Exception as exc:
                         last_error = exc
@@ -175,10 +188,17 @@ class DamperTabMixin:
         def apply() -> None:
             self._damper_read_button.configure(state="normal")
             if errors:
-                self._log(
-                    "DAMPER: Register okuma hatası: " + " | ".join(errors),
-                    "error",
-                )
+                detail = " | ".join(errors)
+                self._log("DAMPER: Register okuma hatası: " + detail, "error")
+                try:
+                    from tkinter import messagebox
+                    messagebox.showerror(
+                        "DAMPER KONTROL",
+                        "Damper registerları okunamadı:\n" + detail,
+                        parent=self,
+                    )
+                except Exception:
+                    pass
                 return
 
             for name, value in values.items():
