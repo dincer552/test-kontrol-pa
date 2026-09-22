@@ -146,7 +146,7 @@ class DamperTabMixin:
             return
 
         self._log("DAMPER: Register değerleri okunuyor...", "muted")
-        self._damper_manual_button.configure(state="disabled")
+        self._damper_read_button.configure(state="disabled")
         threading.Thread(target=self._damper_register_worker, daemon=True).start()
 
     def _damper_register_worker(self) -> None:
@@ -224,6 +224,4 @@ class DamperTabMixin:
         for name, var in self._damper_vars.items():
             var.set(str(self.state.damper_counts[name]))
         self._set_damper_entries_state(False)
-        self._damper_manual_mode = False
-        self._damper_manual_button.configure(text="MANUEL")
         self._apply_damper_visibility_from_values()
