@@ -909,9 +909,13 @@ FAN_TYPE_REGISTERS = {
         self.state.order_no = self._order_no_var.get()
         self.state.project_name = self._project_name_var.get()
         self.state.ahu_name = self._ahu_name_var.get()
-        self.state.fan_type = self._fan_var.get()
-        self.state.supply_fan_count = int(self._supply_fan_count_var.get() or 0)
-        self.state.return_fan_count = int(self._return_fan_count_var.get() or 0)
+        if hasattr(self, "_aspirator_fan_type_var"):
+            self.state.fan_type = (
+                f"Aspiratör: {self._aspirator_fan_type_var.get()} | "
+                f"Vantilatör: {self._ventilator_fan_type_var.get()}"
+            )
+            self.state.supply_fan_count = int(self._ventilator_fan_count_var.get() or 0)
+            self.state.return_fan_count = int(self._aspirator_fan_count_var.get() or 0)
         self.state.supply_airflow = self._supply_airflow_var.get()
         self.state.return_airflow = self._return_airflow_var.get()
         self._save_damper_state()
@@ -950,9 +954,17 @@ FAN_TYPE_REGISTERS = {
         self.state = TestControlState()
         for attr in ("order_no", "project_name", "ahu_name"):
             getattr(self, f"_{attr}_var").set("")
-        self._fan_var.set(self.state.fan_type)
-        self._supply_fan_count_var.set(str(self.state.supply_fan_count))
-        self._return_fan_count_var.set(str(self.state.return_fan_count))
+        if hasattr(self, "_aspirator_fan_type_var"):
+            self._aspirator_fan_type_var.set(
+                self.state.fan_type.split(" | ")[0].replace("Aspiratör: ", "", 1)
+                if "Aspiratör: " in self.state.fan_type else ""
+            )
+            self._ventilator_fan_type_var.set(
+                self.state.fan_type.split(" | ")[1].replace("Vantilatör: ", "", 1)
+                if " | " in self.state.fan_type and "Vantilatör: " in self.state.fan_type else ""
+            )
+            self._aspirator_fan_count_var.set(str(self.state.return_fan_count))
+            self._ventilator_fan_count_var.set(str(self.state.supply_fan_count))
         self._supply_airflow_var.set(self.state.supply_airflow)
         self._return_airflow_var.set(self.state.return_airflow)
         self._airflow_var.set(self.state.airflow_control_ok)
