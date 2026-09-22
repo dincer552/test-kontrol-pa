@@ -889,8 +889,8 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 messagebox.showerror("MODÜLLER", f"Modül verileri okunamadı:\n{error}", parent=self)
                 return
 
-            elec = values["electrical_heater"] > 1
-            pre_elec = values["pre_electrical_heater"] > 1
+            elec = values["electrical_heater"] > 0
+            pre_elec = values["pre_electrical_heater"] > 0
             run = int(values["run_around"]) == 1
             dx_count = max(0, int(values["dx_capacity"]))
             dx_visible = dx_count > 1
