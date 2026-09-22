@@ -539,25 +539,24 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         card = ttk.LabelFrame(body, text="Fan Kontrol", style="Card.TLabelframe", padding=12)
         card.pack(fill="x")
 
-        self._fan_var = tk.StringVar(value=self.state.fan_type)
-        ttk.Label(card, text="Fan Tipi").grid(row=0, column=0, sticky="w", pady=6)
-        ttk.Combobox(
-            card, textvariable=self._fan_var, state="readonly",
-            values=("Danfoss Ziehl-Abegg", "EC Ziehl-Abegg", "EC EBM-Papst"), width=34
-        ).grid(row=0, column=1, sticky="w", pady=6)
+        self._aspirator_fan_type_var = tk.StringVar(value="")
+        self._aspirator_fan_count_var = tk.StringVar(value="0")
+        self._ventilator_fan_type_var = tk.StringVar(value="")
+        self._ventilator_fan_count_var = tk.StringVar(value="0")
 
-        for r, label, attr in (
-            (1, "Supply Fan Sayısı", "supply_fan_count"),
-            (2, "Return Fan Sayısı", "return_fan_count"),
+        for row, label, type_var, count_var in (
+            (0, "Aspiratör Fan Tipi", self._aspirator_fan_type_var, self._aspirator_fan_count_var),
+            (1, "Aspiratör Fan Sayısı", None, self._aspirator_fan_count_var),
+            (2, "Vantilatör Fan Tipi", self._ventilator_fan_type_var, self._ventilator_fan_count_var),
+            (3, "Vantilatör Fan Sayısı", None, self._ventilator_fan_count_var),
         ):
-            ttk.Label(card, text=label).grid(row=r, column=0, sticky="w", pady=6)
-            var = tk.StringVar(value=str(getattr(self.state, attr)))
-            setattr(self, f"_{attr}_var", var)
-            ttk.Entry(
-                card, textvariable=var, width=34, style="Green.TEntry"
-            ).grid(row=r, column=1, sticky="w", pady=6)
+            ttk.Label(card, text=label).grid(row=row, column=0, sticky="w", pady=6)
+            var = type_var if type_var is not None else count_var
+            ttk.Entry(card, textvariable=var, width=34, state="readonly").grid(
+                row=row, column=1, sticky="w", pady=6
+            )
 
-        ttk.Label(card, text="Supply Debi (%25)").grid(row=3, column=0, sticky="w", pady=6)
+        ttk.Label(card, text="Supply Debi (%25)").grid(row=4, column=0, sticky="w", pady=6)
         self._supply_airflow_var = tk.StringVar(value=self.state.supply_airflow)
         self._supply_airflow_entry = ttk.Entry(
             card, textvariable=self._supply_airflow_var, width=34, state="readonly"
@@ -568,19 +567,19 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             command=lambda: self._enable_manual_airflow("supply")
         ).grid(row=3, column=2, sticky="w", padx=(8, 0), pady=6)
 
-        ttk.Label(card, text="Return Debi (%25)").grid(row=4, column=0, sticky="w", pady=6)
+        ttk.Label(card, text="Return Debi (%25)").grid(row=5, column=0, sticky="w", pady=6)
         self._return_airflow_var = tk.StringVar(value=self.state.return_airflow)
         self._return_airflow_entry = ttk.Entry(
             card, textvariable=self._return_airflow_var, width=34, state="readonly"
         )
-        self._return_airflow_entry.grid(row=4, column=1, sticky="w", pady=6)
+        self._return_airflow_entry.grid(row=5, column=1, sticky="w", pady=6)
         ttk.Button(
             card, text="MANUEL GİRİŞ", style="Secondary.TButton",
             command=lambda: self._enable_manual_airflow("return")
-        ).grid(row=4, column=2, sticky="w", padx=(8, 0), pady=6)
+        ).grid(row=5, column=2, sticky="w", padx=(8, 0), pady=6)
 
         buttons = ttk.Frame(card, style="White.TFrame")
-        buttons.grid(row=5, column=0, columnspan=3, sticky="w", pady=(12, 0))
+        buttons.grid(row=6, column=0, columnspan=3, sticky="w", pady=(12, 0))
         self._fan_read_button = ttk.Button(
             buttons, text="VERİLERİ ÇEK", style="Secondary.TButton",
             command=self._read_fan_airflows
@@ -598,25 +597,61 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         entry.focus_set()
         entry.selection_range(0, "end")
 
+FAN_TYPE_REGISTERS = {
+    "Aspiratör": (
+        ("DANFOSS", "EXHDANFOSSINVNU"),
+        ("EBM-Papst", "EXHEBMFANNUM"),
+        ("Ziehl-Abegg", "EXZIEHLABEGGFAN"),
+        ("Honeywell", "EXHHONEYWELLINV"),
+    ),
+    "Vantilatör": (
+        ("Danfoss", "DANFOSSINVNUM"),
+        ("EBM-Papst", "EBMFANNUM"),
+        ("Ziehl-Abegg", "ZIEHLABEGGFANNU"),
+        ("Honeywell", "HONEYWELLINVNUM"),
+    ),
+}
+
+
     def _read_fan_airflows(self) -> None:
         """Read Supply/Return airflow values from the C600 GenericJSON points."""
         if not self.state.c600_connected:
             messagebox.showwarning("FAN KONTROL", "Önce C600 bağlantısı kurulmalı.", parent=self)
             self._log("FAN KONTROL: Veri çekme isteği reddedildi; C600 bağlı değil.", "error")
             return
-        self._log("FAN KONTROL: Supply/Return debi okunuyor...")
+        self._log("FAN KONTROL: Fan bilgileri ve Supply/Return debi okunuyor...")
         self._fan_read_button.configure(state="disabled")
-        threading.Thread(target=self._fan_airflow_worker, daemon=True).start()
+        threading.Thread(target=self._fan_data_worker, daemon=True).start()
 
-    def _fan_airflow_worker(self) -> None:
-        points = (
-            ("AIR_FLOW", self._supply_airflow_var, "Supply Debi"),
-            ("1-AIR_FLOW", self._return_airflow_var, "Return Debi"),
-        )
+    def _fan_data_worker(self) -> None:
         results: dict[str, str] = {}
         error: Exception | None = None
+        conflicts: list[str] = []
         try:
-            for point_id, _var, _label in points:
+            for group, registers in FAN_TYPE_REGISTERS.items():
+                active: list[tuple[str, str, int]] = []
+                for fan_type, point_id in registers:
+                    result = self._c600_json_read(point_id)
+                    raw = str(result.get("value", "")).strip()
+                    if not raw:
+                        raw = "0"
+                    value = int(float(raw.replace(",", ".")))
+                    if value > 0:
+                        active.append((fan_type, point_id, value))
+
+                if len(active) > 1:
+                    conflicts.append(
+                        f"{group}: " + ", ".join(f"{fan_type}={value}" for fan_type, _point, value in active)
+                    )
+                if active:
+                    fan_type, point_id, value = active[0]
+                    results[f"{group}_type"] = fan_type
+                    results[f"{group}_count"] = str(value)
+                else:
+                    results[f"{group}_type"] = "Yok"
+                    results[f"{group}_count"] = "0"
+
+            for point_id in ("AIR_FLOW", "1-AIR_FLOW"):
                 result = self._c600_json_read(point_id)
                 value = str(result.get("value", "")).strip()
                 if not value:
@@ -631,12 +666,26 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 self._log(f"FAN KONTROL: Debi okuma hatası: {error}", "error")
                 messagebox.showerror("FAN KONTROL", f"Debi verileri okunamadı:\n{error}", parent=self)
                 return
+            self._aspirator_fan_type_var.set(results["Aspiratör_type"])
+            self._aspirator_fan_count_var.set(results["Aspiratör_count"])
+            self._ventilator_fan_type_var.set(results["Vantilatör_type"])
+            self._ventilator_fan_count_var.set(results["Vantilatör_count"])
             self._supply_airflow_var.set(results["AIR_FLOW"])
             self._return_airflow_var.set(results["1-AIR_FLOW"])
+            self.state.fan_type = (
+                f"Aspiratör: {results['Aspiratör_type']} | "
+                f"Vantilatör: {results['Vantilatör_type']}"
+            )
+            self.state.supply_fan_count = int(results["Vantilatör_count"])
+            self.state.return_fan_count = int(results["Aspiratör_count"])
             self.state.supply_airflow = results["AIR_FLOW"]
             self.state.return_airflow = results["1-AIR_FLOW"]
+            self._log(f"FAN KONTROL: Aspiratör={results['Aspiratör_type']} / {results['Aspiratör_count']}", "ok")
+            self._log(f"FAN KONTROL: Vantilatör={results['Vantilatör_type']} / {results['Vantilatör_count']}", "ok")
             self._log(f"FAN KONTROL: AIR_FLOW={results['AIR_FLOW']}", "ok")
             self._log(f"FAN KONTROL: 1-AIR_FLOW={results['1-AIR_FLOW']}", "ok")
+            if conflicts:
+                self._log("FAN KONTROL: Birden fazla aktif fan tipi: " + " | ".join(conflicts), "error")
             self._update_statuses()
 
         self._c600_ui(apply)
@@ -815,9 +864,14 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
     def _save_fan_and_unlock_damper(self) -> None:
         """Save Fan Control fields and then reveal the Damper Control tab."""
         try:
-            self.state.fan_type = self._fan_var.get()
-            self.state.supply_fan_count = int(self._supply_fan_count_var.get() or 0)
-            self.state.return_fan_count = int(self._return_fan_count_var.get() or 0)
+            # Fan tipi ve adetleri artık registerlardan otomatik belirlenir.
+            if hasattr(self, "_aspirator_fan_type_var"):
+                self.state.fan_type = (
+                    f"Aspiratör: {self._aspirator_fan_type_var.get()} | "
+                    f"Vantilatör: {self._ventilator_fan_type_var.get()}"
+                )
+                self.state.supply_fan_count = int(self._ventilator_fan_count_var.get() or 0)
+                self.state.return_fan_count = int(self._aspirator_fan_count_var.get() or 0)
             self.state.supply_airflow = self._supply_airflow_var.get()
             self.state.return_airflow = self._return_airflow_var.get()
             self._update_statuses()
