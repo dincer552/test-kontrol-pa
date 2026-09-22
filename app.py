@@ -23,6 +23,22 @@ from pdf_reader import discover_pdf
 from report import save_report_dialog
 
 
+FAN_TYPE_REGISTERS = {
+    "Aspiratör": (
+        ("DANFOSS", "EXHDANFOSSINVNU"),
+        ("EBM-Papst", "EXHEBMFANNUM"),
+        ("Ziehl-Abegg", "EXZIEHLABEGGFAN"),
+        ("Honeywell", "EXHHONEYWELLINV"),
+    ),
+    "Vantilatör": (
+        ("Danfoss", "DANFOSSINVNUM"),
+        ("EBM-Papst", "EBMFANNUM"),
+        ("Ziehl-Abegg", "ZIEHLABEGGFANNU"),
+        ("Honeywell", "HONEYWELLINVNUM"),
+    ),
+}
+
+
 VERSION = BUILD_VERSION
 UPDATE_CHECK_INTERVAL_MS = 2 * 60 * 1000
 UPDATE_URL = "https://github.com/dincer552/test-kontrol-pa/releases/latest"
@@ -561,11 +577,11 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._supply_airflow_entry = ttk.Entry(
             card, textvariable=self._supply_airflow_var, width=34, state="readonly"
         )
-        self._supply_airflow_entry.grid(row=3, column=1, sticky="w", pady=6)
+        self._supply_airflow_entry.grid(row=4, column=1, sticky="w", pady=6)
         ttk.Button(
             card, text="MANUEL GİRİŞ", style="Secondary.TButton",
             command=lambda: self._enable_manual_airflow("supply")
-        ).grid(row=3, column=2, sticky="w", padx=(8, 0), pady=6)
+        ).grid(row=4, column=2, sticky="w", padx=(8, 0), pady=6)
 
         ttk.Label(card, text="Return Debi (%25)").grid(row=5, column=0, sticky="w", pady=6)
         self._return_airflow_var = tk.StringVar(value=self.state.return_airflow)
@@ -596,22 +612,6 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         entry.configure(state="normal", style="Green.TEntry")
         entry.focus_set()
         entry.selection_range(0, "end")
-
-FAN_TYPE_REGISTERS = {
-    "Aspiratör": (
-        ("DANFOSS", "EXHDANFOSSINVNU"),
-        ("EBM-Papst", "EXHEBMFANNUM"),
-        ("Ziehl-Abegg", "EXZIEHLABEGGFAN"),
-        ("Honeywell", "EXHHONEYWELLINV"),
-    ),
-    "Vantilatör": (
-        ("Danfoss", "DANFOSSINVNUM"),
-        ("EBM-Papst", "EBMFANNUM"),
-        ("Ziehl-Abegg", "ZIEHLABEGGFANNU"),
-        ("Honeywell", "HONEYWELLINVNUM"),
-    ),
-}
-
 
     def _read_fan_airflows(self) -> None:
         """Read Supply/Return airflow values from the C600 GenericJSON points."""
@@ -955,16 +955,10 @@ FAN_TYPE_REGISTERS = {
         for attr in ("order_no", "project_name", "ahu_name"):
             getattr(self, f"_{attr}_var").set("")
         if hasattr(self, "_aspirator_fan_type_var"):
-            self._aspirator_fan_type_var.set(
-                self.state.fan_type.split(" | ")[0].replace("Aspiratör: ", "", 1)
-                if "Aspiratör: " in self.state.fan_type else ""
-            )
-            self._ventilator_fan_type_var.set(
-                self.state.fan_type.split(" | ")[1].replace("Vantilatör: ", "", 1)
-                if " | " in self.state.fan_type and "Vantilatör: " in self.state.fan_type else ""
-            )
-            self._aspirator_fan_count_var.set(str(self.state.return_fan_count))
-            self._ventilator_fan_count_var.set(str(self.state.supply_fan_count))
+            self._aspirator_fan_type_var.set("Yok")
+            self._aspirator_fan_count_var.set("0")
+            self._ventilator_fan_type_var.set("Yok")
+            self._ventilator_fan_count_var.set("0")
         self._supply_airflow_var.set(self.state.supply_airflow)
         self._return_airflow_var.set(self.state.return_airflow)
         self._airflow_var.set(self.state.airflow_control_ok)
