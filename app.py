@@ -893,7 +893,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             pre_elec = values["pre_electrical_heater"] > 0
             run = int(values["run_around"]) == 1
             dx_count = max(0, int(values["dx_capacity"]))
-            dx_visible = dx_count > 1
+            dx_visible = dx_count > 0
             cover = int(values["change_over"]) == 1
             hum_count = max(0, int(values["humidifier_capacity"]))
             rotor = int(values["rotor_mode"])
