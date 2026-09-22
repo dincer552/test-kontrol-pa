@@ -845,7 +845,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             "DAMPER KONTROL": "FİLTRE KONTROL",
             "FİLTRE KONTROL": "MODÜLLER",
             "MODÜLLER": "SENSÖRLER",
-            "SENSÖRLER": "USER / RAPOR",
+            "SENSÖRLER": "RAPOR",
         }
         next_tab = next_tabs.get(current)
         if next_tab:
