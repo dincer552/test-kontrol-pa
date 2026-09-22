@@ -1,13 +1,45 @@
 from __future__ import annotations
 
+import threading
 import tkinter as tk
 from tkinter import ttk
 
 from models import DAMPER_NAMES
 
 
+# C600 GenericJSON point names for the damper-count registers.
+# The numeric register mapping supplied for this project is kept here as
+# metadata so the UI is driven by the controller values rather than PDF data.
+DAMPER_REGISTER_POINTS: dict[str, dict[str, str]] = {
+    "Fresh": {
+        "json_id": "FRESHDAMPNUM",
+        "register": "0x2303 0x000024CD",
+    },
+    "Exhaust": {
+        "json_id": "EXTDAMPNUM",
+        "register": "0x2303 0x0000742F",
+    },
+    "Mix": {
+        "json_id": "MIXDAMPNUM",
+        "register": "0x2303 0x0000970E",
+    },
+    "Supply": {
+        "json_id": "SUPPLYDAMPNUM",
+        "register": "0x2303 0x0000A3D8",
+    },
+    "Return": {
+        "json_id": "RETURNDAMPNUM",
+        "register": "0x2303 0x000098F9",
+    },
+    "Bypass": {
+        "json_id": "BYPASSDAMPNUM",
+        "register": "0x2303 0x00004776",
+    },
+}
+
+
 class DamperTabMixin:
-    """DAMPER KONTROL sekmesinin tüm UI ve state işlemleri."""
+    """DAMPER KONTROL sekmesinin UI ve register tabanlı state işlemleri."""
 
     def _add_damper(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
@@ -32,21 +64,43 @@ class DamperTabMixin:
             entry.grid(row=row, column=1, sticky="w", pady=7)
             self._damper_widgets[name] = (label, entry)
 
-        # PDF okunana kadar damper türleri görünmez; görünürlük PDF'deki
-        # gerçek actuator/damper metinlerine göre belirlenir.
+        # Controller values determine visibility during normal operation.
         self._set_damper_visibility({name: False for name in DAMPER_NAMES})
+        self._damper_manual_mode = False
 
-        ttk.Button(
-            card,
-            text="KAYDET",
-            style="Primary.TButton",
-            command=lambda: self._save_and_unlock("FİLTRE KONTROL"),
-        ).grid(
+        buttons = ttk.Frame(card, style="White.TFrame")
+        buttons.grid(
             row=len(DAMPER_NAMES),
             column=0,
+            columnspan=2,
             sticky="w",
             pady=(12, 0),
         )
+
+        ttk.Button(
+            buttons,
+            text="VERİLERİ ÇEK",
+            style="Primary.TButton",
+            command=self._fetch_damper_registers,
+        ).pack(side="left", padx=(0, 8))
+
+        self._damper_manual_button = ttk.Button(
+            buttons,
+            text="MANUEL",
+            style="Secondary.TButton",
+            command=self._toggle_damper_manual,
+        )
+        self._damper_manual_button.pack(side="left", padx=(0, 8))
+
+        self._damper_save_button = ttk.Button(
+            buttons,
+            text="KAYDET",
+            style="Primary.TButton",
+            command=self._save_damper_state,
+        )
+        self._damper_save_button.pack(side="left")
+
+        self._set_damper_entries_state(False)
 
     def _set_damper_visibility(self, visibility: dict[str, bool]) -> None:
         for name, widgets in self._damper_widgets.items():
@@ -57,17 +111,92 @@ class DamperTabMixin:
                 else:
                     widget.grid_remove()
 
-    def _apply_pdf_damper_visibility(self, damper_types: dict[str, bool]) -> None:
-        """PDF keşfine göre damperleri göster; bulunan tipleri varsayılan 1 adet başlat."""
-        self._set_damper_visibility(damper_types)
-        for name, visible in damper_types.items():
-            if visible and self.state.damper_counts.get(name, 0) <= 0:
-                self.state.damper_counts[name] = 1
-                if name in self._damper_vars:
-                    self._damper_vars[name].set("1")
+    def _set_damper_entries_state(self, editable: bool) -> None:
+        state = "normal" if editable else "readonly"
+        for _name, (_label, entry) in self._damper_widgets.items():
+            entry.configure(state=state)
+
+    def _toggle_damper_manual(self) -> None:
+        self._damper_manual_mode = not self._damper_manual_mode
+        if self._damper_manual_mode:
+            # Manual mode exposes all six fields so a hidden controller damper
+            # can also be entered manually with a value greater than zero.
+            self._set_damper_visibility({name: True for name in DAMPER_NAMES})
+            self._set_damper_entries_state(True)
+            self._damper_manual_button.configure(text="OTOMATİK")
+            self._log("DAMPER KONTROL: Manuel giriş açıldı.", "muted")
+        else:
+            self._set_damper_entries_state(False)
+            self._damper_manual_button.configure(text="MANUEL")
+            self._apply_damper_visibility_from_values()
+
+    def _apply_damper_visibility_from_values(self) -> None:
+        visibility = {}
+        for name, var in self._damper_vars.items():
+            try:
+                value = max(0, int(var.get() or 0))
+            except ValueError:
+                value = 0
+                var.set("0")
+            visibility[name] = value > 0
+        self._set_damper_visibility(visibility)
+
+    def _fetch_damper_registers(self) -> None:
+        if not self.state.c600_connected:
+            self._log("DAMPER: Önce C600 bağlantısı kurulmalı.", "error")
+            return
+
+        if self._damper_manual_mode:
+            self._toggle_damper_manual()
+
+        self._log("DAMPER: Register değerleri okunuyor...", "muted")
+        self._damper_manual_button.configure(state="disabled")
+        threading.Thread(target=self._damper_register_worker, daemon=True).start()
+
+    def _damper_register_worker(self) -> None:
+        values: dict[str, int] = {}
+        errors: list[str] = []
+
+        for name in DAMPER_NAMES:
+            point = DAMPER_REGISTER_POINTS[name]
+            try:
+                result = self._c600_json_read(point["json_id"])
+                raw = result.get("value", 0)
+                value = int(float(str(raw).strip() or "0"))
+                values[name] = max(0, value)
+            except Exception as exc:
+                errors.append(f"{name}: {exc}")
+
+        def apply() -> None:
+            self._damper_manual_button.configure(state="normal")
+            if errors:
+                self._log(
+                    "DAMPER: Register okuma hatası: " + " | ".join(errors),
+                    "error",
+                )
+                return
+
+            for name, value in values.items():
+                self.state.damper_counts[name] = value
+                self._damper_vars[name].set(str(value))
+
+            self._set_damper_visibility(
+                {name: value > 0 for name, value in values.items()}
+            )
+            self._set_damper_entries_state(False)
+            self._damper_manual_mode = False
+            self._damper_manual_button.configure(text="MANUEL")
+            self._log(
+                "DAMPER: Register değerleri alındı: "
+                + ", ".join(f"{name}={value}" for name, value in values.items()),
+                "ok",
+            )
+            self._update_statuses()
+
+        self._c600_ui(apply)
 
     def _save_damper_state(self) -> None:
-        """Damper ekranındaki değerleri ortak state'e aktarır."""
+        """Manuel damper değerlerini ortak state'e aktar ve görünürlüğü uygula."""
         changed = []
         for name, var in self._damper_vars.items():
             try:
@@ -75,12 +204,25 @@ class DamperTabMixin:
             except ValueError:
                 value = 0
                 var.set("0")
-            self.state.damper_counts[name] = max(0, value)
-            changed.append(f"{name}={self.state.damper_counts[name]}")
+            value = max(0, value)
+            self.state.damper_counts[name] = value
+            var.set(str(value))
+            changed.append(f"{name}={value}")
+
+        self._set_damper_entries_state(False)
+        self._damper_manual_mode = False
+        self._damper_manual_button.configure(text="MANUEL")
+        self._apply_damper_visibility_from_values()
+
         if changed and hasattr(self, "_log"):
-            self._log("DAMPER KONTROL: " + ", ".join(changed), "ok")
+            self._log("DAMPER KONTROL: Manuel değerler kaydedildi: " + ", ".join(changed), "ok")
+        self._update_statuses()
 
     def _clear_damper_ui(self) -> None:
-        """Damper ekranını ortak state'teki varsayılan değerlere döndürür."""
+        """Damper ekranını ortak state'teki değerlere döndürür."""
         for name, var in self._damper_vars.items():
             var.set(str(self.state.damper_counts[name]))
+        self._set_damper_entries_state(False)
+        self._damper_manual_mode = False
+        self._damper_manual_button.configure(text="MANUEL")
+        self._apply_damper_visibility_from_values()
