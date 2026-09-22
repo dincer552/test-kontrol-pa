@@ -729,12 +729,15 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             ("Nemlendirici", "humidifier", 4),
         )
         for label, key, row in module_specs:
-            ttk.Label(card, text=label).grid(row=row, column=0, sticky="w", padx=12, pady=7)
             var = tk.StringVar(value="—")
             self._module_vars[key] = var
+            label_widget = ttk.Label(card, text=label)
+            # Replace the temporary label with a stored widget so the whole row
+            # can be hidden without hiding the complete module card.
+            label_widget.grid(row=row, column=0, sticky="w", padx=12, pady=7)
             entry = ttk.Entry(card, textvariable=var, width=28, state="readonly")
             entry.grid(row=row, column=1, sticky="w", pady=7)
-            self._module_rows[key] = (entry,)
+            self._module_rows[key] = (label_widget, entry)
 
         self._heater_stage_vars = {
             "electrical": tk.StringVar(value=str(max(1, min(3, self.state.electrical_stage_count)))),
@@ -764,7 +767,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             "dx": self.state.dx_enabled,
             "change_over": self.state.change_over,
             "humidifier": self.state.humidifier_enabled,
-            "rotor": True,
+            "rotor": self.state.rotor_enabled,
         })
 
     def _create_heater_table(self, parent: ttk.Frame, kind: str, title: str, row: int) -> None:
@@ -837,12 +840,14 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             "rotor": "rotor",
         }
         for key, frame_key in mapping.items():
-            row = self._module_rows.get(frame_key)
-            if row:
-                if visibility.get(key, False):
-                    row[0].master.grid()
-                else:
-                    row[0].master.grid_remove()
+            widgets = self._module_rows.get(frame_key)
+            if widgets:
+                visible = bool(visibility.get(key, False))
+                for widget in widgets:
+                    if visible:
+                        widget.grid()
+                    else:
+                        widget.grid_remove()
 
         for key, frame_key in (
             ("electrical_heater", "electrical"),
@@ -920,7 +925,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 "dx": dx_count > 0,
                 "change_over": cover,
                 "humidifier": hum_count > 0,
-                "rotor": True,
+                "rotor": rotor in (1, 2),
             })
             self._rebuild_heater_table("electrical")
             self._rebuild_heater_table("pre_electrical")
