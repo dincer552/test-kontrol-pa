@@ -60,7 +60,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
     def __init__(self) -> None:
         super().__init__()
-        self.title(f"TEST KONTROL {VERSION} — AHU Test ve Devreye Alma")
+        self.title(f"Test Kontrol {VERSION} — AHU Test ve Devreye Alma")
         self.geometry("1300x820")
         self.minsize(1100, 700)
         self.state = TestControlState()
@@ -149,7 +149,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 self._update_available = available
                 button = self._update_button
                 if button is not None:
-                    button.configure(text="GÜNCELLE", state="normal" if available else "disabled")
+                    button.configure(text="Güncelle", state="normal" if available else "disabled")
                 build_label = self._update_build_label
                 if build_label is not None:
                     if available and update:
@@ -188,10 +188,10 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         # Header mirrors PDF kW Selector: compact white card, blue badge and title.
         header = ttk.Frame(self, style="White.TFrame", padding=(12, 8))
         header.pack(fill="x", pady=(0, 8))
-        tk.Label(header, text="TEST", bg="#1a56db", fg="#ffffff", font=("Segoe UI", 10, "bold"), width=5, height=1).pack(side="left", padx=(0, 10))
+        tk.Label(header, text="Test", bg="#1a56db", fg="#ffffff", font=("Segoe UI", 10, "bold"), width=5, height=1).pack(side="left", padx=(0, 10))
         title_box = ttk.Frame(header, style="White.TFrame")
         title_box.pack(side="left")
-        ttk.Label(title_box, text="TEST KONTROL", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(title_box, text="Test Kontrol", style="Title.TLabel").pack(anchor="w")
         ttk.Label(title_box, text="AHU test, devreye alma, kontrol ve raporlama", style="Muted.TLabel").pack(anchor="w")
 
         # Manual update check stays available; the install button activates only when a newer build exists.
@@ -207,7 +207,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._manual_update_button.grid(row=0, column=0, padx=(0, 6), sticky="s")
         self._update_button = ttk.Button(
             update_controls,
-            text="GÜNCELLE",
+            text="Güncelle",
             style="Secondary.TButton",
             command=self._start_update,
             state="disabled",
@@ -239,14 +239,14 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             for i in range(len(tab_ids))
         }
         self._tab_sequence = (
-            "BAĞLANTI",
-            "PROJE",
-            "FAN KONTROL",
-            "DAMPER KONTROL",
-            "FİLTRE KONTROL",
-            "MODÜLLER",
-            "SENSÖRLER",
-            "RAPOR",
+            "Bağlantı",
+            "Proje",
+            "Fan Kontrol",
+            "Damper Kontrol",
+            "Filtre Kontrol",
+            "Modüller",
+            "Sensörler",
+            "Rapor",
         )
         self._tab_positions = {
             name: index for index, name in enumerate(self._tab_sequence)
@@ -259,7 +259,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             tab_id = self._tab_ids.get(tab_name)
             if tab_id is not None:
                 self.tabs.tab(tab_id, state="hidden")
-        self.tabs.select(self._tab_ids["BAĞLANTI"])
+        self.tabs.select(self._tab_ids["Bağlantı"])
 
     def _set_tab_visible(self, tab_name: str, visible: bool = True) -> None:
         """Show/hide an already-created ttk.Notebook tab without changing its order."""
@@ -279,7 +279,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
     def _on_c600_connection_success(self) -> None:
         """A successful C600 connection unlocks the project tab."""
-        self._set_tab_visible("PROJE", True)
+        self._set_tab_visible("Proje", True)
 
     def _tab_frame(self, notebook: ttk.Notebook) -> tuple[ttk.Frame, ttk.Frame]:
         outer = ttk.Frame(notebook, style="White.TFrame")
@@ -299,7 +299,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
     def _add_general(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="PROJE")
+        notebook.add(tab, text="Proje")
         body.columnconfigure(0, weight=1)
 
         project = ttk.LabelFrame(body, text="Proje Bilgileri", style="Card.TLabelframe", padding=12)
@@ -340,7 +340,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         info_col = tk.Frame(head_row, bg="#ffffff")
         info_col.pack(side="left")
         tk.Label(
-            info_col, text="AHU PROJE PDF", bg="#ffffff", fg="#0f172a",
+            info_col, text="AHU Proje PDF", bg="#ffffff", fg="#0f172a",
             font=("Segoe UI", 10, "bold")
         ).pack(anchor="w")
         tk.Label(
@@ -357,7 +357,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         )
         self._pdf_count_label.pack(side="left", padx=(0, 6))
         ttk.Button(
-            btn_col, text="+ PDF EKLE", style="Secondary.TButton",
+            btn_col, text="+ PDF Ekle", style="Secondary.TButton",
             command=self._select_pdf
         ).pack(side="left", padx=2)
 
@@ -366,7 +366,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             highlightthickness=2, padx=8, pady=6
         )
         self._pdf_banner_label = tk.Label(
-            drop_banner, text="⬇  PDF BURAYA BIRAKIN  ⬇",
+            drop_banner, text="⬇  PDF Buraya Bırakın  ⬇",
             bg="#eff6ff", fg="#1d4ed8", font=("Segoe UI", 9, "bold")
         )
         self._pdf_banner_label.pack(fill="both", expand=True)
@@ -525,7 +525,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         # Damper visibility is now driven by controller registers, not PDF discovery.
         self._apply_pdf_sensor_visibility(result.sensor_types)
         # PDF is the approval/input point for opening the next sequential tab.
-        self._set_tab_visible("FAN KONTROL", True)
+        self._set_tab_visible("Fan Kontrol", True)
         if result.order_no:
             self._order_no_var.set(result.order_no)
             self.state.order_no = result.order_no
@@ -561,7 +561,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
     def _add_fan(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="FAN KONTROL")
+        notebook.add(tab, text="Fan Kontrol")
         card = ttk.LabelFrame(body, text="Fan Kontrol", style="Card.TLabelframe", padding=12)
         card.pack(fill="x")
 
@@ -589,7 +589,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         )
         self._supply_airflow_entry.grid(row=4, column=1, sticky="w", pady=6)
         ttk.Button(
-            card, text="MANUEL GİRİŞ", style="Secondary.TButton",
+            card, text="Manuel Giriş", style="Secondary.TButton",
             command=lambda: self._enable_manual_airflow("supply")
         ).grid(row=4, column=2, sticky="w", padx=(8, 0), pady=6)
 
@@ -600,19 +600,19 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         )
         self._return_airflow_entry.grid(row=5, column=1, sticky="w", pady=6)
         ttk.Button(
-            card, text="MANUEL GİRİŞ", style="Secondary.TButton",
+            card, text="Manuel Giriş", style="Secondary.TButton",
             command=lambda: self._enable_manual_airflow("return")
         ).grid(row=5, column=2, sticky="w", padx=(8, 0), pady=6)
 
         buttons = ttk.Frame(card, style="White.TFrame")
         buttons.grid(row=6, column=0, columnspan=3, sticky="w", pady=(12, 0))
         self._fan_read_button = ttk.Button(
-            buttons, text="VERİLERİ ÇEK", style="Secondary.TButton",
+            buttons, text="Verileri Çek", style="Secondary.TButton",
             command=self._read_fan_airflows
         )
         self._fan_read_button.pack(side="left", padx=(0, 8))
         ttk.Button(
-            buttons, text="KAYDET", style="Primary.TButton",
+            buttons, text="Kaydet", style="Primary.TButton",
             command=self._save_fan_and_unlock_damper
         ).pack(side="left")
 
@@ -702,7 +702,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
     def _add_filters(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="FİLTRE KONTROL")
+        notebook.add(tab, text="Filtre Kontrol")
         card = ttk.LabelFrame(body, text="Filtreler", style="Card.TLabelframe", padding=14)
         card.pack(fill="x")
         self._filter_vars: dict[str, tk.BooleanVar] = {}
@@ -710,11 +710,11 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             var = tk.BooleanVar(value=self.state.filters[name])
             self._filter_vars[name] = var
             ttk.Checkbutton(card, text=name, variable=var).grid(row=i // 3, column=i % 3, sticky="w", padx=12, pady=6)
-        ttk.Button(card, text="KAYDET", style="Primary.TButton", command=lambda: self._save_and_unlock("MODÜLLER")).grid(row=2, column=0, sticky="w", pady=(12, 0))
+        ttk.Button(card, text="Kaydet", style="Primary.TButton", command=lambda: self._save_and_unlock("Modüller")).grid(row=2, column=0, sticky="w", pady=(12, 0))
 
     def _add_modules(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="MODÜLLER")
+        notebook.add(tab, text="Modüller")
         card = ttk.LabelFrame(body, text="Modül Konfigürasyonu", style="Card.TLabelframe", padding=14)
         card.pack(fill="x")
         card.columnconfigure(1, weight=1)
@@ -723,7 +723,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._module_rows = {}
         module_specs = (
             ("Rotor", "rotor", 0),
-            ("Run Around", "run_around", 1),
+            ("Around", "run_around", 1),
             ("DX", "dx", 2),
             ("ChangeOverValve", "change_over", 3),
             ("Nemlendirici", "humidifier", 4),
@@ -752,12 +752,12 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         buttons = ttk.Frame(card, style="White.TFrame")
         buttons.grid(row=7, column=0, columnspan=3, sticky="w", pady=(12, 0))
         self._module_read_button = ttk.Button(
-            buttons, text="VERİLERİ ÇEK", style="Secondary.TButton", command=self._read_module_data
+            buttons, text="Verileri Çek", style="Secondary.TButton", command=self._read_module_data
         )
         self._module_read_button.pack(side="left", padx=(0, 8))
         ttk.Button(
-            buttons, text="KAYDET", style="Primary.TButton",
-            command=lambda: self._save_and_unlock("SENSÖRLER")
+            buttons, text="Kaydet", style="Primary.TButton",
+            command=lambda: self._save_and_unlock("Sensörler")
         ).pack(side="left")
 
         self._set_module_visibility({
@@ -912,7 +912,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             self.state.rotor_mode = {0: "Yok", 1: "Oransal", 2: "On/Off"}.get(rotor, f"Bilinmiyor ({rotor})")
 
             self._module_vars["rotor"].set(self.state.rotor_mode)
-            self._module_vars["run_around"].set("Runa" if run else "Yok")
+            self._module_vars["run_around"].set("Var" if run else "Yok")
             self._module_vars["dx"].set(str(dx_count))
             self._module_vars["change_over"].set("ChangeOverValve" if cover else "Yok")
             self._module_vars["humidifier"].set(str(hum_count))
@@ -954,16 +954,16 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
     def _add_user_report(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="RAPOR")
+        notebook.add(tab, text="Rapor")
         card = ttk.LabelFrame(body, text="Rapor", style="Card.TLabelframe", padding=14)
         card.pack(fill="x")
         ttk.Label(card, text="Kullanıcı").grid(row=0, column=0, sticky="w", pady=6)
         self._user_var = tk.StringVar(value="")
         ttk.Entry(card, textvariable=self._user_var, width=40).grid(row=0, column=1, sticky="w", pady=6)
-        ttk.Button(card, text="KAYDET", style="Primary.TButton", command=self._save).grid(row=1, column=0, sticky="w", pady=(12, 0))
+        ttk.Button(card, text="Kaydet", style="Primary.TButton", command=self._save).grid(row=1, column=0, sticky="w", pady=(12, 0))
         ttk.Button(
             card,
-            text="TEST RAPORU OLUŞTUR",
+            text="Test Raporu Oluştur",
             style="Primary.TButton",
             command=self._generate_test_report,
         ).grid(row=2, column=0, sticky="w", pady=(12, 0))
@@ -971,8 +971,8 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
     def _build_bottom_dock(self) -> None:
         dock = ttk.Frame(self, style="White.TFrame", padding=(10, 6))
         dock.pack(side="bottom", fill="x", padx=10, pady=(6, 0))
-        ttk.Button(dock, text="↻ TEMİZLE", style="Secondary.TButton", command=self._clear).pack(side="left", padx=3)
-        ttk.Button(dock, text="▣ RAPOR", style="Secondary.TButton", command=self._report).pack(side="left", padx=3)
+        ttk.Button(dock, text="↻ Temizle", style="Secondary.TButton", command=self._clear).pack(side="left", padx=3)
+        ttk.Button(dock, text="▣ Rapor", style="Secondary.TButton", command=self._report).pack(side="left", padx=3)
 
     def _log(self, message: str, tag: str = "muted") -> None:
         """Write every user-visible operation to the central process log."""
@@ -1013,7 +1013,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 f"FAN KONTROL: KAYDET — fan={self.state.fan_type}, supply_fan={self.state.supply_fan_count}, return_fan={self.state.return_fan_count}, supply_airflow={self.state.supply_airflow}, return_airflow={self.state.return_airflow}",
                 "ok",
             )
-            self._set_tab_visible("DAMPER KONTROL", True)
+            self._set_tab_visible("Damper Kontrol", True)
             self._log("İŞ AKIŞI: DAMPER KONTROL sekmesi açıldı.", "ok")
         except (TypeError, ValueError) as exc:
             messagebox.showwarning("FAN KONTROL", f"Fan bilgileri kontrol edilmeli:\n{exc}", parent=self)
@@ -1029,11 +1029,11 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         """Unlock the next tab according to the fixed workflow order."""
         current = self.tabs.tab(self.tabs.select(), "text")
         next_tabs = {
-            "FAN KONTROL": "DAMPER KONTROL",
-            "DAMPER KONTROL": "FİLTRE KONTROL",
-            "FİLTRE KONTROL": "MODÜLLER",
-            "MODÜLLER": "SENSÖRLER",
-            "SENSÖRLER": "RAPOR",
+            "Fan Kontrol": "Damper Kontrol",
+            "Damper Kontrol": "Filtre Kontrol",
+            "Filtre Kontrol": "Modüller",
+            "Modüller": "Sensörler",
+            "Sensörler": "Rapor",
         }
         next_tab = next_tabs.get(current)
         if next_tab:

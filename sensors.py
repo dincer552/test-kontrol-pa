@@ -33,7 +33,7 @@ class SensorTabMixin:
 
     def _add_sensors(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="SENSÖRLER")
+        notebook.add(tab, text="Sensörler")
 
         card = ttk.LabelFrame(
             body,
@@ -64,7 +64,7 @@ class SensorTabMixin:
             self._sensor_units[name] = "°C" if "CO2" not in name else "ppm"
             button = ttk.Button(
                 card,
-                text="MANUEL GİRİŞ",
+                text="Manuel Giriş",
                 style="Secondary.TButton",
                 command=lambda sensor_name=name: self._toggle_sensor_manual(sensor_name),
             )
@@ -85,7 +85,7 @@ class SensorTabMixin:
             self._sensor_humidity_widgets[name] = (label, entry)
             button = ttk.Button(
                 card,
-                text="MANUEL GİRİŞ",
+                text="Manuel Giriş",
                 style="Secondary.TButton",
                 command=lambda sensor_name=name: self._toggle_sensor_manual(f"{sensor_name} Humidity"),
             )
@@ -105,7 +105,7 @@ class SensorTabMixin:
 
         self._sensor_read_button = ttk.Button(
             card,
-            text="VERİLERİ ÇEK",
+            text="Verileri Çek",
             style="Primary.TButton",
             command=self._read_sensors_from_plc,
         )
@@ -113,9 +113,9 @@ class SensorTabMixin:
 
         self._sensor_save_button = ttk.Button(
             card,
-            text="KAYDET",
+            text="Kaydet",
             style="Primary.TButton",
-            command=lambda: self._save_and_unlock("USER / RAPOR"),
+            command=lambda: self._save_and_unlock("Rapor"),
         )
         self._sensor_save_button.grid(row=row, column=1, sticky="w", pady=(12, 0))
 
@@ -134,7 +134,7 @@ class SensorTabMixin:
             manual_card, textvariable=self._manual_sensor_value_var, width=16, style="Green.TEntry"
         ).grid(row=0, column=3, sticky="w", padx=(0, 10))
         ttk.Button(
-            manual_card, text="+ SENSOR EKLE", style="Secondary.TButton",
+            manual_card, text="+ Sensör Ekle", style="Secondary.TButton",
             command=self._add_manual_sensor,
         ).grid(row=0, column=4, sticky="w")
         self._manual_sensor_form = manual_card
@@ -231,7 +231,7 @@ class SensorTabMixin:
         self._manual_sensor_rows.clear()
         for name, entry_pair in self._sensor_widgets.items():
             entry_pair[1].configure(state="readonly", style="TEntry")
-            self._sensor_manual_buttons[name].configure(text="MANUEL GİRİŞ")
+            self._sensor_manual_buttons[name].configure(text="Manuel Giriş")
         self.state.manual_sensors.clear()
         self._set_sensor_visibility(
             {name: {"temperature": False, "humidity": False, "co2": False} for name in SENSOR_NAMES}

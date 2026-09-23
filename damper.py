@@ -54,7 +54,7 @@ class DamperTabMixin:
 
     def _add_damper(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="DAMPER KONTROL")
+        notebook.add(tab, text="Damper Kontrol")
 
         card = ttk.LabelFrame(
             body,
@@ -76,7 +76,7 @@ class DamperTabMixin:
 
             manual_button = ttk.Button(
                 card,
-                text="MANUEL GİRİŞ",
+                text="Manuel Giriş",
                 style="Secondary.TButton",
                 command=lambda damper=name: self._enable_manual_damper(damper),
             )
@@ -97,7 +97,7 @@ class DamperTabMixin:
 
         self._damper_read_button = ttk.Button(
             buttons,
-            text="VERİLERİ ÇEK",
+            text="Verileri Çek",
             style="Primary.TButton",
             command=self._fetch_damper_registers,
         )
@@ -105,9 +105,9 @@ class DamperTabMixin:
 
         self._damper_save_button = ttk.Button(
             buttons,
-            text="KAYDET",
+            text="Kaydet",
             style="Primary.TButton",
-            command=lambda: self._save_and_unlock("FİLTRE KONTROL"),
+            command=lambda: self._save_and_unlock("Filtre Kontrol"),
         )
         self._damper_save_button.pack(side="left")
 
