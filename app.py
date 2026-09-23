@@ -723,7 +723,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._module_rows = {}
         module_specs = (
             ("Rotor", "rotor", 0),
-            ("Around", "run_around", 1),
+            ("RunAround", "run_around", 1),
             ("DX", "dx", 2),
             ("ChangeOverValve", "change_over", 3),
             ("Nemlendirici", "humidifier", 4),
@@ -912,7 +912,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             self.state.rotor_mode = {0: "Yok", 1: "Oransal", 2: "On/Off"}.get(rotor, f"Bilinmiyor ({rotor})")
 
             self._module_vars["rotor"].set(self.state.rotor_mode)
-            self._module_vars["run_around"].set("Var" if run else "Yok")
+            self._module_vars["run_around"].set("")
             self._module_vars["dx"].set(str(dx_count))
             self._module_vars["change_over"].set("ChangeOverValve" if cover else "Yok")
             self._module_vars["humidifier"].set(str(hum_count))
@@ -1078,7 +1078,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             var.set(str(self.state.filters[name]))
         if hasattr(self, "_module_vars"):
             self._module_vars["rotor"].set("Yok")
-            self._module_vars["run_around"].set("Yok")
+            self._module_vars["run_around"].set("")
             self._module_vars["dx"].set("0")
             self._module_vars["change_over"].set("Yok")
             self._module_vars["humidifier"].set("0")
