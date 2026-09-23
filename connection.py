@@ -28,7 +28,7 @@ class C600ConnectionMixin:
 
     def _add_c600(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="BAĞLANTI")
+        notebook.add(tab, text="Bağlantı")
         body.columnconfigure(0, weight=3)
         body.columnconfigure(1, weight=2)
         body.rowconfigure(3, weight=1)
@@ -82,14 +82,14 @@ class C600ConnectionMixin:
 
         buttons = ttk.Frame(body, style="White.TFrame")
         buttons.grid(row=2, column=0, sticky="w", pady=(0, 10))
-        self._c600_test_btn = ttk.Button(buttons, text="BAĞLAN", style="Primary.TButton", command=self._c600_test)
+        self._c600_test_btn = ttk.Button(buttons, text="Bağlan", style="Primary.TButton", command=self._c600_test)
         self._c600_test_btn.pack(side="left")
 
         log_frame = ttk.LabelFrame(body, text="İşlem Günlüğü", style="Card.TLabelframe", padding=10)
         log_frame.grid(row=3, column=0, columnspan=2, sticky="nsew")
         log_frame.columnconfigure(0, weight=1)
         log_frame.rowconfigure(1, weight=1)
-        ttk.Button(log_frame, text="▣ GÜNLÜĞÜ TEMİZLE", style="Secondary.TButton", command=self._c600_clear_log).grid(row=0, column=0, sticky="e", pady=(0, 6))
+        ttk.Button(log_frame, text="▣ Günlüğü Temizle", style="Secondary.TButton", command=self._c600_clear_log).grid(row=0, column=0, sticky="e", pady=(0, 6))
         self._c600_log = tk.Text(log_frame, height=10, wrap="word", font=("Segoe UI", 9), bg="#ffffff", fg="#334155", relief="solid", bd=1)
         self._c600_log.grid(row=1, column=0, sticky="nsew")
         self._c600_log.tag_configure("ok", foreground="#16a34a")
