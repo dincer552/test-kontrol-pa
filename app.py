@@ -912,7 +912,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             self.state.rotor_mode = {0: "Yok", 1: "Oransal", 2: "On/Off"}.get(rotor, f"Bilinmiyor ({rotor})")
 
             self._module_vars["rotor"].set(self.state.rotor_mode)
-            self._module_vars["run_around"].set("")
+            self._module_vars["run_around"].set("Var" if run else "")
             self._module_vars["dx"].set(str(dx_count))
             self._module_vars["change_over"].set("ChangeOverValve" if cover else "Yok")
             self._module_vars["humidifier"].set(str(hum_count))
