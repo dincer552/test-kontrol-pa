@@ -973,10 +973,6 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         dock.pack(side="bottom", fill="x", padx=10, pady=(6, 0))
         ttk.Button(dock, text="↻ TEMİZLE", style="Secondary.TButton", command=self._clear).pack(side="left", padx=3)
         ttk.Button(dock, text="▣ RAPOR", style="Secondary.TButton", command=self._report).pack(side="left", padx=3)
-        ttk.Label(dock, text="DURUM", style="Muted.TLabel").pack(side="right", padx=(20, 4))
-        for name in ("FAN", "DAMP", "FİLT", "MOD", "SENS"):
-            ttk.Label(dock, text=f"• {name}", style="Badge.TLabel").pack(side="right", padx=2)
-        ttk.Label(dock, text="Hazır", style="Muted.TLabel").pack(side="right", padx=(8, 0))
 
     def _log(self, message: str, tag: str = "muted") -> None:
         """Write every user-visible operation to the central process log."""
