@@ -22,8 +22,17 @@ def _asset_path(name: str) -> Path:
 
 
 def _value(value: object) -> str:
-    text = str(value).strip()
+    text = _ascii(str(value).strip())
     return text if text and text != "-" else "-"
+
+
+def _ascii(text: str) -> str:
+    """Keep the PDF compatible with the built-in Helvetica font."""
+    return str(text).translate(str.maketrans({
+        "ç": "c", "Ç": "C", "ğ": "g", "Ğ": "G",
+        "ı": "i", "İ": "I", "ö": "o", "Ö": "O",
+        "ş": "s", "Ş": "S", "ü": "u", "Ü": "U",
+    }))
 
 
 def _checked(value: bool) -> str:
@@ -37,12 +46,13 @@ def _sensor_value(state: TestControlState, name: str) -> str:
 def _header_footer(canvas, doc) -> None:
     canvas.saveState()
     canvas.setFont("Helvetica", 7)
-    canvas.drawString(15 * mm, 8 * mm, "Systemair HSK Havalandırma Endüstri San. Ve Tic. A. Ş.")
-    canvas.drawRightString(195 * mm, 8 * mm, f"Sayfa {doc.page}")
+    canvas.drawString(15 * mm, 8 * mm, _ascii("Systemair HSK Havalandırma Endüstri San. Ve Tic. A. Ş."))
+    canvas.drawRightString(195 * mm, 8 * mm, _ascii(f"Sayfa {doc.page}"))
     canvas.restoreState()
 
 
 def _grid(rows, widths, font_size=7.5) -> Table:
+    rows = [[_ascii(str(cell)) for cell in row] for row in rows]
     table = Table(rows, colWidths=widths)
     table.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.6, colors.black),
@@ -105,7 +115,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
 
     now = datetime.now().strftime("%d-%b-%y %H:%M:%S")
     story = [_header_table(styles, "1/2", now), Spacer(1, 4)]
-    story.append(Paragraph(f"PROJE / PROJECT &nbsp;&nbsp;&nbsp; Tarih/Date: <b>{now}</b>", styles["small_bold"]))
+    story.append(Paragraph(_ascii(f"PROJE / PROJECT &nbsp;&nbsp;&nbsp; Tarih/Date: <b>{now}</b>"), styles["small_bold"]))
     story.append(_grid([
         ["Sipariş No / Order No", _value(state.order_no)],
         ["Proje Adı / Project Name", _value(state.project_name)],
@@ -120,16 +130,16 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ["", "", "Dönüş Debi %25 / Return Air Flow (%25)", _value(state.return_airflow)],
     ], (43 * mm, 48 * mm, 55 * mm, 48 * mm)))
 
-    story.append(Paragraph("MODÜLLER / MODULES", styles["section"]))
+    story.append(Paragraph("MODULLER / MODULES", styles["section"]))
     module_items = [
         ("Rotor", _checked(state.rotor_enabled)),
-        ("Çevrimsel Batarya / Run Around", _checked(state.run_around)),
+        ("Cevrimsel Batarya / Run Around", _checked(state.run_around)),
         ("DX Batarya", _checked(state.dx_enabled)),
         ("Nemlendirici", _checked(state.humidifier_enabled)),
-        ("Elektrikli Isıtıcı", _checked(state.electrical_heater)),
+        ("Elektrikli Isitici", _checked(state.electrical_heater)),
         ("Room BMS", _checked(state.room_bms)),
-        ("DX Kademe Sayısı", state.dx_stage if state.dx_enabled else "-"),
-        ("Nem. Kademe Sayısı", state.humidifier_stage if state.humidifier_enabled else "-"),
+        ("DX Kademe Sayisi", state.dx_stage if state.dx_enabled else "-"),
+        ("Nem. Kademe Sayisi", state.humidifier_stage if state.humidifier_enabled else "-"),
     ]
     story.append(_grid(
         [[a, b, c, d] for (a, b), (c, d) in zip(module_items[::2], module_items[1::2])],
@@ -145,15 +155,14 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ])
     story.append(_grid(damper_rows, (48 * mm, 48 * mm, 48 * mm, 50 * mm)))
 
-    story.append(Paragraph("FİLTRELER / FILTERS", styles["section"]))
-    story.append(Paragraph(
+    story.append(Paragraph("FILTRELER / FILTERS", styles["section"]))
+    story.append(Paragraph(_ascii(
         " &nbsp;&nbsp; ".join(f"{name}: {_checked(state.filters.get(name, False))}" for name in FILTER_IDS),
-        styles["small"],
-    ))
+    ), styles["small"]))
 
     story.append(PageBreak())
     story.extend([_header_table(styles, "2/2", now), Spacer(1, 4)])
-    story.append(Paragraph(f"SENSÖRLER / SENSORS &nbsp;&nbsp;&nbsp; Tarih/Date: <b>{now}</b>", styles["small_bold"]))
+    story.append(Paragraph(_ascii(f"SENSORLER / SENSORS &nbsp;&nbsp;&nbsp; Tarih/Date: <b>{now}</b>"), styles["small_bold"]))
 
     sensor_labels = [
         ("Fresh Air Sensor", "Fresh Air Temp. Sensor"),
@@ -184,7 +193,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         (49 * mm, 47 * mm, 49 * mm, 47 * mm),
     ))
 
-    story.append(Paragraph("ELEKTRİKLİ ISITICI / ELECTRICAL HEATER", styles["section"]))
+    story.append(Paragraph("ELEKTRIKLI ISITICI / ELECTRICAL HEATER", styles["section"]))
     heater = [["Electrical Heater", "R(A)", "S(A)", "T(A)"]]
     for stage in range(3):
         base_i = stage * 3
@@ -200,7 +209,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
 
     story.extend([
         Spacer(1, 10),
-        Paragraph(f"<b>Hazırlayan / Prepared by:</b> {_value(state.user_name)}", styles["small"]),
+        Paragraph(f"<b>Hazirlayan / Prepared by:</b> {_value(state.user_name)}", styles["small"]),
         Paragraph(f"<b>Not / Note:</b> {_value(state.notlar)}", styles["small"]),
     ])
     doc.build(story, onFirstPage=_header_footer, onLaterPages=_header_footer)
