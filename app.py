@@ -25,7 +25,7 @@ from report import save_report_dialog
 
 FAN_TYPE_REGISTERS = {
     "Aspiratör": (
-        ("DANFOSS", "EXHDANFOSSINVNU"),
+        ("Danfoss", "EXHDANFOSSINVNU"),
         ("EBM-Papst", "EXHEBMFANNUM"),
         ("Ziehl-Abegg", "EXZIEHLABEGGFAN"),
         ("Honeywell", "EXHHONEYWELLINV"),
