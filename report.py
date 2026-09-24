@@ -217,16 +217,30 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
     return output
 
 
-def save_report_dialog(parent, state: TestControlState) -> str | None:
+def save_report_dialog(
+    parent,
+    state: TestControlState,
+    initial_dir: str | os.PathLike[str] | None = None,
+) -> str | None:
     default_name = state.ahu_name.strip() or state.project_name.strip() or "Test_Raporu"
     safe = "".join(ch if ch.isalnum() or ch in "._- " else "_" for ch in default_name)
-    path = filedialog.asksaveasfilename(
-        parent=parent,
-        title="Test Raporunu Kaydet",
-        defaultextension=".pdf",
-        initialfile=f"{safe}_Test_Raporu.pdf",
-        filetypes=[("PDF dosyası", "*.pdf")],
-    )
+
+    options = {
+        "parent": parent,
+        "title": "Test Raporunu Kaydet",
+        "defaultextension": ".pdf",
+        "initialfile": f"{safe}_Test_Raporu.pdf",
+        "filetypes": [("PDF dosyası", "*.pdf")],
+    }
+    if initial_dir:
+        try:
+            initial_path = Path(initial_dir)
+            if initial_path.is_dir():
+                options["initialdir"] = str(initial_path)
+        except (OSError, TypeError, ValueError):
+            pass
+
+    path = filedialog.asksaveasfilename(**options)
     if not path:
         return None
     return build_test_report(state, path)
