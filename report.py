@@ -195,13 +195,14 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
 
     story.append(Paragraph("ELEKTRIKLI ISITICI / ELECTRICAL HEATER", styles["section"]))
     heater = [["Electrical Heater", "R(A)", "S(A)", "T(A)"]]
-    for stage in range(3):
-        base_i = stage * 3
+    stage_count = max(1, min(3, int(state.electrical_stage_count or 1)))
+    for stage in range(stage_count):
+        stage_number = stage + 1
         heater.append([
-            f"{stage + 1}.Kademe",
-            _value(state.electrical_values[base_i]),
-            _value(state.electrical_values[base_i + 1]),
-            _value(state.electrical_values[base_i + 2]),
+            f"{stage_number}.Kademe",
+            _value(state.electrical_values[stage]),
+            _value(state.electrical_values[3 + stage]),
+            _value(state.electrical_values[6 + stage]),
         ])
     ht = _grid(heater, (42 * mm, 24 * mm, 24 * mm, 24 * mm))
     ht.setStyle(TableStyle([("ALIGN", (1, 0), (-1, -1), "CENTER"), ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold")]))
