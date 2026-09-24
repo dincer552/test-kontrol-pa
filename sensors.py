@@ -253,9 +253,18 @@ class SensorTabMixin:
         threading.Thread(target=self._sensor_plc_worker, daemon=True).start()
 
     def _sensor_plc_worker(self) -> None:
-        visibility = dict(self._sensor_visibility)
+        visibility = {name: dict(spec) for name, spec in self._sensor_visibility.items()}
         readings: list[tuple[str, str, str]] = []
         errors: list[str] = []
+
+        # After Dx sensörünün görünürlüğü PDF'den bağımsız olarak PLC register'ı ile belirlenir.
+        try:
+            result = self._c600_json_read(SENSOR_ENABLE_REGISTERS["AfterDxUnit Air Sensor"])
+            enabled = int(float(str(result.get("value", "0")).strip().replace(",", "."))) == 1
+            visibility.setdefault("AfterDxUnit Air Sensor", {})
+            visibility["AfterDxUnit Air Sensor"]["temperature"] = enabled
+        except Exception as exc:
+            errors.append(f"After Dx sensör enable: {exc}")
 
         for name, spec in visibility.items():
             if spec.get("temperature") and name in SENSOR_POINTS:
@@ -284,6 +293,11 @@ class SensorTabMixin:
                     errors.append(f"{name} nem: {exc}")
 
         def apply() -> None:
+            # Register 1 ise After Dx sensörünü ekranda oluştur/göster.
+            self._sensor_visibility["AfterDxUnit Air Sensor"] = dict(
+                visibility.get("AfterDxUnit Air Sensor", {})
+            )
+            self._set_sensor_visibility(self._sensor_visibility)
             for kind, name, value in readings:
                 if kind == "humidity":
                     self._sensor_humidity_vars[name].set(value)
