@@ -25,6 +25,7 @@ SENSOR_POINTS = {
 HUMIDITY_POINTS = {
     "Supply Air Sensor": ("1-HUMVAL", "%RH"),
     "Return Air Sensor": ("HUMVAL", "%RH"),
+    "Room Hum Sensor": ("ROOM_HUM", "%RH"),
 }
 
 
