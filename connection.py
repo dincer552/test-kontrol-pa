@@ -71,15 +71,6 @@ class C600ConnectionMixin:
         self._c600_status_ping.grid(row=2, column=1, sticky="w", padx=(0, 12), pady=(2, 10))
         conn.columnconfigure(2, weight=2)
 
-        info = ttk.LabelFrame(body, text="Cihaz Bilgileri", style="Card.TLabelframe", padding=14)
-        info.grid(row=1, column=1, rowspan=2, sticky="nsew", padx=(8, 0), pady=(0, 10))
-        info.columnconfigure(1, weight=1)
-        for r, label, key in ((0, "Model", "model"), (1, "Serial No", "serial"), (2, "Firmware", "firmware"), (3, "Revision", "revision"), (4, "Cihaz Saati", "clock")):
-            ttk.Label(info, text=f"{label}:").grid(row=r, column=0, sticky="w", pady=7, padx=(0, 18))
-            var = tk.StringVar(value="—")
-            self._c600_info_vars[key] = var
-            ttk.Label(info, textvariable=var, style="White.TLabel").grid(row=r, column=1, sticky="w", pady=7)
-
         buttons = ttk.Frame(body, style="White.TFrame")
         buttons.grid(row=2, column=0, sticky="w", pady=(0, 10))
         self._c600_test_btn = ttk.Button(buttons, text="Bağlan", style="Primary.TButton", command=self._c600_test)
@@ -159,7 +150,6 @@ class C600ConnectionMixin:
                 self._c600_dot.configure(fg="#16a34a")
                 self._c600_test_btn.configure(state="normal")
                 self._c600_log_write("Bağlantı başarılı.", "ok")
-                self._c600_read_device_info()
                 self._read_sensors_from_plc()
                 self._update_statuses()
                 self._on_c600_connection_success()
@@ -277,7 +267,6 @@ class C600ConnectionMixin:
             self._c600_log_write("OKU: Önce C600 bağlantısı kurulmalı.", "error")
             return
         self._c600_log_write("OKU: Cihaz bilgileri okunuyor...")
-        self._c600_read_device_info()
 
     def _c600_write(self) -> None:
         self._c600_log_write("YAZ: Register eşlemesi tanımlanmadığı için güvenli yazma yapılmadı.", "error")
