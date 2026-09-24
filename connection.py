@@ -162,9 +162,9 @@ class C600ConnectionMixin:
                 self._c600_status_detail.configure(text=f"{host}:{port}\n{exc}")
                 self._c600_status_ping.configure(text="Yanıt süresi: —")
                 self._c600_dot.configure(fg="#dc2626")
-                self._c600_test_btn.configure(state="normal")
                 self._c600_log_write(f"Bağlantı başarısız: {exc}", "error")
                 self._update_statuses()
+                self.after(3000, lambda: self._c600_test_btn.configure(text="BAĞLAN", state="normal"))
             self._c600_ui(fail)
 
     def _c600_read_device_info(self) -> None:
