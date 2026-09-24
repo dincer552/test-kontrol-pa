@@ -72,6 +72,8 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._update_button: ttk.Button | None = None
         self._manual_update_button: ttk.Button | None = None
         self._update_build_label: ttk.Label | None = None
+        # Test raporu için varsayılan kayıt klasörü, eklenen AHU PDF'sinin klasörüdür.
+        self._report_initial_dir: str | None = None
         self._init_modern_theme()
         self._build_ui()
         self._configure_tab_flow()
@@ -511,6 +513,8 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             self._log(f"PROJE: PDF okuma hatası: {exc}", "error")
             return
 
+        # Rapor kaydetme penceresi ilk açıldığında AHU PDF'sinin klasörünü önersin.
+        self._report_initial_dir = str(pdf_path.parent)
         self._pdf_count_label.configure(text="1 PDF")
         self._pdf_list_label.configure(
             text=f"✓  {pdf_path.name}",
@@ -1102,7 +1106,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
     def _generate_test_report(self) -> None:
         try:
             self._save()
-            path = save_report_dialog(self, self.state)
+            path = save_report_dialog(self, self.state, self._report_initial_dir)
             if path:
                 self._log(f"RAPOR: test raporu oluşturuldu — {path}", "ok")
                 messagebox.showinfo("RAPOR", f"Test raporu oluşturuldu:\n{path}", parent=self)
