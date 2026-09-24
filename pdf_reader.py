@@ -188,7 +188,7 @@ def discover_pdf(path: str | Path) -> PdfDiscovery:
         "Return CO2 Sensor": {
             "temperature": False,
             "humidity": False,
-            "co2": _has_component(text, r"Return\s+CO2\s+Sensor"),
+            "co2": _has_component(text, r"Return\s+Air\s+CO(?:2|²)\s+And\s+Temperature\s+Sensor|Return\s+CO(?:2|²)\s+Sensor|Return\s+CO(?:2|²)\s+Air\s+Sensor"),
         },
         "Water Temp Sensor": {
             "temperature": _has_component(text, r"Water\s+Temperature\s+Sensor|Water\s+Temp\s+Sensor"),
