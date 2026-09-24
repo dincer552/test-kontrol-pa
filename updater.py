@@ -240,6 +240,12 @@ try {
     }
     for ($i = 0; $i -lt 60; $i++) {
         try {
+            # PowerShell Move-Item -Force does not reliably replace an existing
+            # Windows executable. Remove the old EXE after the parent process
+            # has exited, then move the verified download into its place.
+            if (Test-Path -LiteralPath $Target) {
+                Remove-Item -LiteralPath $Target -Force -ErrorAction Stop
+            }
             Move-Item -LiteralPath $Source -Destination $Target -Force -ErrorAction Stop
             break
         } catch {
