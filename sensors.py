@@ -7,6 +7,10 @@ from tkinter import ttk
 from models import SENSOR_NAMES
 
 
+SENSOR_ENABLE_REGISTERS = {
+    "AfterDxUnit Air Sensor": "AFTERDXSENSOREN",
+}
+
 SENSOR_POINTS = {
     "Fresh Air Sensor": ("5-TMPVAL", "°C"),
     "Supply Air Sensor": ("SUPPLY_AIR_TEMP", "°C"),
