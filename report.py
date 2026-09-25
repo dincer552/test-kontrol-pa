@@ -125,13 +125,38 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ["AHU Adı / AHU Name", _value(state.ahu_name)],
     ], (52 * mm, 142 * mm)))
 
-    story.append(Paragraph("FANLAR / FANS", styles["section"]))
-    story.append(_grid([
-        ["Fan Tipi / Fan Type", _value(state.fan_type), "Üfleme Fan Sayısı / Supply Fan Number", state.supply_fan_count],
-        ["Debi Kontrol / Air Flow Control", _checked(state.airflow_control_ok), "Dönüş Fan Sayısı / Return Fan Number", state.return_fan_count],
-        ["Basınç Kontrol / Pressure Control", _checked(state.pressure_control_ok), "Üfleme Debi %25 / Supply Air Flow (%25)", _value(state.supply_airflow)],
-        ["", "", "Dönüş Debi %25 / Return Air Flow (%25)", _value(state.return_airflow)],
-    ], (43 * mm, 48 * mm, 55 * mm, 48 * mm)))
+    # FANLAR: baslik tablo icinde, baslik hucreleri acik gri ve kalin.
+    fan_rows = [
+        ["FANLAR / FANS", "", "", ""],
+        ["Fan Tipi / Fan Type", _value(state.fan_type),
+         "Vantilator / Ventilator", "Var"],
+        ["Debi Kontrol / Air Flow Control", _checked(state.airflow_control_ok),
+         "Ufleme Fan Sayisi / Supply Fan Number", state.supply_fan_count],
+        ["Basinc Kontrol / Pressure Control", _checked(state.pressure_control_ok),
+         "Donus Fan Sayisi / Return Fan Number", state.return_fan_count],
+        ["Ufleme Debi %25 / Supply Air Flow (%25)", _value(state.supply_airflow),
+         "Donus Debi %25 / Return Air Flow (%25)", _value(state.return_airflow)],
+    ]
+    fan_table = _grid(
+        fan_rows,
+        (58 * mm, 37 * mm, 58 * mm, 37 * mm),
+        7,
+    )
+    fan_table.setStyle(TableStyle([
+        ("SPAN", (0, 0), (-1, 0)),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 9),
+        ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#eeeeee")),
+        ("BACKGROUND", (2, 1), (2, -1), colors.HexColor("#eeeeee")),
+        ("FONTNAME", (0, 1), (0, -1), "Helvetica-Bold"),
+        ("FONTNAME", (2, 1), (2, -1), "Helvetica-Bold"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 3),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 3),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    story.append(fan_table)
 
     story.append(Paragraph("MODULLER / MODULES", styles["section"]))
     # Sadece aktif modulleri rapora yaz. Pasif moduller ve onlara ait
