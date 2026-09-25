@@ -26,7 +26,7 @@ from tkinter import messagebox
 
 from build_info import BUILD_SHA, BUILD_VERSION
 
-UPDATE_MANIFEST_URL = "http://20.91.245.7/pdf-updates/test-kontrol/manifest.json"
+UPDATE_MANIFEST_URL = "https://dinceryuksek.com/pdf-updates/test-kontrol/manifest.json"
 USER_AGENT = "Test-Kontrol-Updater"
 
 
