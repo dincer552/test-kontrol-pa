@@ -158,9 +158,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
     ]))
     story.append(fan_table)
 
-    story.append(Paragraph("MODULLER / MODULES", styles["section"]))
-    # Sadece aktif modulleri rapora yaz. Pasif moduller ve onlara ait
-    # kademe satirlari raporda hic gorunmesin.
+    # MODULLER: fanlar bolumundeki sade tablo tasarimi.
     module_items = []
     if state.rotor_enabled:
         module_items.append(("Rotor", _checked(True)))
@@ -178,18 +176,24 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         module_items.append(("Room BMS", _checked(True)))
 
     if module_items:
-        module_rows = []
+        module_rows = [["MODULLER / MODULES", "", "", ""]]
         for i in range(0, len(module_items), 2):
             left = module_items[i]
             right = module_items[i + 1] if i + 1 < len(module_items) else ("", "")
             module_rows.append([left[0], left[1], right[0], right[1]])
-        story.append(_grid(
-            module_rows,
-            (48 * mm, 48 * mm, 48 * mm, 50 * mm),
-        ))
+        module_table = _grid(module_rows, (48 * mm, 48 * mm, 48 * mm, 50 * mm), 7)
+        module_table.setStyle(TableStyle([
+            ("SPAN", (0, 0), (-1, 0)),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 9),
+            ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#eeeeee")),
+            ("BACKGROUND", (2, 1), (2, -1), colors.HexColor("#eeeeee")),
+            ("FONTNAME", (0, 1), (0, -1), "Helvetica-Bold"),
+            ("FONTNAME", (2, 1), (2, -1), "Helvetica-Bold"),
+        ]))
+        story.append(module_table)
 
-    story.append(Paragraph("DAMPERLER / DAMPERS", styles["section"]))
-    # Adedi 0 olan damperleri raporda gosterme.
+    # DAMPERLER: sadece adedi 0'dan buyuk olanlar.
     active_dampers = []
     for name in DAMPER_NAMES:
         try:
@@ -200,7 +204,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
             active_dampers.append((name, count))
 
     if active_dampers:
-        damper_rows = []
+        damper_rows = [["DAMPERLER / DAMPERS", "", "", ""]]
         for i in range(0, len(active_dampers), 2):
             left = active_dampers[i]
             right = active_dampers[i + 1] if i + 1 < len(active_dampers) else ("", "")
@@ -209,12 +213,35 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
                 f"{right[0]} Damper" if right[0] else "",
                 right[1] if right[0] else "",
             ])
-        story.append(_grid(damper_rows, (48 * mm, 48 * mm, 48 * mm, 50 * mm)))
+        damper_table = _grid(damper_rows, (48 * mm, 48 * mm, 48 * mm, 50 * mm), 7)
+        damper_table.setStyle(TableStyle([
+            ("SPAN", (0, 0), (-1, 0)),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 9),
+            ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#eeeeee")),
+            ("BACKGROUND", (2, 1), (2, -1), colors.HexColor("#eeeeee")),
+            ("FONTNAME", (0, 1), (0, -1), "Helvetica-Bold"),
+            ("FONTNAME", (2, 1), (2, -1), "Helvetica-Bold"),
+        ]))
+        story.append(damper_table)
 
-    story.append(Paragraph("FILTRELER / FILTERS", styles["section"]))
-    story.append(Paragraph(_ascii(
-        " &nbsp;&nbsp; ".join(f"{name}: {_checked(state.filters.get(name, False))}" for name in FILTER_IDS),
-    ), styles["small"]))
+    filter_rows = [["FILTRELER / FILTERS", "", "", ""]]
+    filter_items = [(name, _checked(state.filters.get(name, False))) for name in FILTER_IDS]
+    for i in range(0, len(filter_items), 2):
+        left = filter_items[i]
+        right = filter_items[i + 1] if i + 1 < len(filter_items) else ("", "")
+        filter_rows.append([left[0], left[1], right[0], right[1]])
+    filter_table = _grid(filter_rows, (48 * mm, 48 * mm, 48 * mm, 50 * mm), 7)
+    filter_table.setStyle(TableStyle([
+        ("SPAN", (0, 0), (-1, 0)),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 9),
+        ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#eeeeee")),
+        ("BACKGROUND", (2, 1), (2, -1), colors.HexColor("#eeeeee")),
+        ("FONTNAME", (0, 1), (0, -1), "Helvetica-Bold"),
+        ("FONTNAME", (2, 1), (2, -1), "Helvetica-Bold"),
+    ]))
+    story.append(filter_table)
 
     story.append(PageBreak())
     story.extend([_header_table(styles, "2/2", now), Spacer(1, 4)])
