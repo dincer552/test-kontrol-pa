@@ -18,15 +18,19 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: pip
           cache-dependency-path: requirements.txt
+
       - name: Install dependencies
         run: python -m pip install -r requirements.txt pyinstaller pytest
+
       - name: Run tests
         run: python -m pytest -q
+
       - name: Embed build metadata
         shell: pwsh
         env:
@@ -38,13 +42,16 @@ jobs:
             "BUILD_SHA = `"$env:GITHUB_SHA`""
           ) -Encoding UTF8
           python -c "import build_info; assert build_info.BUILD_VERSION == '$env:APP_VERSION'; print(build_info.BUILD_VERSION, build_info.BUILD_SHA)"
+
       - name: Compile sources
         run: python -m py_compile app.py models.py updater.py webbrowser.py build_info.py connection.py pdf_reader.py damper.py sensors.py report.py
+
       - name: Build EXE
         shell: pwsh
         env:
           APP_VERSION: v0.1.0.${{ github.run_number }}
         run: pyinstaller --noconfirm --clean --onefile --windowed --collect-all tkinterdnd2 --add-data "SYSR.ST.png;." --name "Test_Kontrol_$env:APP_VERSION" app.py
+
       - name: Smoke test packaged EXE startup
         shell: pwsh
         env:
@@ -57,6 +64,7 @@ jobs:
           if ($proc.HasExited) { throw "Test Control EXE exited during startup smoke test. ExitCode=$($proc.ExitCode)" }
           Write-Host "Test Control EXE startup OK"
           Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+
       - name: Prepare release assets
         shell: pwsh
         env:
@@ -66,6 +74,29 @@ jobs:
           Copy-Item $source dist/Test_Kontrol_latest.exe
           Copy-Item $source "dist/Test_Kontrol_${env:GITHUB_SHA}.exe"
           Compress-Archive -Path $source -DestinationPath "dist/Test_Kontrol_${env:GITHUB_SHA}.zip" -CompressionLevel Optimal
+
+          # Split the latest EXE into 2 MiB pieces.
+          $chunkSize = 2MB
+          $buffer = New-Object byte[] $chunkSize
+          $inputStream = [System.IO.File]::OpenRead("dist/Test_Kontrol_latest.exe")
+          $index = 0
+          try {
+            while (($read = $inputStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+              $partName = "dist/Test_Kontrol_latest.part{0:D3}" -f $index
+              $outputStream = [System.IO.File]::Create($partName)
+              try {
+                $outputStream.Write($buffer, 0, $read)
+              } finally {
+                $outputStream.Dispose()
+              }
+              Write-Host "Created $partName ($read bytes)"
+              $index++
+            }
+          } finally {
+            $inputStream.Dispose()
+          }
+          Write-Host "Created $index parts of 2 MiB maximum."
+
       - name: Publish latest release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -73,15 +104,23 @@ jobs:
         shell: bash
         run: |
           if gh release view latest >/dev/null 2>&1; then
+            # Remove old split parts so stale assets can never be mixed.
+            gh release view latest --json assets --jq '.assets[].name' |
+              grep '^Test_Kontrol_latest\.part[0-9][0-9][0-9]$' |
+              while IFS= read -r asset; do
+                gh release delete-asset latest "$asset" --yes || true
+              done
+
             gh release upload latest dist/Test_Kontrol_latest.exe --clobber
             gh release upload latest "dist/Test_Kontrol_${GITHUB_SHA}.exe" --clobber
             gh release upload latest "dist/Test_Kontrol_${GITHUB_SHA}.zip" --clobber
-            gh release edit latest --title "Test Kontrol $APP_VERSION - Latest" --notes "Version: $APP_VERSION; Build: $GITHUB_SHA"
+            gh release upload latest dist/Test_Kontrol_latest.part* --clobber
+            gh release edit latest --title "Test Kontrol $APP_VERSION - Latest" --notes "Version: $APP_VERSION; Build: $GITHUB_SHA; Updates use 2 MiB GitHub release parts."
           else
-            gh release create latest dist/Test_Kontrol_latest.exe "dist/Test_Kontrol_${GITHUB_SHA}.exe" "dist/Test_Kontrol_${GITHUB_SHA}.zip" --target "$GITHUB_SHA" --title "Test Kontrol $APP_VERSION - Latest" --notes "Version: $APP_VERSION; Build: $GITHUB_SHA"
+            gh release create latest dist/Test_Kontrol_latest.exe "dist/Test_Kontrol_${GITHUB_SHA}.exe" "dist/Test_Kontrol_${GITHUB_SHA}.zip" dist/Test_Kontrol_latest.part* --target "$GITHUB_SHA" --title "Test Kontrol $APP_VERSION - Latest" --notes "Version: $APP_VERSION; Build: $GITHUB_SHA; Updates use 2 MiB GitHub release parts."
           fi
+
       - uses: actions/upload-artifact@v4
         with:
           name: Test_Kontrol_Windows
           path: dist/Test_Kontrol_v0.1.0.${{ github.run_number }}.exe
-
