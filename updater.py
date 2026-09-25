@@ -41,38 +41,87 @@ def check_for_update(current_exe=None) -> dict:
 
 
 def _download_latest(progress=None) -> Path:
+    """Download the GitHub asset with HTTP Range resume support.
+
+    No SHA/manifest verification is performed. If the connection is cut
+    before EOF, the next request resumes from the exact byte already saved.
+    This handles networks/proxies that terminate large downloads early.
+    """
     temp_dir = Path(tempfile.mkdtemp(prefix="test_kontrol_update_"))
     target = temp_dir / "Test_Kontrol_update.exe"
 
-    request = urllib.request.Request(
-        UPDATE_URL,
-        headers={
-            "User-Agent": USER_AGENT,
-            "Accept": "application/octet-stream",
-            "Cache-Control": "no-cache",
-            "Pragma": "no-cache",
-            "Accept-Encoding": "identity",
-        },
-    )
+    total = 0
+    downloaded = 0
+    started_at = time.monotonic()
+    max_attempts = 30
 
     try:
-        with urllib.request.urlopen(request, timeout=180) as response:
-            total_header = response.headers.get("Content-Length")
-            total = int(total_header) if total_header and total_header.isdigit() else 0
-            downloaded = 0
-            started_at = time.monotonic()
+        with target.open("wb") as output:
+            for attempt in range(1, max_attempts + 1):
+                request = urllib.request.Request(
+                    UPDATE_URL,
+                    headers={
+                        "User-Agent": USER_AGENT,
+                        "Accept": "application/octet-stream",
+                        "Cache-Control": "no-cache",
+                        "Pragma": "no-cache",
+                        "Accept-Encoding": "identity",
+                    },
+                )
+                if downloaded:
+                    request.add_header("Range", f"bytes={downloaded}-")
 
-            with target.open("wb") as output:
-                while True:
-                    data = response.read(1024 * 1024)
-                    if not data:
-                        break
-                    output.write(data)
-                    downloaded += len(data)
+                try:
+                    with urllib.request.urlopen(request, timeout=180) as response:
+                        status = getattr(response, "status", response.getcode())
 
-                    if progress:
-                        speed = downloaded / max(time.monotonic() - started_at, 0.001)
-                        progress(downloaded, total, speed)
+                        content_range = response.headers.get("Content-Range", "")
+                        if content_range:
+                            try:
+                                total = int(content_range.rsplit("/", 1)[1])
+                            except (ValueError, IndexError):
+                                pass
+
+                        content_length = response.headers.get("Content-Length")
+                        if not total and content_length and content_length.isdigit():
+                            if status == 206 and downloaded:
+                                total = downloaded + int(content_length)
+                            else:
+                                total = int(content_length)
+
+                        if downloaded and status != 206:
+                            raise RuntimeError(
+                                "Sunucu devam indirmesini desteklemedi (HTTP Range)."
+                            )
+
+                        while True:
+                            data = response.read(1024 * 1024)
+                            if not data:
+                                break
+                            output.write(data)
+                            downloaded += len(data)
+
+                            if progress:
+                                speed = downloaded / max(time.monotonic() - started_at, 0.001)
+                                progress(downloaded, total, speed)
+
+                except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
+                    if attempt >= max_attempts:
+                        raise RuntimeError(
+                            f"GitHub indirmesi bağlantı nedeniyle tamamlanamadı: {exc}"
+                        ) from exc
+                    time.sleep(min(2 + attempt, 10))
+                    continue
+
+                if total and downloaded >= total:
+                    break
+
+                if not total:
+                    raise RuntimeError(
+                        "GitHub indirme boyutu alınamadı; dosya güvenli şekilde tamamlanamıyor."
+                    )
+
+                time.sleep(1)
 
         if not target.exists() or downloaded <= 0:
             raise RuntimeError("GitHub'dan güncelleme dosyası indirilemedi.")
@@ -86,26 +135,18 @@ def _download_latest(progress=None) -> Path:
         return target
 
     except urllib.error.HTTPError as exc:
-        target.unlink(missing_ok=True)
-        try:
-            temp_dir.rmdir()
-        except OSError:
-            pass
-        raise RuntimeError(f"GitHub güncelleme sunucusu HTTP {exc.code}: {exc.reason}") from exc
-    except urllib.error.URLError as exc:
-        target.unlink(missing_ok=True)
-        try:
-            temp_dir.rmdir()
-        except OSError:
-            pass
-        raise RuntimeError(f"GitHub güncelleme sunucusuna bağlanılamadı: {exc.reason}") from exc
+        raise RuntimeError(
+            f"GitHub güncelleme sunucusu HTTP {exc.code}: {exc.reason}"
+        ) from exc
     except Exception:
-        target.unlink(missing_ok=True)
-        try:
-            temp_dir.rmdir()
-        except OSError:
-            pass
         raise
+    finally:
+        if not target.exists() or (total and downloaded != total):
+            target.unlink(missing_ok=True)
+            try:
+                temp_dir.rmdir()
+            except OSError:
+                pass
 
 
 def _start_replacement(downloaded: Path, current_exe: Path) -> None:
