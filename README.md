@@ -123,3 +123,5 @@ Self-updater, güncelleme dosyasını dört paralel indirme hattıyla ve parça 
 
 
 <!-- GitHub updater compatibility build test -->
+
+<!-- 2 MiB updater test build -->
