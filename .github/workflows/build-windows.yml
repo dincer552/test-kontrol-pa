@@ -106,7 +106,7 @@ jobs:
           if gh release view latest >/dev/null 2>&1; then
             # Remove old split parts so stale assets can never be mixed.
             gh release view latest --json assets --jq '.assets[].name' |
-              grep '^Test_Kontrol_latest\.part[0-9][0-9][0-9]$' |
+              grep '^Test_Kontrol_latest\.part[0-9][0-9][0-9]$' || true
               while IFS= read -r asset; do
                 gh release delete-asset latest "$asset" --yes || true
               done
