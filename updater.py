@@ -1,14 +1,17 @@
-"""Simple GitHub-based updater for the packaged Test Kontrol Windows application.
+"""GitHub Release updater for the packaged Test Kontrol Windows application.
 
-Updates are downloaded directly from the latest GitHub Release.
-No VM manifest, SHA-256 verification, chunk verification, or digest comparison
-is used. The download is only accepted when the HTTP Content-Length matches
-the number of bytes actually received.
+The EXE is downloaded from the latest GitHub Release in 2 MiB parts.
+There is no SHA-256, digest, manifest, or chunk hash verification.
+Each small part is simply downloaded completely and then all parts are
+joined in order into the final EXE. If a part is cut off by the network,
+only that part is downloaded again.
 """
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -20,15 +23,14 @@ from tkinter import messagebox
 
 from build_info import BUILD_VERSION
 
-UPDATE_URL = (
-    "https://github.com/dincer552/test-kontrol-pa/"
-    "releases/latest/download/Test_Kontrol_latest.exe"
-)
+REPO = "dincer552/test-kontrol-pa"
+API_URL = f"https://api.github.com/repos/{REPO}/releases/tags/latest"
 USER_AGENT = "Test-Kontrol-Updater"
+PART_RE = re.compile(r"^Test_Kontrol_latest\.part(\\d+)$")
 
 
 def check_for_update(current_exe=None) -> dict:
-    """Keep the existing app UI compatible while using direct GitHub downloads."""
+    """Keep the existing app UI compatible with the direct GitHub updater."""
     return {
         "available": True,
         "version": "latest",
@@ -40,97 +42,131 @@ def check_for_update(current_exe=None) -> dict:
     }
 
 
-def _download_latest(progress=None) -> Path:
-    """Download the GitHub asset with HTTP Range resume support.
+def _release_parts() -> list[dict]:
+    request = urllib.request.Request(
+        API_URL,
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "application/vnd.github+json",
+            "Cache-Control": "no-cache",
+        },
+    )
 
-    No SHA/manifest verification is performed. If the connection is cut
-    before EOF, the next request resumes from the exact byte already saved.
-    This handles networks/proxies that terminate large downloads early.
-    """
+    with urllib.request.urlopen(request, timeout=60) as response:
+        payload = json.load(response)
+
+    parts = []
+    for asset in payload.get("assets", []):
+        name = asset.get("name", "")
+        match = PART_RE.match(name)
+        if not match:
+            continue
+        parts.append(
+            {
+                "name": name,
+                "number": int(match.group(1)),
+                "size": int(asset.get("size", 0)),
+                "url": asset.get("browser_download_url", ""),
+            }
+        )
+
+    parts.sort(key=lambda item: item["number"])
+
+    if not parts:
+        raise RuntimeError("GitHub Release içinde güncelleme parçaları bulunamadı.")
+
+    return parts
+
+
+def _download_part(part: dict, folder: Path, progress=None, done_before: int = 0, total: int = 0) -> Path:
+    target = folder / part["name"]
+    expected = part["size"]
+
+    for attempt in range(1, 9):
+        downloaded = 0
+        try:
+            request = urllib.request.Request(
+                part["url"],
+                headers={
+                    "User-Agent": USER_AGENT,
+                    "Accept": "application/octet-stream",
+                    "Cache-Control": "no-cache",
+                    "Pragma": "no-cache",
+                    "Accept-Encoding": "identity",
+                },
+            )
+
+            with urllib.request.urlopen(request, timeout=120) as response:
+                with target.open("wb") as output:
+                    while True:
+                        data = response.read(256 * 1024)
+                        if not data:
+                            break
+                        output.write(data)
+                        downloaded += len(data)
+
+                        if progress:
+                            speed = (done_before + downloaded) / max(time.monotonic() - progress.start_time, 0.001)
+                            progress(done_before + downloaded, total, speed)
+
+            if expected and downloaded != expected:
+                target.unlink(missing_ok=True)
+                if attempt == 8:
+                    raise RuntimeError(
+                        f"{part['name']} eksik indirildi ({downloaded:,} / {expected:,} byte)."
+                    )
+                time.sleep(min(attempt, 5))
+                continue
+
+            return target
+
+        except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
+            target.unlink(missing_ok=True)
+            if attempt == 8:
+                raise RuntimeError(
+                    f"{part['name']} indirilemedi: {exc}"
+                ) from exc
+            time.sleep(min(attempt, 5))
+
+    raise RuntimeError(f"{part['name']} indirilemedi.")
+
+
+def _download_latest(progress=None) -> Path:
+    """Download 2 MiB GitHub Release parts and join them into one EXE."""
     temp_dir = Path(tempfile.mkdtemp(prefix="test_kontrol_update_"))
     target = temp_dir / "Test_Kontrol_update.exe"
 
-    total = 0
-    downloaded = 0
-    started_at = time.monotonic()
-    max_attempts = 30
-
     try:
-        with target.open("wb") as output:
-            for attempt in range(1, max_attempts + 1):
-                request = urllib.request.Request(
-                    UPDATE_URL,
-                    headers={
-                        "User-Agent": USER_AGENT,
-                        "Accept": "application/octet-stream",
-                        "Cache-Control": "no-cache",
-                        "Pragma": "no-cache",
-                        "Accept-Encoding": "identity",
-                    },
-                )
-                if downloaded:
-                    request.add_header("Range", f"bytes={downloaded}-")
+        parts = _release_parts()
+        total = sum(part["size"] for part in parts)
+        done = 0
 
-                try:
-                    with urllib.request.urlopen(request, timeout=180) as response:
-                        status = getattr(response, "status", response.getcode())
+        if progress:
+            progress.start_time = time.monotonic()
 
-                        content_range = response.headers.get("Content-Range", "")
-                        if content_range:
-                            try:
-                                total = int(content_range.rsplit("/", 1)[1])
-                            except (ValueError, IndexError):
-                                pass
-
-                        content_length = response.headers.get("Content-Length")
-                        if not total and content_length and content_length.isdigit():
-                            if status == 206 and downloaded:
-                                total = downloaded + int(content_length)
-                            else:
-                                total = int(content_length)
-
-                        if downloaded and status != 206:
-                            raise RuntimeError(
-                                "Sunucu devam indirmesini desteklemedi (HTTP Range)."
-                            )
-
-                        while True:
-                            data = response.read(1024 * 1024)
-                            if not data:
-                                break
-                            output.write(data)
-                            downloaded += len(data)
-
-                            if progress:
-                                speed = downloaded / max(time.monotonic() - started_at, 0.001)
-                                progress(downloaded, total, speed)
-
-                except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
-                    if attempt >= max_attempts:
-                        raise RuntimeError(
-                            f"GitHub indirmesi bağlantı nedeniyle tamamlanamadı: {exc}"
-                        ) from exc
-                    time.sleep(min(2 + attempt, 10))
-                    continue
-
-                if total and downloaded >= total:
-                    break
-
-                if not total:
-                    raise RuntimeError(
-                        "GitHub indirme boyutu alınamadı; dosya güvenli şekilde tamamlanamıyor."
-                    )
-
-                time.sleep(1)
-
-        if not target.exists() or downloaded <= 0:
-            raise RuntimeError("GitHub'dan güncelleme dosyası indirilemedi.")
-
-        if total and downloaded != total:
-            raise RuntimeError(
-                f"Güncelleme eksik indirildi ({downloaded:,} / {total:,} byte). "
-                "Mevcut program korunuyor."
+        part_files = []
+        for part in parts:
+            part_file = _download_part(
+                part,
+                temp_dir,
+                progress=progress,
+                done_before=done,
+                total=total,
             )
+            part_files.append(part_file)
+            done += part["size"]
+
+        with target.open("wb") as output:
+            for part_file in part_files:
+                with part_file.open("rb") as source:
+                    while True:
+                        data = source.read(1024 * 1024)
+                        if not data:
+                            break
+                        output.write(data)
+
+        if not target.exists() or target.stat().st_size != total:
+            raise RuntimeError("Güncelleme dosyası birleştirilemedi.")
 
         return target
 
@@ -138,11 +174,11 @@ def _download_latest(progress=None) -> Path:
         raise RuntimeError(
             f"GitHub güncelleme sunucusu HTTP {exc.code}: {exc.reason}"
         ) from exc
-    except Exception:
-        raise
     finally:
-        if not target.exists() or (total and downloaded != total):
-            target.unlink(missing_ok=True)
+        # Keep the completed EXE until the PowerShell replacement process moves it.
+        if not target.exists():
+            for item in temp_dir.glob("*"):
+                item.unlink(missing_ok=True)
             try:
                 temp_dir.rmdir()
             except OSError:
@@ -217,7 +253,7 @@ try {
 
 
 def start_update(parent, button=None) -> None:
-    """Download the latest GitHub Release directly and install it."""
+    """Download the latest GitHub Release in small parts and install it."""
     if getattr(parent, "_update_running", False):
         return
 
@@ -240,7 +276,6 @@ def start_update(parent, button=None) -> None:
     def worker() -> None:
         try:
             current = Path(sys.executable).resolve()
-
             parent.after(0, lambda: set_button("İNDİRİLİYOR...", False))
 
             def report(done: int, total: int, speed: float) -> None:
