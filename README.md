@@ -120,3 +120,6 @@ Self-updater, güncelleme dosyasını dört paralel indirme hattıyla ve parça 
 4. Her faz küçük ve test edilebilir olacak.
 5. Her başarılı fazdan sonra README güncellenecek.
 6. Windows EXE build ve startup smoke test geçmeden release yayınlanmayacak.
+
+
+<!-- GitHub updater compatibility build test -->
