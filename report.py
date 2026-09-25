@@ -87,8 +87,11 @@ def _header_table(styles, page_no: str, updated: str) -> Table:
         ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.black),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("ALIGN", (1, 0), (1, 0), "CENTER"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 5),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ("LEFTPADDING", (0, 0), (1, 0), 5),
+        ("RIGHTPADDING", (0, 0), (1, 0), 5),
+        # Sagdaki Dokuman No tablosu kendi hucre sinirlarinin disina tasmasin.
+        ("LEFTPADDING", (2, 0), (2, 0), 0),
+        ("RIGHTPADDING", (2, 0), (2, 0), 0),
     ]))
     return header
 
