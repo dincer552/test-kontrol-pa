@@ -123,7 +123,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ["Sipariş No / Order No", _value(state.order_no)],
         ["Proje Adı / Project Name", _value(state.project_name)],
         ["AHU Adı / AHU Name", _value(state.ahu_name)],
-    ], (52 * mm, 142 * mm)))
+    ], (52 * mm, 134 * mm)))
 
     # FANLAR: baslik tablo icinde, baslik hucreleri acik gri ve kalin.
     fan_rows = [
@@ -139,7 +139,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
     ]
     fan_table = _grid(
         fan_rows,
-        (58 * mm, 37 * mm, 58 * mm, 37 * mm),
+        (56 * mm, 37 * mm, 56 * mm, 37 * mm),
         7,
     )
     fan_table.setStyle(TableStyle([
@@ -157,6 +157,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
     ]))
     story.append(fan_table)
+    story.append(Spacer(1, 5 * mm))
 
     # MODULLER: fanlar bolumundeki sade tablo tasarimi.
     module_items = []
@@ -181,7 +182,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
             left = module_items[i]
             right = module_items[i + 1] if i + 1 < len(module_items) else ("", "")
             module_rows.append([left[0], left[1], right[0], right[1]])
-        module_table = _grid(module_rows, (48 * mm, 48 * mm, 48 * mm, 50 * mm), 7)
+        module_table = _grid(module_rows, (56 * mm, 37 * mm, 56 * mm, 37 * mm), 7)
         module_table.setStyle(TableStyle([
             ("SPAN", (0, 0), (-1, 0)),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
@@ -192,6 +193,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
             ("FONTNAME", (2, 1), (2, -1), "Helvetica-Bold"),
         ]))
         story.append(module_table)
+        story.append(Spacer(1, 5 * mm))
 
     # DAMPERLER: sadece adedi 0'dan buyuk olanlar.
     active_dampers = []
@@ -224,6 +226,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
             ("FONTNAME", (2, 1), (2, -1), "Helvetica-Bold"),
         ]))
         story.append(damper_table)
+        story.append(Spacer(1, 5 * mm))
 
     filter_rows = [["FILTRELER / FILTERS", "", "", ""]]
     filter_items = [(name, _checked(state.filters.get(name, False))) for name in FILTER_IDS]
@@ -242,6 +245,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ("FONTNAME", (2, 1), (2, -1), "Helvetica-Bold"),
     ]))
     story.append(filter_table)
+    story.append(Spacer(1, 5 * mm))
 
     story.append(PageBreak())
     story.extend([_header_table(styles, "2/2", now), Spacer(1, 4)])
