@@ -89,7 +89,7 @@ EXE değiştirme → kullanıcıya yeniden başlatma uyarısı → manuel yenide
 ```
 
 Güncelleme manifest adresi:
-`http://20.91.245.7/pdf-updates/test-kontrol/manifest.json`
+`https://dinceryuksek.com/pdf-updates/test-kontrol/manifest.json`
 
 Self-updater, güncelleme dosyasını dört paralel indirme hattıyla ve parça bazında yeniden denemeyle indirir; toplam boyut ve SHA-256 doğrulamasından sonra çalışan EXE'yi yardımcı PowerShell süreciyle değiştirir.
 
