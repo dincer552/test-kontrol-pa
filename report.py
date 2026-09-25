@@ -245,8 +245,6 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
 
     story.append(PageBreak())
     story.extend([_header_table(styles, "2/2", now), Spacer(1, 4)])
-    story.append(Paragraph(_ascii(f"SENSORLER / SENSORS &nbsp;&nbsp;&nbsp; Tarih/Date: <b>{now}</b>"), styles["small_bold"]))
-
     sensor_labels = [
         ("Fresh Air Sensor", "Fresh Air Temp. Sensor"),
         ("Supply Air Sensor", "Supply Air Temp. Sensor"),
@@ -281,10 +279,19 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
     left, right = sensor_rows[:half], sensor_rows[half:]
     while len(right) < len(left):
         right.append(["", ""])
-    story.append(_grid(
-        [[a, b, c, d] for (a, b), (c, d) in zip(left, right)],
-        (49 * mm, 47 * mm, 49 * mm, 47 * mm),
-    ))
+    sensor_rows_table = [["SENSORLER / SENSORS", "", "", ""]]
+    sensor_rows_table.extend([[a, b, c, d] for (a, b), (c, d) in zip(left, right)])
+    sensor_table = _grid(sensor_rows_table, (49 * mm, 47 * mm, 49 * mm, 47 * mm), 7)
+    sensor_table.setStyle(TableStyle([
+        ("SPAN", (0, 0), (-1, 0)),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 9),
+        ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#eeeeee")),
+        ("BACKGROUND", (2, 1), (2, -1), colors.HexColor("#eeeeee")),
+        ("FONTNAME", (0, 1), (0, -1), "Helvetica-Bold"),
+        ("FONTNAME", (2, 1), (2, -1), "Helvetica-Bold"),
+    ]))
+    story.append(sensor_table)
 
     story.append(Paragraph("ELEKTRIKLI ISITICI / ELECTRICAL HEATER", styles["section"]))
     heater = [["Electrical Heater", "R(A)", "S(A)", "T(A)"]]
@@ -297,8 +304,17 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
             _value(state.electrical_values[3 + stage]),
             _value(state.electrical_values[6 + stage]),
         ])
-    ht = _grid(heater, (42 * mm, 24 * mm, 24 * mm, 24 * mm))
-    ht.setStyle(TableStyle([("ALIGN", (1, 0), (-1, -1), "CENTER"), ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold")]))
+    heater = [["ELEKTRIKLI ISITICI / ELECTRICAL HEATER", "", "", ""], *heater]
+    ht = _grid(heater, (42 * mm, 24 * mm, 24 * mm, 24 * mm), 7)
+    ht.setStyle(TableStyle([
+        ("SPAN", (0, 0), (-1, 0)),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 9),
+        ("BACKGROUND", (0, 2), (0, -1), colors.HexColor("#eeeeee")),
+        ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
+        ("ALIGN", (1, 2), (-1, -1), "CENTER"),
+        ("ALIGN", (1, 1), (-1, 1), "CENTER"),
+    ]))
     story.append(ht)
 
     story.extend([
