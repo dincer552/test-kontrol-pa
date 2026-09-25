@@ -164,13 +164,22 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ))
 
     story.append(Paragraph("DAMPERLER / DAMPERS", styles["section"]))
-    damper_rows = []
-    for left, right in zip(DAMPER_NAMES[::2], DAMPER_NAMES[1::2]):
-        damper_rows.append([
-            f"{left} Damper", state.damper_counts.get(left, 0),
-            f"{right} Damper", state.damper_counts.get(right, 0),
-        ])
-    story.append(_grid(damper_rows, (48 * mm, 48 * mm, 48 * mm, 50 * mm)))
+    # Adedi 0 olan damperleri raporda gosterme.
+    active_dampers = [
+        (name, state.damper_counts.get(name, 0))
+        for name in DAMPER_NAMES
+        if state.damper_counts.get(name, 0) > 0
+    ]
+    if active_dampers:
+        damper_rows = []
+        for i in range(0, len(active_dampers), 2):
+            left = active_dampers[i]
+            right = active_dampers[i + 1] if i + 1 < len(active_dampers) else ("", "")
+            damper_rows.append([
+                f"{left[0]} Damper", left[1],
+                f"{right[0]} Damper", right[1],
+            ])
+        story.append(_grid(damper_rows, (48 * mm, 48 * mm, 48 * mm, 50 * mm)))
 
     story.append(Paragraph("FILTRELER / FILTERS", styles["section"]))
     story.append(Paragraph(_ascii(
