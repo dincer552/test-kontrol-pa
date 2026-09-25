@@ -81,7 +81,7 @@ def _header_table(styles, page_no: str, updated: str) -> Table:
         "OTOMASYON TEST RAPORU<br/><font size='9'>AUTOMATION TEST REPORT</font>",
         styles["title"],
     )
-    header = Table([[logo, title, meta_table]], colWidths=[42 * mm, 92 * mm, 60 * mm])
+    header = Table([[logo, title, meta_table]], colWidths=[42 * mm, 84 * mm, 60 * mm])
     header.setStyle(TableStyle([
         ("BOX", (0, 0), (-1, -1), 0.8, colors.black),
         ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.black),
@@ -123,12 +123,14 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ["Sipariş No / Order No", _value(state.order_no)],
         ["Proje Adı / Project Name", _value(state.project_name)],
         ["AHU Adı / AHU Name", _value(state.ahu_name)],
-    ], (52 * mm, 134 * mm)))
+    ], (56 * mm, 130 * mm)))
 
     # FANLAR: baslik tablo icinde, baslik hucreleri acik gri ve kalin.
+    fan_value = _value(state.fan_type)
+    fan_value_cell = Paragraph(_ascii(fan_value), styles["small"])
     fan_rows = [
         ["FANLAR / FANS", "", "", ""],
-        ["Fan Tipi / Fan Type", _value(state.fan_type),
+        ["Fan Tipi / Fan Type", fan_value_cell,
          "Vantilator / Ventilator", "Var"],
         ["Debi Kontrol / Air Flow Control", _checked(state.airflow_control_ok),
          "Ufleme Fan Sayisi / Supply Fan Number", state.supply_fan_count],
@@ -215,7 +217,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
                 f"{right[0]} Damper" if right[0] else "",
                 right[1] if right[0] else "",
             ])
-        damper_table = _grid(damper_rows, (48 * mm, 48 * mm, 48 * mm, 50 * mm), 7)
+        damper_table = _grid(damper_rows, (56 * mm, 37 * mm, 56 * mm, 37 * mm), 7)
         damper_table.setStyle(TableStyle([
             ("SPAN", (0, 0), (-1, 0)),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
@@ -234,7 +236,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         left = filter_items[i]
         right = filter_items[i + 1] if i + 1 < len(filter_items) else ("", "")
         filter_rows.append([left[0], left[1], right[0], right[1]])
-    filter_table = _grid(filter_rows, (48 * mm, 48 * mm, 48 * mm, 50 * mm), 7)
+    filter_table = _grid(filter_rows, (56 * mm, 37 * mm, 56 * mm, 37 * mm), 7)
     filter_table.setStyle(TableStyle([
         ("SPAN", (0, 0), (-1, 0)),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
@@ -248,7 +250,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
     story.append(Spacer(1, 5 * mm))
 
     story.append(PageBreak())
-    story.extend([_header_table(styles, "2/2", now), Spacer(1, 4)])
+    story.extend([_header_table(styles, "2/2", now), Spacer(1, 5 * mm)])
     sensor_labels = [
         ("Fresh Air Sensor", "Fresh Air Temp. Sensor"),
         ("Supply Air Sensor", "Supply Air Temp. Sensor"),
@@ -285,7 +287,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         right.append(["", ""])
     sensor_rows_table = [["SENSORLER / SENSORS", "", "", ""]]
     sensor_rows_table.extend([[a, b, c, d] for (a, b), (c, d) in zip(left, right)])
-    sensor_table = _grid(sensor_rows_table, (49 * mm, 47 * mm, 49 * mm, 47 * mm), 7)
+    sensor_table = _grid(sensor_rows_table, (56 * mm, 37 * mm, 56 * mm, 37 * mm), 7)
     sensor_table.setStyle(TableStyle([
         ("SPAN", (0, 0), (-1, 0)),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
@@ -297,7 +299,6 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
     ]))
     story.append(sensor_table)
 
-    story.append(Paragraph("ELEKTRIKLI ISITICI / ELECTRICAL HEATER", styles["section"]))
     heater = [["Electrical Heater", "R(A)", "S(A)", "T(A)"]]
     stage_count = max(1, min(3, int(state.electrical_stage_count or 1)))
     for stage in range(stage_count):
@@ -309,12 +310,13 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
             _value(state.electrical_values[6 + stage]),
         ])
     heater = [["ELEKTRIKLI ISITICI / ELECTRICAL HEATER", "", "", ""], *heater]
-    ht = _grid(heater, (42 * mm, 24 * mm, 24 * mm, 24 * mm), 7)
+    ht = _grid(heater, (56 * mm, 37 * mm, 56 * mm, 37 * mm), 7)
     ht.setStyle(TableStyle([
         ("SPAN", (0, 0), (-1, 0)),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("FONTSIZE", (0, 0), (-1, 0), 9),
         ("BACKGROUND", (0, 2), (0, -1), colors.HexColor("#eeeeee")),
+        ("BACKGROUND", (0, 1), (3, 1), colors.HexColor("#eeeeee")),
         ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
         ("ALIGN", (1, 2), (-1, -1), "CENTER"),
         ("ALIGN", (1, 1), (-1, 1), "CENTER"),
