@@ -2,8 +2,8 @@
 
 Updates are downloaded directly from the latest GitHub Release.
 No VM manifest, SHA-256 verification, chunk verification, or digest comparison
-is used. Clicking GUNCELLE downloads the current Test_Kontrol_latest.exe and
-replaces the running executable after it exits.
+is used. The download is only accepted when the HTTP Content-Length matches
+the number of bytes actually received.
 """
 from __future__ import annotations
 
@@ -27,7 +27,6 @@ UPDATE_URL = (
 USER_AGENT = "Test-Kontrol-Updater"
 
 
-
 def check_for_update(current_exe=None) -> dict:
     """Keep the existing app UI compatible while using direct GitHub downloads."""
     return {
@@ -39,6 +38,7 @@ def check_for_update(current_exe=None) -> dict:
         "file": "Test_Kontrol_latest.exe",
         "chunks": [],
     }
+
 
 def _download_latest(progress=None) -> Path:
     temp_dir = Path(tempfile.mkdtemp(prefix="test_kontrol_update_"))
@@ -57,7 +57,8 @@ def _download_latest(progress=None) -> Path:
 
     try:
         with urllib.request.urlopen(request, timeout=180) as response:
-            total = int(response.headers.get("Content-Length") or 0)
+            total_header = response.headers.get("Content-Length")
+            total = int(total_header) if total_header and total_header.isdigit() else 0
             downloaded = 0
             started_at = time.monotonic()
 
@@ -73,14 +74,30 @@ def _download_latest(progress=None) -> Path:
                         speed = downloaded / max(time.monotonic() - started_at, 0.001)
                         progress(downloaded, total, speed)
 
-        if not target.exists() or target.stat().st_size <= 0:
+        if not target.exists() or downloaded <= 0:
             raise RuntimeError("GitHub'dan güncelleme dosyası indirilemedi.")
+
+        if total and downloaded != total:
+            raise RuntimeError(
+                f"Güncelleme eksik indirildi ({downloaded:,} / {total:,} byte). "
+                "Mevcut program korunuyor."
+            )
 
         return target
 
     except urllib.error.HTTPError as exc:
+        target.unlink(missing_ok=True)
+        try:
+            temp_dir.rmdir()
+        except OSError:
+            pass
         raise RuntimeError(f"GitHub güncelleme sunucusu HTTP {exc.code}: {exc.reason}") from exc
     except urllib.error.URLError as exc:
+        target.unlink(missing_ok=True)
+        try:
+            temp_dir.rmdir()
+        except OSError:
+            pass
         raise RuntimeError(f"GitHub güncelleme sunucusuna bağlanılamadı: {exc.reason}") from exc
     except Exception:
         target.unlink(missing_ok=True)
