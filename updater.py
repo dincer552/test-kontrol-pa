@@ -27,6 +27,19 @@ UPDATE_URL = (
 USER_AGENT = "Test-Kontrol-Updater"
 
 
+
+def check_for_update(current_exe=None) -> dict:
+    """Keep the existing app UI compatible while using direct GitHub downloads."""
+    return {
+        "available": True,
+        "version": "latest",
+        "build": "",
+        "size": 0,
+        "sha256": "",
+        "file": "Test_Kontrol_latest.exe",
+        "chunks": [],
+    }
+
 def _download_latest(progress=None) -> Path:
     temp_dir = Path(tempfile.mkdtemp(prefix="test_kontrol_update_"))
     target = temp_dir / "Test_Kontrol_update.exe"
