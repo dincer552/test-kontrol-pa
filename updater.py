@@ -26,7 +26,7 @@ from build_info import BUILD_VERSION
 REPO = "dincer552/test-kontrol-pa"
 API_URL = f"https://api.github.com/repos/{REPO}/releases/tags/latest"
 USER_AGENT = "Test-Kontrol-Updater"
-PART_RE = re.compile(r"^Test_Kontrol_latest\.part(\\d+)$")
+PART_RE = re.compile(r"^Test_Kontrol_latest\.part(\d+)$")
 
 
 def check_for_update(current_exe=None) -> dict:
