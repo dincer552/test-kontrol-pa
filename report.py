@@ -134,20 +134,34 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
     ], (43 * mm, 48 * mm, 55 * mm, 48 * mm)))
 
     story.append(Paragraph("MODULLER / MODULES", styles["section"]))
-    module_items = [
-        ("Rotor", _checked(state.rotor_enabled)),
-        ("Cevrimsel Batarya / Run Around", _checked(state.run_around)),
-        ("DX Batarya", _checked(state.dx_enabled)),
-        ("Nemlendirici", _checked(state.humidifier_enabled)),
-        ("Elektrikli Isitici", _checked(state.electrical_heater)),
-        ("Room BMS", _checked(state.room_bms)),
-        ("DX Kademe Sayisi", state.dx_stage if state.dx_enabled else "-"),
-        ("Nem. Kademe Sayisi", state.humidifier_stage if state.humidifier_enabled else "-"),
-    ]
-    story.append(_grid(
-        [[a, b, c, d] for (a, b), (c, d) in zip(module_items[::2], module_items[1::2])],
-        (48 * mm, 48 * mm, 48 * mm, 50 * mm),
-    ))
+    # Sadece aktif modulleri rapora yaz. Pasif moduller ve onlara ait
+    # kademe satirlari raporda hic gorunmesin.
+    module_items = []
+    if state.rotor_enabled:
+        module_items.append(("Rotor", _checked(True)))
+    if state.run_around:
+        module_items.append(("Cevrimsel Batarya / Run Around", _checked(True)))
+    if state.dx_enabled:
+        module_items.append(("DX Batarya", _checked(True)))
+        module_items.append(("DX Kademe Sayisi", state.dx_stage))
+    if state.humidifier_enabled:
+        module_items.append(("Nemlendirici", _checked(True)))
+        module_items.append(("Nem. Kademe Sayisi", state.humidifier_stage))
+    if state.electrical_heater:
+        module_items.append(("Elektrikli Isitici", _checked(True)))
+    if state.room_bms:
+        module_items.append(("Room BMS", _checked(True)))
+
+    if module_items:
+        module_rows = []
+        for i in range(0, len(module_items), 2):
+            left = module_items[i]
+            right = module_items[i + 1] if i + 1 < len(module_items) else ("", "")
+            module_rows.append([left[0], left[1], right[0], right[1]])
+        story.append(_grid(
+            module_rows,
+            (48 * mm, 48 * mm, 48 * mm, 50 * mm),
+        ))
 
     story.append(Paragraph("DAMPERLER / DAMPERS", styles["section"]))
     damper_rows = []
