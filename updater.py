@@ -30,17 +30,32 @@ PART_RE = re.compile(r"^Test_Kontrol_latest\.part(\d+)$")
 
 
 def check_for_update(current_exe=None) -> dict:
-    """Keep the existing app UI compatible with the direct GitHub updater."""
+    """Read the latest GitHub Release so the UI can show its actual build version."""
+    request = urllib.request.Request(
+        API_URL,
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "application/vnd.github+json",
+            "Cache-Control": "no-cache",
+        },
+    )
+
+    with urllib.request.urlopen(request, timeout=30) as response:
+        payload = json.load(response)
+
+    version = str(payload.get("tag_name") or "").strip()
+    if not version:
+        raise RuntimeError("GitHub Release sürümü okunamadı.")
+
     return {
         "available": True,
-        "version": "latest",
-        "build": "",
+        "version": version,
+        "build": version,
         "size": 0,
         "sha256": "",
         "file": "Test_Kontrol_latest.exe",
         "chunks": [],
     }
-
 
 def _release_parts() -> list[dict]:
     request = urllib.request.Request(
