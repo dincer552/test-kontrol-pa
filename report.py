@@ -213,8 +213,18 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ("Return CO2 Sensor", "Return CO2 Sensor"),
         ("Return CO2 Air Sensor", "Return Air CO2 Temp. Sensor"),
     ]
-    sensor_rows = [[label, _sensor_value(state, name)] for name, label in sensor_labels if name in SENSOR_NAMES]
-    sensor_rows.extend([[f"Manuel / {name}", _value(value)] for name, value in state.manual_sensors.items()])
+    # Degeri olmayan sensörleri raporda gosterme.
+    sensor_rows = []
+    for name, label in sensor_labels:
+        if name not in SENSOR_NAMES:
+            continue
+        value = _value(state.sensors.get(name, "-"))
+        if value != "-":
+            sensor_rows.append([label, value])
+    for name, value in state.manual_sensors.items():
+        value_text = _value(value)
+        if value_text != "-":
+            sensor_rows.append([f"Manuel / {name}", value_text])
     half = (len(sensor_rows) + 1) // 2
     left, right = sensor_rows[:half], sensor_rows[half:]
     while len(right) < len(left):
