@@ -151,14 +151,16 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 self._update_available = available
                 button = self._update_button
                 if button is not None:
-                    button.configure(text="Güncelle", state="normal" if available else "disabled")
+                    button.configure(
+                        text="Güncelle",
+                        state="normal" if available else "disabled",
+                    )
                 build_label = self._update_build_label
                 if build_label is not None:
+                    # Only show a version when an actually newer build exists.
                     if available and update:
                         version = str(update.get("version") or "").strip()
                         display_version = version.lstrip("vV")
-                        if display_version.startswith("0.1.0."):
-                            display_version = "1.0." + display_version[len("0.1.0."):]
                         label = f"v{display_version}" if display_version else "Yeni sürüm"
                         build_label.configure(text=label)
                     else:
