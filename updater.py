@@ -29,8 +29,30 @@ USER_AGENT = "Test-Kontrol-Updater"
 PART_RE = re.compile(r"^Test_Kontrol_latest\.part(\d+)$")
 
 
+def _version_tuple(value: str) -> tuple[int, ...]:
+    match = re.search(r"(\d+(?:\.\d+)+)", str(value or ""))
+    if not match:
+        return ()
+    return tuple(int(part) for part in match.group(1).split("."))
+
+
+def _release_version(payload: dict) -> str:
+    # Release tag is intentionally "latest"; the real build number is in
+    # the release name, e.g. "Test Kontrol v0.1.0.222 - Latest".
+    name = str(payload.get("name") or "").strip()
+    match = re.search(r"v?(\d+(?:\.\d+)+)", name, re.IGNORECASE)
+    if match:
+        return f"v{match.group(1)}"
+
+    tag = str(payload.get("tag_name") or "").strip()
+    if tag.lower() != "latest" and _version_tuple(tag):
+        return tag if tag.lower().startswith("v") else f"v{tag}"
+
+    raise RuntimeError("GitHub Release build sürümü okunamadı.")
+
+
 def check_for_update(current_exe=None) -> dict:
-    """Read the latest GitHub Release so the UI can show its actual build version."""
+    """Compare the installed build with the real build number in the latest Release."""
     request = urllib.request.Request(
         API_URL,
         headers={
@@ -43,14 +65,22 @@ def check_for_update(current_exe=None) -> dict:
     with urllib.request.urlopen(request, timeout=30) as response:
         payload = json.load(response)
 
-    version = str(payload.get("tag_name") or "").strip()
-    if not version:
-        raise RuntimeError("GitHub Release sürümü okunamadı.")
+    latest_version = _release_version(payload)
+    current_version = str(BUILD_VERSION or "").strip()
+    latest_tuple = _version_tuple(latest_version)
+    current_tuple = _version_tuple(current_version)
+
+    if not latest_tuple:
+        raise RuntimeError("GitHub Release build sürümü okunamadı.")
+
+    # No newer build = no update. This prevents downloading/installing the
+    # exact same "latest" EXE repeatedly.
+    available = bool(current_tuple and latest_tuple > current_tuple)
 
     return {
-        "available": True,
-        "version": version,
-        "build": version,
+        "available": available,
+        "version": latest_version,
+        "build": latest_version,
         "size": 0,
         "sha256": "",
         "file": "Test_Kontrol_latest.exe",
