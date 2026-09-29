@@ -52,8 +52,19 @@ def _header_footer(canvas, doc) -> None:
 
 
 def _grid(rows, widths, font_size=7.5) -> Table:
-    rows = [[_ascii(str(cell)) for cell in row] for row in rows]
-    table = Table(rows, colWidths=widths)
+    # Preserve ReportLab flowables (Paragraph, Image, etc.). Converting every
+    # cell with str() would print the Paragraph object's Python representation.
+    normalized_rows = []
+    for row in rows:
+        normalized_row = []
+        for cell in row:
+            if isinstance(cell, str):
+                normalized_row.append(_ascii(cell))
+            else:
+                normalized_row.append(cell)
+        normalized_rows.append(normalized_row)
+
+    table = Table(normalized_rows, colWidths=widths)
     table.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.6, colors.black),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
