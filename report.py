@@ -129,12 +129,23 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
 
     now = datetime.now().strftime("%d-%b-%y %H:%M:%S")
     story = [_header_table(styles, "1/2", now), Spacer(1, 4)]
-    story.append(Paragraph(_ascii(f"PROJE / PROJECT &nbsp;&nbsp;&nbsp; Tarih/Date: <b>{now}</b>"), styles["small_bold"]))
-    story.append(_grid([
-        ["Sipariş No / Order No", _value(state.order_no)],
-        ["Proje Adı / Project Name", _value(state.project_name)],
-        ["AHU Adı / AHU Name", _value(state.ahu_name)],
-    ], (56 * mm, 130 * mm)))
+    # PROJE: grup basligi tablo icinde; bilgiler kendi kutularinda
+    # baslik ustte, deger altta olacak sekilde gosterilir.
+    project_rows = [
+        ["PROJE / PROJECT", "", ""],
+        ["Sipariş No / Order No", "Proje Adı / Project Name", "AHU Adı / AHU Name"],
+        [_value(state.order_no), _value(state.project_name), _value(state.ahu_name)],
+    ]
+    project_table = _grid(project_rows, (62 * mm, 62 * mm, 62 * mm), 7)
+    project_table.setStyle(TableStyle([
+        ("SPAN", (0, 0), (-1, 0)),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 9),
+        ("BACKGROUND", (0, 1), (-1, 1), colors.HexColor("#eeeeee")),
+        ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ]))
+    story.append(project_table)
 
     # FANLAR: baslik tablo icinde, baslik hucreleri acik gri ve kalin.
     fan_value = _value(state.fan_type)
