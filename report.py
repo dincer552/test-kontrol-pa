@@ -321,6 +321,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ("FONTNAME", (2, 1), (2, -1), "Helvetica-Bold"),
     ]))
     story.append(sensor_table)
+    story.append(Spacer(1, 5 * mm))
 
     heater = [["Electrical Heater", "R(A)", "S(A)", "T(A)"]]
     stage_count = max(1, min(3, int(state.electrical_stage_count or 1)))
@@ -346,11 +347,54 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
     ]))
     story.append(ht)
 
-    story.extend([
-        Spacer(1, 10),
-        Paragraph(f"<b>Hazirlayan / Prepared by:</b> {_value(state.user_name)}", styles["small"]),
-        Paragraph(f"<b>Not / Note:</b> {_value(state.notlar)}", styles["small"]),
-    ])
+    # Pre elektrikli isitici: ana elektrikli isitici ile ayni tablo mantigi.
+    if state.pre_electrical_heater:
+        story.append(Spacer(1, 5 * mm))
+        pre_heater = [["Pre Electrical Heater", "R(A)", "S(A)", "T(A)"]]
+        pre_stage_count = max(1, min(3, int(state.pre_electrical_stage_count or 1)))
+        for stage in range(pre_stage_count):
+            stage_number = stage + 1
+            pre_heater.append([
+                f"{stage_number}.Kademe",
+                _value(state.pre_electrical_values[stage]),
+                _value(state.pre_electrical_values[3 + stage]),
+                _value(state.pre_electrical_values[6 + stage]),
+            ])
+        pre_heater = [["PRE ELEKTRIKLI ISITICI / PRE ELECTRICAL HEATER", "", "", ""], *pre_heater]
+        pht = _grid(pre_heater, (56 * mm, 37 * mm, 56 * mm, 37 * mm), 7)
+        pht.setStyle(TableStyle([
+            ("SPAN", (0, 0), (-1, 0)),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 9),
+            ("BACKGROUND", (0, 1), (3, 1), colors.HexColor("#eeeeee")),
+            ("BACKGROUND", (0, 2), (0, -1), colors.HexColor("#eeeeee")),
+            ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
+            ("ALIGN", (1, 1), (-1, -1), "CENTER"),
+        ]))
+        story.append(pht)
+
+    # Hazirlayan / Not: sayfanin sag alt tarafinda tek bir kutu.
+    story.append(Spacer(1, 5 * mm))
+    prepared_note = Table(
+        [[
+            "",
+            Paragraph(
+                f"<b>Hazirlayan / Prepared by:</b> {_value(state.user_name)}<br/>"
+                f"<b>Not / Note:</b> {_value(state.notlar)}",
+                styles["small"],
+            ),
+        ]],
+        colWidths=[106 * mm, 80 * mm],
+    )
+    prepared_note.setStyle(TableStyle([
+        ("BOX", (1, 0), (1, 0), 0.6, colors.black),
+        ("VALIGN", (1, 0), (1, 0), "TOP"),
+        ("LEFTPADDING", (1, 0), (1, 0), 5),
+        ("RIGHTPADDING", (1, 0), (1, 0), 5),
+        ("TOPPADDING", (1, 0), (1, 0), 5),
+        ("BOTTOMPADDING", (1, 0), (1, 0), 5),
+    ]))
+    story.append(prepared_note)
     doc.build(story, onFirstPage=_header_footer, onLaterPages=_header_footer)
     return output
 
