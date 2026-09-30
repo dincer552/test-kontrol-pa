@@ -74,11 +74,25 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._update_build_label: ttk.Label | None = None
         # Test raporu için varsayılan kayıt klasörü, eklenen AHU PDF'sinin klasörüdür.
         self._report_initial_dir: str | None = None
+        self._app_icon_image: tk.PhotoImage | None = None
+        self._init_app_icon()
         self._init_modern_theme()
         self._build_ui()
         self._configure_tab_flow()
         self._update_statuses()
         self.after(2000, self._schedule_update_check)
+
+    def _init_app_icon(self) -> None:
+        icon_path = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / "app_icon.png"
+        if not icon_path.exists():
+            return
+        try:
+            self._app_icon_image = tk.PhotoImage(file=str(icon_path))
+            # Use a compact 32x32 version for the title bar and header.
+            self._app_icon_image = self._app_icon_image.subsample(16, 16)
+            self.iconphoto(True, self._app_icon_image)
+        except (tk.TclError, OSError):
+            self._app_icon_image = None
 
     def _init_modern_theme(self) -> None:
         self.configure(bg="#f0f4f9")
@@ -192,7 +206,10 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         # Header mirrors PDF kW Selector: compact white card, blue badge and title.
         header = ttk.Frame(self, style="White.TFrame", padding=(12, 8))
         header.pack(fill="x", pady=(0, 8))
-        tk.Label(header, text="Test", bg="#1a56db", fg="#ffffff", font=("Segoe UI", 10, "bold"), width=5, height=1).pack(side="left", padx=(0, 10))
+        if self._app_icon_image is not None:
+            tk.Label(header, image=self._app_icon_image, bg="#ffffff", borderwidth=0).pack(side="left", padx=(0, 10))
+        else:
+            tk.Label(header, text="T", bg="#1a56db", fg="#ffffff", font=("Segoe UI", 10, "bold"), width=5, height=1).pack(side="left", padx=(0, 10))
         title_box = ttk.Frame(header, style="White.TFrame")
         title_box.pack(side="left")
         ttk.Label(title_box, text="Test Kontrol", style="Title.TLabel").pack(anchor="w")
