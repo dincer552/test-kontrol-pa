@@ -16,7 +16,7 @@ except ImportError:
 
 from models import FILTER_IDS, TestControlState
 from build_info import BUILD_VERSION, BUILD_SHA
-from updater import check_for_update, start_update
+from updater import check_for_update, start_update, start_recovery_update
 from connection import C600ConnectionMixin
 from damper import DamperTabMixin
 from sensors import SensorTabMixin
@@ -1137,5 +1137,60 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
     def _report(self) -> None:
         self._generate_test_report()
 
+def _show_startup_recovery(exc: Exception) -> None:
+    root = tk.Tk()
+    root.title("TEST KONTROL - Başlangıç Hatası")
+    root.geometry("620x300")
+    root.minsize(620, 300)
+    root.configure(bg="#f8fafc")
+
+    tk.Label(
+        root,
+        text="TEST KONTROL başlatılamadı",
+        bg="#f8fafc",
+        fg="#b91c1c",
+        font=("Segoe UI", 13, "bold"),
+    ).pack(anchor="w", padx=24, pady=(22, 8))
+
+    tk.Label(
+        root,
+        text="Program açılırken bir hata oluştu. Güncelleme denetleyerek son sürümü kurabilirsiniz.",
+        bg="#f8fafc",
+        fg="#334155",
+        font=("Segoe UI", 9),
+        wraplength=570,
+        justify="left",
+    ).pack(anchor="w", padx=24)
+
+    status = tk.Label(
+        root,
+        text="Hata: " + str(exc),
+        bg="#f1f5f9",
+        fg="#475569",
+        font=("Consolas", 8),
+        anchor="w",
+        justify="left",
+        wraplength=570,
+        padx=10,
+        pady=10,
+    )
+    status.pack(fill="x", padx=24, pady=18)
+
+    button_frame = tk.Frame(root, bg="#f8fafc")
+    button_frame.pack(fill="x", padx=24)
+
+    update_button = ttk.Button(button_frame, text="GÜNCELLEME DENETLE")
+    update_button.pack(side="left")
+    update_button.configure(
+        command=lambda: start_recovery_update(root, status, update_button)
+    )
+
+    ttk.Button(button_frame, text="KAPAT", command=root.destroy).pack(side="right")
+    root.mainloop()
+
+
 if __name__ == "__main__":
-    TestControlApp().mainloop()
+    try:
+        TestControlApp().mainloop()
+    except Exception as exc:
+        _show_startup_recovery(exc)
