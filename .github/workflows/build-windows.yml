@@ -26,7 +26,7 @@ jobs:
           cache-dependency-path: requirements.txt
 
       - name: Install dependencies
-        run: python -m pip install -r requirements.txt pyinstaller pytest
+        run: python -m pip install -r requirements.txt pyinstaller pytest Pillow
 
       - name: Run tests
         run: python -m pytest -q
@@ -43,14 +43,17 @@ jobs:
           ) -Encoding UTF8
           python -c "import build_info; assert build_info.BUILD_VERSION == '$env:APP_VERSION'; print(build_info.BUILD_VERSION, build_info.BUILD_SHA)"
 
+      - name: Create application icon
+        run: python icon_builder.py
+
       - name: Compile sources
-        run: python -m py_compile app.py models.py updater.py webbrowser.py build_info.py connection.py pdf_reader.py damper.py sensors.py report.py
+        run: python -m py_compile app.py models.py updater.py webbrowser.py build_info.py connection.py pdf_reader.py damper.py sensors.py report.py icon_builder.py
 
       - name: Build EXE
         shell: pwsh
         env:
           APP_VERSION: v0.1.0.${{ github.run_number }}
-        run: pyinstaller --noconfirm --clean --onefile --windowed --collect-all tkinterdnd2 --add-data "SYSR.ST.png;." --name "Test_Kontrol_$env:APP_VERSION" app.py
+        run: pyinstaller --noconfirm --clean --onefile --windowed --collect-all tkinterdnd2 --add-data "SYSR.ST.png;." --add-data "app_icon.png;." --icon "app_icon.ico" --name "Test_Kontrol_$env:APP_VERSION" app.py
 
       - name: Smoke test packaged EXE startup
         shell: pwsh
