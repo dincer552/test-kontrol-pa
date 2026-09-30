@@ -297,6 +297,52 @@ try {
     )
 
 
+def start_recovery_update(parent, status_label=None, button=None) -> None:
+    """Emergency updater used when the main application cannot start."""
+    if getattr(parent, "_recovery_update_running", False):
+        return
+    parent._recovery_update_running = True
+
+    def set_ui(text: str, enabled: bool) -> None:
+        if status_label is not None:
+            try:
+                status_label.configure(text=text)
+            except Exception:
+                pass
+        if button is not None:
+            try:
+                button.configure(text="GÜNCELLE", state="normal" if enabled else "disabled")
+            except Exception:
+                pass
+
+    def worker() -> None:
+        try:
+            parent.after(0, lambda: set_ui("Güncelleme indiriliyor...", False))
+            current = Path(sys.executable).resolve()
+
+            def progress(done: int, total: int, speed: float) -> None:
+                percent = int(done * 100 / total) if total else 0
+                parent.after(0, lambda: set_ui(f"İndiriliyor... %{percent}", False))
+
+            downloaded = _download_latest(progress=progress)
+            _start_replacement(downloaded, current)
+
+            parent.after(
+                0,
+                lambda: messagebox.showinfo(
+                    "GÜNCELLEME HAZIR",
+                    "Güncelleme indirildi. Program şimdi kapatılacak ve yeni sürüm kurulacak.",
+                    parent=parent,
+                ),
+            )
+            parent.after(200, parent.destroy)
+        except Exception as exc:
+            parent.after(0, lambda: set_ui(f"Güncelleme başarısız: {exc}", True))
+            parent._recovery_update_running = False
+
+    parent.after(0, lambda: set_ui("Güncelleme hazırlanıyor...", False))
+    threading.Thread(target=worker, name="test-kontrol-recovery-updater", daemon=True).start()
+
 def start_update(parent, button=None) -> None:
     """Download the latest GitHub Release in small parts and install it."""
     if getattr(parent, "_update_running", False):
