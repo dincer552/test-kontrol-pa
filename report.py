@@ -146,6 +146,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
     ]))
     story.append(project_table)
+    story.append(Spacer(1, 5 * mm))
 
     # FANLAR: baslik tablo icinde, baslik hucreleri acik gri ve kalin.
     fan_value = _value(state.fan_type)
