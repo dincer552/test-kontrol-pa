@@ -159,8 +159,8 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
          "Ufleme Fan Sayisi / Supply Fan Number", state.supply_fan_count],
         ["Basinc Kontrol / Pressure Control", _checked(state.pressure_control_ok),
          "Donus Fan Sayisi / Return Fan Number", state.return_fan_count],
-        ["Ufleme Debi %25 / Supply Air Flow (%25)", _value(state.supply_airflow),
-         "Donus Debi %25 / Return Air Flow (%25)", _value(state.return_airflow)],
+        ["Aspirator Olculen Debi / Exhaust Measured Air Flow", _value(state.return_airflow),
+         "Vantilator Olculen Debi / Supply Measured Air Flow", _value(state.supply_airflow)],
     ]
     fan_table = _grid(
         fan_rows,
