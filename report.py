@@ -173,25 +173,29 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
     story.append(project_table)
     story.append(Spacer(1, 5 * mm))
 
-    # FANLAR: baslik tablo icinde, baslik hucreleri acik gri ve kalin.
-    fan_value = _value(state.fan_type)
-    fan_value_cell = Paragraph(_ascii(fan_value), styles["small"])
+    # FANLAR: sadece fan tipi, debi ve adet bilgileri.
+    # Eski tek fan_type alanindan iki tipi ayir; ayrica eski kayitlarla uyumlu kal.
+    raw_fan_type = _value(state.fan_type)
+    supply_fan_type = raw_fan_type
+    exhaust_fan_type = raw_fan_type
+    if "|" in raw_fan_type:
+        parts = [part.strip() for part in raw_fan_type.split("|")]
+        for part in parts:
+            lower = part.lower()
+            if "ventilator" in lower or "üfleme" in lower or "ufleme" in lower:
+                supply_fan_type = part.split(":", 1)[1].strip() if ":" in part else part
+            elif "aspirator" in lower or "aspiratör" in lower or "egzoz" in lower or "exhaust" in lower:
+                exhaust_fan_type = part.split(":", 1)[1].strip() if ":" in part else part
     fan_rows = [
         ["FANLAR / FANS", "", "", ""],
-        ["Fan Tipi / Fan Type", fan_value_cell,
-         "Vantilator / Ventilator", "Var"],
-        ["Debi Kontrol / Air Flow Control", _checked(state.airflow_control_ok),
-         "Ufleme Fan Sayisi / Supply Fan Number", state.supply_fan_count],
-        ["Basinc Kontrol / Pressure Control", _checked(state.pressure_control_ok),
-         "Donus Fan Sayisi / Return Fan Number", state.return_fan_count],
-        ["Egzoz Debi", _value(state.return_airflow),
-         "T. Hava Debi", _value(state.supply_airflow)],
+        ["Üfleme Fan Tipi / Supply Fan Type", _value(supply_fan_type),
+         "Egzoz Fan Tipi / Exhaust Fan Type", _value(exhaust_fan_type)],
+        ["Ü. Hava Debi / Supply Air Flow", _value(state.supply_airflow),
+         "Egzoz Debi / Exhaust Air Flow", _value(state.return_airflow)],
+        ["Üfleme Fan Sayısı / Supply Fan Number", state.supply_fan_count,
+         "Egzoz Fan Sayısı / Exhaust Fan Number", state.return_fan_count],
     ]
-    fan_table = _grid(
-        fan_rows,
-        (56 * mm, 37 * mm, 56 * mm, 37 * mm),
-        7,
-    )
+    fan_table = _grid(fan_rows, (56 * mm, 37 * mm, 56 * mm, 37 * mm), 7)
     fan_table.setStyle(TableStyle([
         ("SPAN", (0, 0), (-1, 0)),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
@@ -201,10 +205,6 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ("FONTNAME", (0, 1), (0, -1), "Helvetica-Bold"),
         ("FONTNAME", (2, 1), (2, -1), "Helvetica-Bold"),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 3),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 3),
-        ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
     ]))
     story.append(fan_table)
     story.append(Spacer(1, 5 * mm))
@@ -223,6 +223,8 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         module_items.append(("Nem. Kademe Sayisi", state.humidifier_stage))
     if state.electrical_heater:
         module_items.append(("Elektrikli Isitici", _checked(True)))
+    if state.pre_electrical_heater:
+        module_items.append(("Pre Elektrikli Isitici", _checked(True)))
     if state.room_bms:
         module_items.append(("Room BMS", _checked(True)))
 
