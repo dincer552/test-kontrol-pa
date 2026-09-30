@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+import sys
 import time
 import tkinter as tk
 from tkinter import messagebox, ttk
