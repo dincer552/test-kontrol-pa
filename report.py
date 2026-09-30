@@ -11,7 +11,7 @@ from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Flowable, Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from models import DAMPER_NAMES, FILTER_IDS, SENSOR_NAMES, TestControlState
 
@@ -49,6 +49,31 @@ def _header_footer(canvas, doc) -> None:
     canvas.drawString(15 * mm, 8 * mm, _ascii("Systemair HSK Havalandırma Endüstri San. Ve Tic. A. Ş."))
     canvas.drawRightString(195 * mm, 8 * mm, _ascii(f"Sayfa {doc.page}"))
     canvas.restoreState()
+
+
+class _FixedBottomNote(Flowable):
+    """Draw the prepared-by/note box at a fixed position on its current page."""
+    def __init__(self, content, width=80 * mm, height=18 * mm):
+        super().__init__()
+        self.content = content
+        self.width = width
+        self.height = height
+
+    def wrap(self, availWidth, availHeight):
+        return self.width, self.height
+
+    def draw(self):
+        canvas = self.canv
+        page_width, _ = A4
+        x = page_width - 12 * mm - self.width
+        y = 14 * mm
+        canvas.saveState()
+        canvas.setStrokeColor(colors.black)
+        canvas.setLineWidth(0.6)
+        canvas.rect(x, y, self.width, self.height, stroke=1, fill=0)
+        self.content.wrapOn(canvas, self.width - 10, self.height - 10)
+        self.content.drawOn(canvas, x + 5, y + self.height - 5 - self.content.height)
+        canvas.restoreState()
 
 
 def _grid(rows, widths, font_size=7.5) -> Table:
@@ -159,8 +184,8 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
          "Ufleme Fan Sayisi / Supply Fan Number", state.supply_fan_count],
         ["Basinc Kontrol / Pressure Control", _checked(state.pressure_control_ok),
          "Donus Fan Sayisi / Return Fan Number", state.return_fan_count],
-        ["Aspirator Olculen Debi / Exhaust Measured Air Flow", _value(state.return_airflow),
-         "Vantilator Olculen Debi / Supply Measured Air Flow", _value(state.supply_airflow)],
+        ["Egzoz Debi", _value(state.return_airflow),
+         "T. Hava Debi", _value(state.supply_airflow)],
     ]
     fan_table = _grid(
         fan_rows,
@@ -373,28 +398,14 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ]))
         story.append(pht)
 
-    # Hazirlayan / Not: sayfanin sag alt tarafinda tek bir kutu.
-    story.append(Spacer(1, 5 * mm))
-    prepared_note = Table(
-        [[
-            "",
-            Paragraph(
-                f"<b>Hazirlayan / Prepared by:</b> {_value(state.user_name)}<br/>"
-                f"<b>Not / Note:</b> {_value(state.notlar)}",
-                styles["small"],
-            ),
-        ]],
-        colWidths=[106 * mm, 80 * mm],
+    # Hazirlayan / Not: kutuyu her zaman bulundugu sayfanin sag altinda,
+    # sayfa altindan sabit 14 mm mesafede goster.
+    prepared_note = Paragraph(
+        f"<b>Hazirlayan / Prepared by:</b> {_value(state.user_name)}<br/>"
+        f"<b>Not / Note:</b> {_value(state.notlar)}",
+        styles["small"],
     )
-    prepared_note.setStyle(TableStyle([
-        ("BOX", (1, 0), (1, 0), 0.6, colors.black),
-        ("VALIGN", (1, 0), (1, 0), "TOP"),
-        ("LEFTPADDING", (1, 0), (1, 0), 5),
-        ("RIGHTPADDING", (1, 0), (1, 0), 5),
-        ("TOPPADDING", (1, 0), (1, 0), 5),
-        ("BOTTOMPADDING", (1, 0), (1, 0), 5),
-    ]))
-    story.append(prepared_note)
+    story.append(_FixedBottomNote(prepared_note))
     doc.build(story, onFirstPage=_header_footer, onLaterPages=_header_footer)
     return output
 
