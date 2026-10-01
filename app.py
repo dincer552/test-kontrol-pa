@@ -681,6 +681,14 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                     fan_type, point_id, value = active[0]
                     results[f"{group}_type"] = fan_type
                     results[f"{group}_count"] = str(value)
+                    if "DANFOSS" in point_id:
+                        results[f"{group}_driver"] = "Danfoss"
+                    elif "HONEYWELL" in point_id:
+                        results[f"{group}_driver"] = "Honeywell"
+                    else:
+                        results[f"{group}_driver"] = ""
+                else:
+                    results[f"{group}_driver"] = ""
                 else:
                     results[f"{group}_type"] = "Yok"
                     results[f"{group}_count"] = "0"
@@ -712,6 +720,8 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             )
             self.state.supply_fan_count = int(results["Vantilatör_count"])
             self.state.return_fan_count = int(results["Aspiratör_count"])
+            self.state.supply_fan_driver = results["Vantilatör_driver"]
+            self.state.return_fan_driver = results["Aspiratör_driver"]
             self.state.supply_airflow = results["AIR_FLOW"]
             self.state.return_airflow = results["1-AIR_FLOW"]
             self._log(f"FAN KONTROL: Aspiratör={results['Aspiratör_type']} / {results['Aspiratör_count']}", "ok")
