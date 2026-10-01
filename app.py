@@ -688,10 +688,9 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                     else:
                         results[f"{group}_driver"] = ""
                 else:
-                    results[f"{group}_driver"] = ""
-                else:
                     results[f"{group}_type"] = "Yok"
                     results[f"{group}_count"] = "0"
+                    results[f"{group}_driver"] = ""
 
             for point_id in ("AIR_FLOW", "1-AIR_FLOW"):
                 result = self._c600_json_read(point_id)
