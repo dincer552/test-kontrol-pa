@@ -279,7 +279,11 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         story.append(Spacer(1, 5 * mm))
 
     filter_rows = [["FILTRELER / FILTERS", "", "", ""]]
-    filter_items = [(name, _checked(state.filters.get(name, False))) for name in FILTER_IDS]
+    filter_items = [
+        (name, _checked(state.filters.get(name, False)))
+        for name in FILTER_IDS
+        if state.filters.get(name, False)
+    ]
     for i in range(0, len(filter_items), 2):
         left = filter_items[i]
         right = filter_items[i + 1] if i + 1 < len(filter_items) else ("", "")
