@@ -402,8 +402,10 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
     # Hazirlayan / Not: kutuyu her zaman bulundugu sayfanin sag altinda,
     # sayfa altindan sabit 14 mm mesafede goster.
     prepared_note = Paragraph(
-        f"<b>Hazirlayan / Prepared by:</b> {_value(state.user_name)}<br/>"
-        f"<b>Not / Note:</b> {_value(state.notlar)}",
+        f'<font name="Helvetica-Bold" size="9">Hazirlayan / Prepared by:</font> '
+        f'<font name="Helvetica" size="9">{_value(state.user_name)}</font><br/>'
+        f'<font name="Helvetica-Bold" size="9">Not / Note:</font> '
+        f'<font name="Helvetica" size="9">{_value(state.notlar)}</font>',
         styles["small"],
     )
     story.append(_FixedBottomNote(prepared_note))
