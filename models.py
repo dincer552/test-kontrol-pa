@@ -28,6 +28,8 @@ class TestControlState:
     return_fan_count: int = 1
     supply_airflow: str = ""
     return_airflow: str = ""
+    supply_fan_driver: str = ""
+    return_fan_driver: str = ""
     airflow_control_ok: bool = True
     pressure_control_ok: bool = False
 
