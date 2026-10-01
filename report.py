@@ -328,7 +328,8 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
     for name, value in state.manual_sensors.items():
         value_text = _value(value)
         if value_text != "-":
-            sensor_rows.append([f"Manuel / {name}", value_text])
+            unit = _value(state.manual_sensor_units.get(name, "°C"))
+            sensor_rows.append([name, f"{value_text} {unit}"])
     half = (len(sensor_rows) + 1) // 2
     left, right = sensor_rows[:half], sensor_rows[half:]
     while len(right) < len(left):
