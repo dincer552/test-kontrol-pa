@@ -183,7 +183,7 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ["Üfleme Fan Tipi", _value(supply_fan_type),
          "Egzoz Fan Tipi", _value(exhaust_fan_type)],
         ["Ü. Hava Debi (%25)", f"{_value(state.supply_airflow)} m3/h",
-         "Egzoz Debi", _value(state.return_airflow)],
+         "Egzoz Debi (%25)", f"{_value(state.return_airflow)} m3/h"],
         ["Üfleme Fan Sayısı", state.supply_fan_count,
          "Egzoz Fan Sayısı", state.return_fan_count],
     ]
