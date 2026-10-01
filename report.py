@@ -192,6 +192,12 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         ["Üfleme Fan Sayısı / Supply Fan Number", state.supply_fan_count,
          "Egzoz Fan Sayısı / Exhaust Fan Number", state.return_fan_count],
     ]
+    if _value(state.supply_fan_driver):
+        fan_rows.append(["Üfleme Sürücü Tipi / Supply Drive Type", _value(state.supply_fan_driver),
+                         "Egzoz Sürücü Tipi / Exhaust Drive Type", _value(state.return_fan_driver)])
+    elif _value(state.return_fan_driver):
+        fan_rows.append(["Üfleme Sürücü Tipi / Supply Drive Type", "-",
+                         "Egzoz Sürücü Tipi / Exhaust Drive Type", _value(state.return_fan_driver)])
     fan_table = _grid(fan_rows, (56 * mm, 37 * mm, 56 * mm, 37 * mm), 7)
     fan_table.setStyle(TableStyle([
         ("SPAN", (0, 0), (-1, 0)),
