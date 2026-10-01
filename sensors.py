@@ -245,9 +245,10 @@ class SensorTabMixin:
             var.set(self.state.sensors[name])
         for var in self._sensor_humidity_vars.values():
             var.set("-")
-        for name, (label, entry) in self._manual_sensor_rows.items():
+        for name, (label, entry, unit_box) in self._manual_sensor_rows.items():
             label.destroy()
             entry.destroy()
+            unit_box.destroy()
         self._manual_sensor_rows.clear()
         self.state.manual_sensor_units.clear()
         for name, entry_pair in self._sensor_widgets.items():
