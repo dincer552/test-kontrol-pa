@@ -717,6 +717,8 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 f"Aspiratör: {results['Aspiratör_type']} | "
                 f"Vantilatör: {results['Vantilatör_type']}"
             )
+            self.state.supply_fan_type = results["Vantilatör_type"]
+            self.state.return_fan_type = results["Aspiratör_type"]
             self.state.supply_fan_count = int(results["Vantilatör_count"])
             self.state.return_fan_count = int(results["Aspiratör_count"])
             self.state.supply_fan_driver = results["Vantilatör_driver"]
