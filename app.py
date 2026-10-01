@@ -26,16 +26,16 @@ from report import save_report_dialog
 
 FAN_TYPE_REGISTERS = {
     "Aspiratör": (
-        ("Danfoss", "EXHDANFOSSINVNU"),
-        ("EBM-Papst", "EXHEBMFANNUM"),
-        ("Ziehl-Abegg", "EXZIEHLABEGGFAN"),
-        ("Honeywell", "EXHHONEYWELLINV"),
+        ("ZIEHL-ABEGG +plug", "EXHDANFOSSINVNU"),
+        ("EBM-Papst ec", "EXHEBMFANNUM"),
+        ("Ziehl-Abegg ec", "EXZIEHLABEGGFAN"),
+        ("ZIEHL-ABEGG +plug", "EXHHONEYWELLINV"),
     ),
     "Vantilatör": (
-        ("Danfoss", "DANFOSSINVNUM"),
-        ("EBM-Papst", "EBMFANNUM"),
-        ("Ziehl-Abegg", "ZIEHLABEGGFANNU"),
-        ("Honeywell", "HONEYWELLINVNUM"),
+        ("ZIEHL-ABEGG +plug", "DANFOSSINVNUM"),
+        ("EBM-Papst ec", "EBMFANNUM"),
+        ("Ziehl-Abegg ec", "ZIEHLABEGGFANNU"),
+        ("ZIEHL-ABEGG +plug", "HONEYWELLINVNUM"),
     ),
 }
 
