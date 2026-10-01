@@ -934,9 +934,14 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             rotor = int(values["rotor_mode"])
 
             self.state.electrical_heater = elec
-            self.state.electrical_stage_count = 3
+            # Kademe sayisi registerdan gelmez; kullanicinin sectigi deger korunur.
+            self.state.electrical_stage_count = max(
+                1, min(3, int(self._heater_stage_vars["electrical"].get() or 3))
+            )
             self.state.pre_electrical_heater = pre_elec
-            self.state.pre_electrical_stage_count = 3
+            self.state.pre_electrical_stage_count = max(
+                1, min(3, int(self._heater_stage_vars["pre_electrical"].get() or 3))
+            )
             self.state.run_around = run
             self.state.dx_enabled = dx_visible
             self.state.dx_stage = dx_count
@@ -951,8 +956,8 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             self._module_vars["dx"].set(str(dx_count))
             self._module_vars["change_over"].set("ChangeOverValve" if cover else "Yok")
             self._module_vars["humidifier"].set(str(hum_count))
-            self._heater_stage_vars["electrical"].set("3")
-            self._heater_stage_vars["pre_electrical"].set("3")
+            self._heater_stage_vars["electrical"].set(str(self.state.electrical_stage_count))
+            self._heater_stage_vars["pre_electrical"].set(str(self.state.pre_electrical_stage_count))
 
             self._set_module_visibility({
                 "electrical_heater": elec,
