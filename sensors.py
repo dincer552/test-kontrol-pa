@@ -55,7 +55,7 @@ class SensorTabMixin:
         self._sensor_manual_buttons: dict[str, ttk.Button] = {}
         self._sensor_units: dict[str, str] = {}
         self._sensor_visibility: dict[str, dict[str, bool]] = {}
-        self._manual_sensor_rows: dict[str, tuple[ttk.Label, ttk.Entry]] = {}
+        self._manual_sensor_rows: dict[str, tuple[ttk.Label, ttk.Entry, ttk.Combobox]] = {}
         self._manual_sensor_rows_frame: ttk.Frame | None = None
 
         row = 0
@@ -139,10 +139,16 @@ class SensorTabMixin:
         ttk.Entry(
             manual_card, textvariable=self._manual_sensor_value_var, width=16, style="Green.TEntry"
         ).grid(row=0, column=3, sticky="w", padx=(0, 10))
+        ttk.Label(manual_card, text="Eng. Unit").grid(row=0, column=4, sticky="w", padx=(0, 8))
+        self._manual_sensor_unit_var = tk.StringVar(value="°C")
+        ttk.Combobox(
+            manual_card, textvariable=self._manual_sensor_unit_var,
+            values=("°C", "%RH", "ppm"), state="readonly", width=8
+        ).grid(row=0, column=5, sticky="w", padx=(0, 10))
         ttk.Button(
             manual_card, text="+ Sensör Ekle", style="Secondary.TButton",
             command=self._add_manual_sensor,
-        ).grid(row=0, column=4, sticky="w")
+        ).grid(row=0, column=6, sticky="w")
         self._manual_sensor_form = manual_card
 
         self._set_sensor_visibility({name: {"temperature": False, "humidity": False, "co2": False} for name in SENSOR_NAMES})
@@ -172,13 +178,20 @@ class SensorTabMixin:
         if frame is None:
             return
         row = len(self._manual_sensor_rows)
+        unit = self._manual_sensor_unit_var.get().strip() or "°C"
         label = ttk.Label(frame, text=name)
         label.grid(row=row, column=0, sticky="w", pady=6, padx=(0, 20))
         entry = ttk.Entry(frame, width=24, style="Green.TEntry")
         entry.insert(0, value)
         entry.grid(row=row, column=1, sticky="w", pady=6)
-        self._manual_sensor_rows[name] = (label, entry)
+        unit_box = ttk.Combobox(
+            frame, values=("°C", "%RH", "ppm"), state="readonly", width=8
+        )
+        unit_box.set(unit)
+        unit_box.grid(row=row, column=2, sticky="w", pady=6, padx=(8, 0))
+        self._manual_sensor_rows[name] = (label, entry, unit_box)
         self.state.manual_sensors[name] = value
+        self.state.manual_sensor_units[name] = unit
         self._manual_sensor_name_var.set("")
         self._manual_sensor_value_var.set("")
         if hasattr(self, "_log"):
@@ -223,8 +236,9 @@ class SensorTabMixin:
             self.state.sensors[name] = var.get()
         for name, var in self._sensor_humidity_vars.items():
             self.state.sensors[f"{name} Humidity"] = var.get()
-        for name, (_label, entry) in self._manual_sensor_rows.items():
+        for name, (_label, entry, unit_box) in self._manual_sensor_rows.items():
             self.state.manual_sensors[name] = entry.get()
+            self.state.manual_sensor_units[name] = unit_box.get()
 
     def _clear_sensor_ui(self) -> None:
         for name, var in self._sensor_vars.items():
@@ -235,6 +249,7 @@ class SensorTabMixin:
             label.destroy()
             entry.destroy()
         self._manual_sensor_rows.clear()
+        self.state.manual_sensor_units.clear()
         for name, entry_pair in self._sensor_widgets.items():
             entry_pair[1].configure(state="readonly", style="TEntry")
             self._sensor_manual_buttons[name].configure(text="Manuel Giriş")
