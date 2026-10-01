@@ -172,18 +172,9 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
 
     # FANLAR: sadece fan tipi, debi ve adet bilgileri.
     # Eski tek fan_type alanindan iki tipi ayir; ayrica eski kayitlarla uyumlu kal.
-    raw_fan_type = _value(state.fan_type)
-    supply_fan_type = raw_fan_type
-    exhaust_fan_type = raw_fan_type
-    if "|" in raw_fan_type:
-        parts = [part.strip() for part in raw_fan_type.split("|")]
-        for part in parts:
-            lower = part.lower()
-            value = part.split(":", 1)[1].strip() if ":" in part else part
-            if "vantilatör" in lower or "ventilator" in lower or "üfleme" in lower or "ufleme" in lower:
-                supply_fan_type = value
-            elif "aspiratör" in lower or "aspirator" in lower or "egzoz" in lower or "exhaust" in lower:
-                exhaust_fan_type = value
+    # Üfleme ve egzoz fan tipi ayrı state alanlarından alınır.
+    supply_fan_type = _value(getattr(state, "supply_fan_type", "")) or "Yok"
+    exhaust_fan_type = _value(getattr(state, "return_fan_type", "")) or "Yok"
     fan_rows = [
         ["FANLAR / FANS", "", "", ""],
         ["Üfleme Fan Tipi", _value(supply_fan_type),
