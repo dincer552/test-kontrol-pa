@@ -39,6 +39,7 @@ class TestControlState:
     filters: Dict[str, bool] = field(default_factory=lambda: {name: False for name in FILTER_IDS})
     sensors: Dict[str, str] = field(default_factory=lambda: {name: "-" for name in SENSOR_NAMES})
     manual_sensors: Dict[str, str] = field(default_factory=dict)
+    manual_sensor_units: Dict[str, str] = field(default_factory=dict)
 
     rotor_enabled: bool = False
     rotor_mode: str = "Oransal"
