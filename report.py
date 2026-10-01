@@ -60,13 +60,16 @@ class _FixedBottomNote(Flowable):
         self.height = height
 
     def wrap(self, availWidth, availHeight):
-        return self.width, self.height
+        # Akisin kalan tum sayfa yuksekligini rezerve et; kutu boylece
+        # her zaman bu sayfanin en altinda kalir ve diger tablolarla cakismez.
+        self._available_height = max(self.height, availHeight)
+        return self.width, self._available_height
 
     def draw(self):
         canvas = self.canv
-        page_width, _ = A4
+        page_width = A4[0]
         x = page_width - 12 * mm - self.width
-        y = 14 * mm
+        y = 0
         canvas.saveState()
         canvas.setStrokeColor(colors.black)
         canvas.setLineWidth(0.6)
