@@ -20,3 +20,5 @@ if __name__ == "__main__":
 # Approved transparent blue T artwork is stored in app_icon.png.
 
 # Artwork asset is committed in app_icon.png.
+
+# Build trigger: approved blue T artwork is included in app_icon.png.
