@@ -16,3 +16,5 @@ def build_icon() -> None:
 
 if __name__ == "__main__":
     build_icon()
+
+# Approved transparent blue T artwork is stored in app_icon.png.
