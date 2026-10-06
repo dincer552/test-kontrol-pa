@@ -2,10 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
-import os
-from pathlib import Path
 import socket
-import subprocess
 import threading
 import time
 import tkinter as tk
@@ -134,17 +131,17 @@ class C600ConnectionMixin:
             self._c600_port_var.set(port_text)
             api_host, api_port = host, int(port_text)
         elif mode == "TCP/IP":
-            # Keep the UI on the real SCOPE endpoint. JSON is sent through the
-            # local Rainbow tunnel to the controller's HTTP port 80.
+            # Keep the UI on the real SCOPE endpoint. The tunnel startup is
+            # asynchronous so the Tk UI never freezes while SCOPE connects.
             port_text = "4242"
             self._c600_port_var.set(port_text)
-            try:
-                self._c600_tcp_tunnel.start(host, target_type="POL6x8", auth=C600_API_PASSWORD)
-            except Exception as exc:
-                self._c600_log_write(f"TCP/IP SCOPE tüneli başlatılamadı: {exc}", "error")
-                messagebox.showerror("C600 TCP/IP", f"SCOPE TCP tüneli başlatılamadı.\n\n{exc}", parent=self)
-                return
-            api_host, api_port = self._c600_tcp_tunnel.local_host, self._c600_tcp_tunnel.local_port
+            self._c600_status_var.set(f"Bağlanıyor: {host}:{port_text}")
+            self._c600_status_title.configure(text="SCOPE tüneli başlatılıyor...")
+            self._c600_status_detail.configure(text=f"{host}:{port_text} adresine SCOPE TCP tüneli kuruluyor...")
+            self._c600_log_write(f"TCP/IP SCOPE tüneli başlatılıyor: {host}:4242 -> yerel 127.0.0.1:4243 -> HTTP 80")
+            self._c600_test_btn.configure(state="disabled")
+            threading.Thread(target=self._c600_tcpip_connect_worker, args=(host,), daemon=True).start()
+            return
         else:
             api_host, api_port = host, int(port_text or "80")
         try:
@@ -160,6 +157,31 @@ class C600ConnectionMixin:
         self._c600_log_write(f"{self._c600_connection_var.get()} ile {host}:{port} adresine bağlanılıyor...")
         self._c600_test_btn.configure(state="disabled")
         threading.Thread(target=self._c600_connect_worker, args=(api_host, api_port, host, port), daemon=True).start()
+
+    def _c600_tcpip_connect_worker(self, host: str) -> None:
+        try:
+            self._c600_tcp_tunnel.start(host, target_type="POL6x8", auth=C600_API_PASSWORD)
+            self._c600_ui(lambda: self._c600_log_write(
+                f"TCP/IP SCOPE tüneli hazır: {host}:4242 -> 127.0.0.1:4243 -> HTTP 80", "ok"
+            ))
+            self._c600_connect_worker(
+                self._c600_tcp_tunnel.local_host,
+                self._c600_tcp_tunnel.local_port,
+                host,
+                4242,
+            )
+        except Exception as exc:
+            self.state.c600_connected = False
+            self._c600_tcp_tunnel.stop()
+            def fail() -> None:
+                self._c600_status_var.set("Bağlantı başarısız")
+                self._c600_status_title.configure(text="TCP/IP SCOPE tüneli başarısız")
+                self._c600_status_detail.configure(text=f"{host}:4242\n{exc}")
+                self._c600_status_ping.configure(text="Yanıt süresi: —")
+                self._c600_dot.configure(fg="#dc2626")
+                self._c600_log_write(f"TCP/IP SCOPE tüneli başarısız: {exc}", "error")
+                self._c600_test_btn.configure(text="BAĞLAN", state="normal")
+            self._c600_ui(fail)
 
     def _c600_connect_worker(self, host: str, port: int, display_host: str | None = None, display_port: int | None = None) -> None:
         started = time.perf_counter()
