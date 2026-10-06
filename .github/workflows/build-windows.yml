@@ -53,7 +53,7 @@ jobs:
         shell: pwsh
         env:
           APP_VERSION: v0.1.0.${{ github.run_number }}
-        run: pyinstaller --noconfirm --clean --onefile --windowed --collect-all tkinterdnd2 --add-data "SYSR.ST.png;." --add-data "app_icon.png;." --add-data "Communication;Communication" --icon "app_icon.ico" --name "Test_Kontrol_$env:APP_VERSION" app.py
+        run: pyinstaller --noconfirm --clean --onefile --windowed --collect-all tkinterdnd2 --add-data "SYSR.ST.png;." --add-data "app_icon.png;." --icon "app_icon.ico" --name "Test_Kontrol_$env:APP_VERSION" app.py
 
       - name: Smoke test packaged EXE startup
         shell: pwsh
