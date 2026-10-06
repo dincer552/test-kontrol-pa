@@ -78,6 +78,14 @@ class C600ConnectionMixin:
         buttons.grid(row=2, column=0, sticky="w", pady=(0, 10))
         self._c600_test_btn = ttk.Button(buttons, text="Bağlan", style="Primary.TButton", command=self._c600_test)
         self._c600_test_btn.pack(side="left")
+        self._c600_disconnect_btn = ttk.Button(
+            buttons,
+            text="Bağlantıyı Kes",
+            style="Secondary.TButton",
+            command=self._c600_disconnect,
+            state="disabled",
+        )
+        self._c600_disconnect_btn.pack(side="left", padx=(8, 0))
 
         log_frame = ttk.LabelFrame(body, text="İşlem Günlüğü", style="Card.TLabelframe", padding=10)
         log_frame.grid(row=3, column=0, columnspan=2, sticky="nsew")
@@ -156,6 +164,7 @@ class C600ConnectionMixin:
         self._c600_status_detail.configure(text=f"{host}:{port} adresine bağlanılıyor...")
         self._c600_log_write(f"{self._c600_connection_var.get()} ile {host}:{port} adresine bağlanılıyor...")
         self._c600_test_btn.configure(state="disabled")
+        self._c600_disconnect_btn.configure(state="disabled")
         threading.Thread(target=self._c600_connect_worker, args=(api_host, api_port, host, port), daemon=True).start()
 
     def _c600_tcpip_connect_worker(self, host: str) -> None:
@@ -181,6 +190,7 @@ class C600ConnectionMixin:
                 self._c600_dot.configure(fg="#dc2626")
                 self._c600_log_write(f"TCP/IP SCOPE tüneli başarısız: {exc}", "error")
                 self._c600_test_btn.configure(text="BAĞLAN", state="normal")
+                self._c600_disconnect_btn.configure(state="disabled")
             self._c600_ui(fail)
 
     def _c600_connect_worker(self, host: str, port: int, display_host: str | None = None, display_port: int | None = None) -> None:
@@ -202,7 +212,8 @@ class C600ConnectionMixin:
                 self._c600_status_detail.configure(text=f"IP: {shown_host}:{shown_port}\nCihaz: Climatix C600\nDurum: Online")
                 self._c600_status_ping.configure(text=f"Yanıt süresi: {elapsed:.0f} ms")
                 self._c600_dot.configure(fg="#16a34a")
-                self._c600_test_btn.configure(state="normal")
+                self._c600_test_btn.configure(state="disabled")
+                self._c600_disconnect_btn.configure(state="normal")
                 self._c600_log_write("Bağlantı başarılı.", "ok")
                 self._read_sensors_from_plc()
                 self._update_statuses()
@@ -367,6 +378,8 @@ class C600ConnectionMixin:
         self._c600_status_ping.configure(text="Yanıt süresi: —")
         self._c600_dot.configure(fg="#94a3b8")
         self._c600_log_write("Bağlantı ayrıldı.", "muted")
+        self._c600_test_btn.configure(text="BAĞLAN", state="normal")
+        self._c600_disconnect_btn.configure(state="disabled")
         self._update_statuses()
 
     def _c600_clear_log(self) -> None:
