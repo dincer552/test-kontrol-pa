@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os
+import shutil
 from pathlib import Path
 import socket
 import subprocess
@@ -32,8 +32,26 @@ class TcpTunnelManager:
         bundled = self._communication_dir() / "RainbowTcpTunnel.exe"
         if bundled.exists():
             return bundled
+
+        found = shutil.which("RainbowTcpTunnel.exe")
+        if found:
+            return Path(found)
+
+        candidates = (
+            Path(r"C:\Program Files\Siemens"),
+            Path(r"C:\Program Files (x86)\Siemens"),
+        )
+        for root in candidates:
+            if not root.exists():
+                continue
+            try:
+                for path in root.rglob("RainbowTcpTunnel.exe"):
+                    return path
+            except OSError:
+                continue
+
         raise FileNotFoundError(
-            "RainbowTcpTunnel.exe bulunamadı. Communication bileşenleri EXE içine eklenmemiş."
+            "RainbowTcpTunnel.exe bulunamadı. Siemens SCOPE/Communication kurulumu gerekli."
         )
 
     def stop(self) -> None:
