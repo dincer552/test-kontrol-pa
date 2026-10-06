@@ -2,13 +2,18 @@ from __future__ import annotations
 
 import base64
 import json
+import os
+from pathlib import Path
 import socket
+import subprocess
 import threading
 import time
 import tkinter as tk
 from tkinter import messagebox, ttk
 import urllib.parse
 import urllib.request
+
+from tcp_tunnel import TcpTunnelManager
 
 
 C600_API_USERNAME = "ADMIN"
@@ -25,6 +30,7 @@ class C600ConnectionMixin:
         self._c600_tx_id = 0
         self._c600_log: tk.Text | None = None
         self._c600_info_vars: dict[str, tk.StringVar] = {}
+        self._c600_tcp_tunnel = TcpTunnelManager()
 
     def _add_c600(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
@@ -102,19 +108,18 @@ class C600ConnectionMixin:
             pass
 
     def _c600_connection_changed(self, _event=None) -> None:
-        """Select the endpoint appropriate for the selected transport.
+        """Keep USB untouched; TCP/IP uses the Siemens SCOPE TCP tunnel.
 
-        USB/SCOPE is intentionally left on the existing local 4242 tunnel.
-        Direct TCP/IP GenericJSON access is HTTP and therefore uses the
-        controller's HTTP/API port 80. Port 502 is Modbus TCP and is not the
-        protocol used by this application's JSON reader.
+        USB continues to use the existing local 127.0.0.1:4242 tunnel.
+        TCP/IP starts RainbowTcpTunnel locally and forwards remote HTTP/JSON
+        port 80 through the controller's SCOPE/Climatix service on 4242.
         """
         mode = self._c600_connection_var.get()
         if mode == "USB / SCOPE TCP Tunnel":
             self._c600_host_var.set("127.0.0.1")
             self._c600_port_var.set("4242")
         elif mode == "TCP/IP":
-            self._c600_port_var.set("80")
+            self._c600_port_var.set("4242")
 
     def _c600_test(self) -> None:
         host = self._c600_host_var.get().strip()
@@ -127,9 +132,21 @@ class C600ConnectionMixin:
             # Existing working USB/SCOPE tunnel: do not change this path.
             port_text = "4242"
             self._c600_port_var.set(port_text)
-        elif mode == "TCP/IP" and not port_text:
-            port_text = "80"
+            api_host, api_port = host, int(port_text)
+        elif mode == "TCP/IP":
+            # Keep the UI on the real SCOPE endpoint. JSON is sent through the
+            # local Rainbow tunnel to the controller's HTTP port 80.
+            port_text = "4242"
             self._c600_port_var.set(port_text)
+            try:
+                self._c600_tcp_tunnel.start(host, target_type="POL6x8", auth=C600_API_PASSWORD)
+            except Exception as exc:
+                self._c600_log_write(f"TCP/IP SCOPE tüneli başlatılamadı: {exc}", "error")
+                messagebox.showerror("C600 TCP/IP", f"SCOPE TCP tüneli başlatılamadı.\n\n{exc}", parent=self)
+                return
+            api_host, api_port = self._c600_tcp_tunnel.local_host, self._c600_tcp_tunnel.local_port
+        else:
+            api_host, api_port = host, int(port_text or "80")
         try:
             port = int(port_text)
             if not 1 <= port <= 65535:
@@ -142,9 +159,9 @@ class C600ConnectionMixin:
         self._c600_status_detail.configure(text=f"{host}:{port} adresine bağlanılıyor...")
         self._c600_log_write(f"{self._c600_connection_var.get()} ile {host}:{port} adresine bağlanılıyor...")
         self._c600_test_btn.configure(state="disabled")
-        threading.Thread(target=self._c600_connect_worker, args=(host, port), daemon=True).start()
+        threading.Thread(target=self._c600_connect_worker, args=(api_host, api_port, host, port), daemon=True).start()
 
-    def _c600_connect_worker(self, host: str, port: int) -> None:
+    def _c600_connect_worker(self, host: str, port: int, display_host: str | None = None, display_port: int | None = None) -> None:
         started = time.perf_counter()
         try:
             sock = socket.create_connection((host, port), timeout=3.0)
@@ -156,9 +173,11 @@ class C600ConnectionMixin:
                 try: old.close()
                 except OSError: pass
             def success() -> None:
-                self._c600_status_var.set(f"Bağlandı: {host}:{port}")
+                shown_host = display_host or host
+                shown_port = display_port or port
+                self._c600_status_var.set(f"Bağlandı: {shown_host}:{shown_port}")
                 self._c600_status_title.configure(text="Bağlandı - C600")
-                self._c600_status_detail.configure(text=f"IP: {host}:{port}\nCihaz: Climatix C600\nDurum: Online")
+                self._c600_status_detail.configure(text=f"IP: {shown_host}:{shown_port}\nCihaz: Climatix C600\nDurum: Online")
                 self._c600_status_ping.configure(text=f"Yanıt süresi: {elapsed:.0f} ms")
                 self._c600_dot.configure(fg="#16a34a")
                 self._c600_test_btn.configure(state="normal")
@@ -187,6 +206,9 @@ class C600ConnectionMixin:
     def _c600_json_read(self, point_id: str) -> dict:
         host = self._c600_host_var.get().strip()
         port = int(self._c600_port_var.get().strip())
+        if self._c600_connection_var.get() == "TCP/IP":
+            host = self._c600_tcp_tunnel.local_host
+            port = self._c600_tcp_tunnel.local_port
         if self._c600_connection_var.get() not in ("USB / SCOPE TCP Tunnel", "TCP/IP"):
             raise OSError("Desteklenmeyen C600 bağlantı tipi")
 
@@ -310,6 +332,7 @@ class C600ConnectionMixin:
             self._c600_ui(lambda: self._update_statuses())
 
     def _c600_disconnect(self) -> None:
+        self._c600_tcp_tunnel.stop()
         sock = self._c600_socket
         self._c600_socket = None
         self.state.c600_connected = False
