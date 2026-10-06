@@ -102,23 +102,33 @@ class C600ConnectionMixin:
             pass
 
     def _c600_connection_changed(self, _event=None) -> None:
-        """Use the correct local port for the selected C600 transport."""
-        if self._c600_connection_var.get() in ("USB / SCOPE TCP Tunnel", "TCP/IP"):
-            # Both transports expose the same C600 GenericJSON endpoint.
-            # USB keeps its existing local SCOPE tunnel; TCP/IP uses the
-            # remote Rainbow TCP tunnel on the same 4242 port.
+        """Select the endpoint appropriate for the selected transport.
+
+        USB/SCOPE is intentionally left on the existing local 4242 tunnel.
+        Direct TCP/IP GenericJSON access is HTTP and therefore uses the
+        controller's HTTP/API port 80. Port 502 is Modbus TCP and is not the
+        protocol used by this application's JSON reader.
+        """
+        mode = self._c600_connection_var.get()
+        if mode == "USB / SCOPE TCP Tunnel":
+            self._c600_host_var.set("127.0.0.1")
             self._c600_port_var.set("4242")
+        elif mode == "TCP/IP":
+            self._c600_port_var.set("80")
 
     def _c600_test(self) -> None:
         host = self._c600_host_var.get().strip()
         port_text = self._c600_port_var.get().strip()
+        mode = self._c600_connection_var.get()
         if not host:
             messagebox.showwarning("C600", "Cihaz IP / Host boş bırakılamaz.", parent=self)
             return
-        if self._c600_connection_var.get() in ("USB / SCOPE TCP Tunnel", "TCP/IP"):
-            # Do not change the working USB tunnel path. TCP/IP uses the
-            # Rainbow TCP tunnel port shown by the Siemens communication tool.
+        if mode == "USB / SCOPE TCP Tunnel":
+            # Existing working USB/SCOPE tunnel: do not change this path.
             port_text = "4242"
+            self._c600_port_var.set(port_text)
+        elif mode == "TCP/IP" and not port_text:
+            port_text = "80"
             self._c600_port_var.set(port_text)
         try:
             port = int(port_text)
