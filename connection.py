@@ -45,7 +45,7 @@ class C600ConnectionMixin:
             conn,
             textvariable=self._c600_connection_var,
             state="readonly",
-            values=("USB / SCOPE TCP Tunnel", "Modbus TCP"),
+            values=("USB / SCOPE TCP Tunnel", "TCP/IP"),
             width=34,
         )
         self._c600_connection_combo.grid(row=0, column=1, sticky="ew", pady=6)
@@ -103,10 +103,11 @@ class C600ConnectionMixin:
 
     def _c600_connection_changed(self, _event=None) -> None:
         """Use the correct local port for the selected C600 transport."""
-        if self._c600_connection_var.get() == "USB / SCOPE TCP Tunnel":
+        if self._c600_connection_var.get() in ("USB / SCOPE TCP Tunnel", "TCP/IP"):
+            # Both transports expose the same C600 GenericJSON endpoint.
+            # USB keeps its existing local SCOPE tunnel; TCP/IP uses the
+            # remote Rainbow TCP tunnel on the same 4242 port.
             self._c600_port_var.set("4242")
-        else:
-            self._c600_port_var.set("502")
 
     def _c600_test(self) -> None:
         host = self._c600_host_var.get().strip()
@@ -114,7 +115,9 @@ class C600ConnectionMixin:
         if not host:
             messagebox.showwarning("C600", "Cihaz IP / Host boş bırakılamaz.", parent=self)
             return
-        if self._c600_connection_var.get() == "USB / SCOPE TCP Tunnel":
+        if self._c600_connection_var.get() in ("USB / SCOPE TCP Tunnel", "TCP/IP"):
+            # Do not change the working USB tunnel path. TCP/IP uses the
+            # Rainbow TCP tunnel port shown by the Siemens communication tool.
             port_text = "4242"
             self._c600_port_var.set(port_text)
         try:
@@ -174,8 +177,8 @@ class C600ConnectionMixin:
     def _c600_json_read(self, point_id: str) -> dict:
         host = self._c600_host_var.get().strip()
         port = int(self._c600_port_var.get().strip())
-        if self._c600_connection_var.get() != "USB / SCOPE TCP Tunnel":
-            raise OSError("Climatix JSON API yalnızca USB / SCOPE TCP Tunnel bağlantısında kullanılabilir")
+        if self._c600_connection_var.get() not in ("USB / SCOPE TCP Tunnel", "TCP/IP"):
+            raise OSError("Desteklenmeyen C600 bağlantı tipi")
 
         # The embedded Climatix web server expects spaces in IDs as %20.
         # urllib.parse.urlencode() uses '+' for spaces, which works with normal
