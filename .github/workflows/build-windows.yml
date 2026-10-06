@@ -47,13 +47,13 @@ jobs:
         run: python icon_builder.py
 
       - name: Compile sources
-        run: python -m py_compile app.py models.py updater.py webbrowser.py build_info.py connection.py pdf_reader.py damper.py sensors.py report.py icon_builder.py
+        run: python -m py_compile app.py models.py updater.py webbrowser.py build_info.py connection.py tcp_tunnel.py pdf_reader.py damper.py sensors.py report.py icon_builder.py
 
       - name: Build EXE
         shell: pwsh
         env:
           APP_VERSION: v0.1.0.${{ github.run_number }}
-        run: pyinstaller --noconfirm --clean --onefile --windowed --collect-all tkinterdnd2 --add-data "SYSR.ST.png;." --add-data "app_icon.png;." --icon "app_icon.ico" --name "Test_Kontrol_$env:APP_VERSION" app.py
+        run: pyinstaller --noconfirm --clean --onefile --windowed --collect-all tkinterdnd2 --add-data "SYSR.ST.png;." --add-data "app_icon.png;." --add-data "Communication;Communication" --icon "app_icon.ico" --name "Test_Kontrol_$env:APP_VERSION" app.py
 
       - name: Smoke test packaged EXE startup
         shell: pwsh
