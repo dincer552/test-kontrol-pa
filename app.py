@@ -65,6 +65,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self.geometry("1300x820")
         self.minsize(1100, 700)
         self.state = TestControlState()
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
         self._status_vars: dict[str, tk.StringVar] = {}
         self._status_labels: dict[str, tk.Label] = {}
         self._init_connection_state()
@@ -82,6 +83,13 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._configure_tab_flow()
         self._update_statuses()
         self.after(2000, self._schedule_update_check)
+
+    def _on_close(self) -> None:
+        try:
+            self._c600_tcp_tunnel.stop()
+        except Exception:
+            pass
+        self.destroy()
 
     def _init_app_icon(self) -> None:
         icon_path = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / "app_icon.png"
