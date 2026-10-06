@@ -112,6 +112,12 @@ class C600ConnectionMixin:
         except tk.TclError:
             pass
 
+    def _c600_set_idle_buttons(self) -> None:
+        """Return the connection controls to a clean retry state."""
+        self._c600_test_btn.configure(text="Bağlan")
+        self._c600_test_btn.state(["!disabled"])
+        self._c600_disconnect_btn.state(["disabled"])
+
     def _c600_connection_changed(self, _event=None) -> None:
         """Keep USB untouched; TCP/IP uses the Siemens SCOPE TCP tunnel.
 
@@ -148,6 +154,7 @@ class C600ConnectionMixin:
             self._c600_status_detail.configure(text=f"{host}:{port_text} adresine SCOPE TCP tüneli kuruluyor...")
             self._c600_log_write(f"TCP/IP SCOPE tüneli başlatılıyor: {host}:4242 -> yerel 127.0.0.1:4243 -> HTTP 80")
             self._c600_test_btn.configure(state="disabled")
+            self._c600_disconnect_btn.configure(state="disabled")
             threading.Thread(target=self._c600_tcpip_connect_worker, args=(host,), daemon=True).start()
             return
         else:
@@ -189,8 +196,7 @@ class C600ConnectionMixin:
                 self._c600_status_ping.configure(text="Yanıt süresi: —")
                 self._c600_dot.configure(fg="#dc2626")
                 self._c600_log_write(f"TCP/IP SCOPE tüneli başarısız: {exc}", "error")
-                self._c600_test_btn.configure(text="BAĞLAN", state="normal")
-                self._c600_disconnect_btn.configure(state="disabled")
+                self._c600_set_idle_buttons()
             self._c600_ui(fail)
 
     def _c600_connect_worker(self, host: str, port: int, display_host: str | None = None, display_port: int | None = None) -> None:
@@ -378,8 +384,7 @@ class C600ConnectionMixin:
         self._c600_status_ping.configure(text="Yanıt süresi: —")
         self._c600_dot.configure(fg="#94a3b8")
         self._c600_log_write("Bağlantı ayrıldı.", "muted")
-        self._c600_test_btn.configure(text="BAĞLAN", state="normal")
-        self._c600_disconnect_btn.configure(state="disabled")
+        self._c600_set_idle_buttons()
         self._update_statuses()
 
     def _c600_clear_log(self) -> None:
