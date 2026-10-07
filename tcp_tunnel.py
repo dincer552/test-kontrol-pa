@@ -103,7 +103,7 @@ class TcpTunnelManager:
                 except Exception:
                     pass
 
-    def _wait_for_listener(self, timeout: float = 12.0) -> None:
+    def _wait_for_listener(self, timeout: float = 30.0) -> None:
         deadline = time.monotonic() + timeout
         last_error: Exception | None = None
         while time.monotonic() < deadline:
@@ -152,7 +152,11 @@ class TcpTunnelManager:
             "--InterfaceType", "TCP/IP",
             "--InterfaceParameters", interface_parameters,
             "--IpAddress", self.local_host,
+            "--TimeoutSeconds", "5",
+            "--ReconnectTimeoutSeconds", "30",
+            "--ReconnectDelaySeconds", "1",
             "--Verbose",
+            "--LogData",
             "--LogHeaders",
         ]
 
@@ -175,6 +179,7 @@ class TcpTunnelManager:
             raise RuntimeError(f"RainbowTcpTunnel başlatılamadı: {exc}") from exc
 
         self._target_host = host
+        self.last_diagnostics = f"RainbowTcpTunnel: {exe}"
 
         def drain_output() -> None:
             process = self._process
