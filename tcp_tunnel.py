@@ -74,6 +74,7 @@ class TcpTunnelManager:
 
     def _read_diagnostics(self) -> str:
         lines: list[str] = []
+        lines.append(f"Log dizini: {self._log_directory()}")
         for name in ("TunnelError.log", "Tunnel.log"):
             path = self._log_directory() / name
             if not path.exists():
