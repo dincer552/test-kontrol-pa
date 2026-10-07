@@ -191,10 +191,9 @@ class TcpTunnelManager:
         threading.Thread(target=drain_output, daemon=True).start()
 
         try:
-            # The user-entered endpoint is the real SCOPE TCP/IP service.
-            # Verify it before waiting for the local forwarding socket.
-            with socket.create_connection((host, scope_port), timeout=3.0):
-                pass
+            # Do not probe the SCOPE port with a raw socket here.
+            # Port 4242 is the proprietary Siemens SCOPE protocol; the
+            # RainbowTcpTunnel process must own that connection itself.
             self._wait_for_listener()
         except Exception as exc:
             diagnostics = self._read_diagnostics()
