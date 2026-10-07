@@ -152,10 +152,23 @@ class C600ConnectionMixin:
             self._c600_status_var.set(f"Bağlanıyor: {host}:{port_text}")
             self._c600_status_title.configure(text="SCOPE tüneli başlatılıyor...")
             self._c600_status_detail.configure(text=f"{host}:{port_text} adresine SCOPE TCP tüneli kuruluyor...")
-            self._c600_log_write(f"TCP/IP SCOPE tüneli başlatılıyor: {host}:4242 -> yerel 127.0.0.1:4243 -> HTTP 80")
+            try:
+                scope_port = int(port_text)
+                if not 1 <= scope_port <= 65535:
+                    raise ValueError
+            except ValueError:
+                messagebox.showwarning("C600", "SCOPE portu 1-65535 arasında bir sayı olmalı.", parent=self)
+                return
+            self._c600_log_write(
+                f"TCP/IP SCOPE tüneli başlatılıyor: {host}:{scope_port} -> yerel 127.0.0.1:4243 -> HTTP 80"
+            )
             self._c600_test_btn.configure(state="disabled")
             self._c600_disconnect_btn.configure(state="disabled")
-            threading.Thread(target=self._c600_tcpip_connect_worker, args=(host,), daemon=True).start()
+            threading.Thread(
+                target=self._c600_tcpip_connect_worker,
+                args=(host, scope_port),
+                daemon=True,
+            ).start()
             return
         else:
             api_host, api_port = host, int(port_text or "80")
@@ -174,17 +187,51 @@ class C600ConnectionMixin:
         self._c600_disconnect_btn.configure(state="disabled")
         threading.Thread(target=self._c600_connect_worker, args=(api_host, api_port, host, port), daemon=True).start()
 
-    def _c600_tcpip_connect_worker(self, host: str) -> None:
+    def _c600_tcpip_probe(self) -> None:
+        """Verify that the local tunnel actually reaches the C600 HTTP API."""
+        query = urllib.parse.urlencode({"FN": "GetPages", "PIN": C600_API_PIN})
+        url = (
+            f"http://{self._c600_tcp_tunnel.local_host}:"
+            f"{self._c600_tcp_tunnel.local_port}/JSON.HTML?{query}"
+        )
+        request = urllib.request.Request(url, method="GET")
+        credentials = base64.b64encode(
+            f"{C600_API_USERNAME}:{C600_API_PASSWORD}".encode("ascii")
+        ).decode("ascii")
+        request.add_header("Authorization", f"Basic {credentials}")
+        with urllib.request.urlopen(request, timeout=5.0) as response:
+            payload = response.read().decode("utf-8", errors="replace")
+            status = response.status
+        if status != 200:
+            raise RuntimeError(f"C600 HTTP API beklenen 200 yerine {status} döndürdü.")
+        if not payload.strip().startswith("["):
+            raise RuntimeError("C600 HTTP API tünel üzerinden beklenen JSON yanıtını döndürmedi.")
+
+    def _c600_tcpip_connect_worker(self, host: str, scope_port: int) -> None:
         try:
-            self._c600_tcp_tunnel.start(host, target_type="POL6x8", auth=C600_API_PASSWORD)
+            self._c600_tcp_tunnel.start(
+                host,
+                target_type="POL6x8",
+                auth=C600_API_PASSWORD,
+                scope_port=scope_port,
+            )
             self._c600_ui(lambda: self._c600_log_write(
-                f"TCP/IP SCOPE tüneli hazır: {host}:4242 -> 127.0.0.1:4243 -> HTTP 80", "ok"
+                f"TCP/IP SCOPE tüneli hazır: {host}:{scope_port} -> 127.0.0.1:4243 -> HTTP 80",
+                "ok",
+            ))
+            self._c600_ui(lambda: self._c600_log_write(
+                "TCP/IP: yerel 127.0.0.1:4243 üzerinden C600 HTTP API test ediliyor..."
+            ))
+            self._c600_tcpip_probe()
+            self._c600_ui(lambda: self._c600_log_write(
+                "TCP/IP: C600 HTTP API yanıtı alındı.",
+                "ok",
             ))
             self._c600_connect_worker(
                 self._c600_tcp_tunnel.local_host,
                 self._c600_tcp_tunnel.local_port,
                 host,
-                4242,
+                scope_port,
             )
         except Exception as exc:
             self.state.c600_connected = False
@@ -192,10 +239,13 @@ class C600ConnectionMixin:
             def fail() -> None:
                 self._c600_status_var.set("Bağlantı başarısız")
                 self._c600_status_title.configure(text="TCP/IP SCOPE tüneli başarısız")
-                self._c600_status_detail.configure(text=f"{host}:4242\n{exc}")
+                self._c600_status_detail.configure(text=f"{host}:{scope_port}\n{exc}")
                 self._c600_status_ping.configure(text="Yanıt süresi: —")
                 self._c600_dot.configure(fg="#dc2626")
                 self._c600_log_write(f"TCP/IP SCOPE tüneli başarısız: {exc}", "error")
+                diagnostics = self._c600_tcp_tunnel.last_diagnostics.strip()
+                if diagnostics and diagnostics not in str(exc):
+                    self._c600_log_write(f"SCOPE tanı: {diagnostics}", "error")
                 self._c600_set_idle_buttons()
             self._c600_ui(fail)
 
@@ -349,12 +399,16 @@ class C600ConnectionMixin:
         if not self.state.c600_connected:
             self._c600_log_write("DURUM YENİLE: C600 bağlı değil.", "error")
             return
-        host = self._c600_host_var.get().strip()
-        try:
-            port = int(self._c600_port_var.get().strip())
-        except ValueError:
-            self._c600_log_write("DURUM YENİLE: Geçersiz port.", "error")
-            return
+        if self._c600_connection_var.get() == "TCP/IP":
+            host = self._c600_tcp_tunnel.local_host
+            port = self._c600_tcp_tunnel.local_port
+        else:
+            host = self._c600_host_var.get().strip()
+            try:
+                port = int(self._c600_port_var.get().strip())
+            except ValueError:
+                self._c600_log_write("DURUM YENİLE: Geçersiz port.", "error")
+                return
         self._c600_log_write("DURUM YENİLE: TCP bağlantısı kontrol ediliyor...")
         threading.Thread(target=self._c600_refresh_worker, args=(host, port), daemon=True).start()
 
