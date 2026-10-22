@@ -45,6 +45,8 @@ class TcpTunnelManager:
         roots = (
             Path(r"C:\Program Files\Siemens"),
             Path(r"C:\Program Files (x86)\Siemens"),
+            Path(r"C:\Program Files\Common Files\Rainbow"),
+            Path(r"C:\Program Files (x86)\Common Files\Rainbow"),
         )
         for root in roots:
             if not root.exists():
@@ -127,7 +129,7 @@ class TcpTunnelManager:
             detail += f" {diagnostics}"
         raise TimeoutError(detail)
 
-    def start(self, host: str, target_type: str, auth: str, scope_port: int = 4242) -> None:
+    def start(self, host: str, target_type: str, auth: str, scope_port: int = 4242, interface_type: str = "TCP/IP") -> None:
         host = host.strip()
         if not host:
             raise ValueError("TCP/IP host boş.")
@@ -137,6 +139,10 @@ class TcpTunnelManager:
             raise ValueError("SCOPE portu geçersiz.") from exc
         if not 1 <= scope_port <= 65535:
             raise ValueError("SCOPE portu 1-65535 arasında olmalı.")
+
+        interface_type = interface_type.strip().upper()
+        if interface_type not in {"TCP/IP", "USB"}:
+            raise ValueError("Desteklenmeyen tünel arayüzü.")
 
         self.stop()
         self.last_diagnostics = ""
@@ -150,7 +156,7 @@ class TcpTunnelManager:
             "--Port", str(self.local_port),
             "--RemotePort", str(self.remote_port),
             "--TargetType", target_type,
-            "--InterfaceType", "TCP/IP",
+            "--InterfaceType", interface_type,
             "--InterfaceParameters", interface_parameters,
             "--IpAddress", self.local_host,
             "--TimeoutSeconds", "5",
@@ -161,12 +167,22 @@ class TcpTunnelManager:
             "--LogHeaders",
         ]
 
-        creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        # RainbowTcpTunnel reads Console.ReadKey() while it is running.  A
+        # windowed PyInstaller process has no console, and CREATE_NO_WINDOW
+        # makes the Siemens process exit immediately after opening the port.
+        # Give it a hidden console instead; the user still sees no console
+        # window, but the tunnel remains alive like it does from CMD.
+        creationflags = getattr(subprocess, "CREATE_NEW_CONSOLE", 0x00000010)
+        startupinfo = None
+        if sys.platform == "win32":
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = 0
         try:
             self._process = subprocess.Popen(
                 args,
                 cwd=str(communication_dir),
-                stdin=subprocess.DEVNULL,
+                stdin=None,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -174,6 +190,7 @@ class TcpTunnelManager:
                 errors="replace",
                 bufsize=1,
                 creationflags=creationflags,
+                startupinfo=startupinfo,
             )
         except OSError as exc:
             self._process = None

@@ -43,19 +43,19 @@ class C600ConnectionMixin:
         conn.columnconfigure(1, weight=1)
 
         ttk.Label(conn, text="Bağlantı:").grid(row=0, column=0, sticky="w", pady=6, padx=(0, 12))
-        self._c600_connection_var = tk.StringVar(value="USB / SCOPE TCP Tunnel")
+        self._c600_connection_var = tk.StringVar(value="USB Direct Tunnel")
         self._c600_connection_combo = ttk.Combobox(
             conn,
             textvariable=self._c600_connection_var,
             state="readonly",
-            values=("USB / SCOPE TCP Tunnel", "TCP/IP"),
+            values=("USB Direct Tunnel", "TCP/IP"),
             width=34,
         )
         self._c600_connection_combo.grid(row=0, column=1, sticky="ew", pady=6)
         self._c600_connection_combo.bind("<<ComboboxSelected>>", self._c600_connection_changed)
 
         ttk.Label(conn, text="Cihaz IP / Host:").grid(row=1, column=0, sticky="w", pady=6, padx=(0, 12))
-        self._c600_host_var = tk.StringVar(value="127.0.0.1")
+        self._c600_host_var = tk.StringVar(value="*1")
         ttk.Entry(conn, textvariable=self._c600_host_var).grid(row=1, column=1, sticky="ew", pady=6)
 
         ttk.Label(conn, text="Port:").grid(row=2, column=0, sticky="w", pady=6, padx=(0, 12))
@@ -126,9 +126,9 @@ class C600ConnectionMixin:
         port 80 through the controller's SCOPE/Climatix service on 4242.
         """
         mode = self._c600_connection_var.get()
-        if mode == "USB / SCOPE TCP Tunnel":
-            self._c600_host_var.set("127.0.0.1")
-            self._c600_port_var.set("4242")
+        if mode == "USB Direct Tunnel":
+            self._c600_host_var.set("*1")
+            self._c600_port_var.set("4243")
         elif mode == "TCP/IP":
             self._c600_port_var.set("4242")
 
@@ -139,11 +139,14 @@ class C600ConnectionMixin:
         if not host:
             messagebox.showwarning("C600", "Cihaz IP / Host boş bırakılamaz.", parent=self)
             return
-        if mode == "USB / SCOPE TCP Tunnel":
-            # Existing working USB/SCOPE tunnel: do not change this path.
-            port_text = "4242"
+        if mode == "USB Direct Tunnel":
+            port_text = "4243"
             self._c600_port_var.set(port_text)
-            api_host, api_port = host, int(port_text)
+            self._c600_status_title.configure(text="USB tüneli başlatılıyor...")
+            self._c600_status_detail.configure(text="C600 USB servis arayüzüne bağlanılıyor...")
+            self._c600_test_btn.configure(state="disabled")
+            threading.Thread(target=self._c600_usb_connect_worker, args=(host,), daemon=True).start()
+            return
         elif mode == "TCP/IP":
             # Keep the UI on the real SCOPE endpoint. The tunnel startup is
             # asynchronous so the Tk UI never freezes while SCOPE connects.
@@ -249,6 +252,36 @@ class C600ConnectionMixin:
                 self._c600_set_idle_buttons()
             self._c600_ui(fail)
 
+    def _c600_usb_connect_worker(self, device: str) -> None:
+        """Start Siemens' local HTTP bridge directly on the C600 USB service port."""
+        try:
+            self._c600_tcp_tunnel.start(
+                "*1",
+                target_type="0",
+                auth=C600_API_PASSWORD,
+                interface_type="USB",
+            )
+            self._c600_ui(lambda: self._c600_log_write(
+                "USB Direct Tunnel hazır: USB -> 127.0.0.1:4243 -> HTTP 80", "ok"))
+            self._c600_tcpip_probe()
+            self._c600_connect_worker(
+                self._c600_tcp_tunnel.local_host,
+                self._c600_tcp_tunnel.local_port,
+                "USB Direct",
+                self._c600_tcp_tunnel.local_port,
+            )
+        except Exception as exc:
+            self.state.c600_connected = False
+            self._c600_tcp_tunnel.stop()
+            def fail() -> None:
+                self._c600_status_var.set("USB bağlantısı başarısız")
+                self._c600_status_title.configure(text="USB tüneli başarısız")
+                self._c600_status_detail.configure(text=str(exc))
+                self._c600_dot.configure(fg="#dc2626")
+                self._c600_log_write(f"USB Direct Tunnel başarısız: {exc}", "error")
+                self._c600_set_idle_buttons()
+            self._c600_ui(fail)
+
     def _c600_connect_worker(self, host: str, port: int, display_host: str | None = None, display_port: int | None = None) -> None:
         started = time.perf_counter()
         try:
@@ -298,7 +331,7 @@ class C600ConnectionMixin:
         if self._c600_connection_var.get() == "TCP/IP":
             host = self._c600_tcp_tunnel.local_host
             port = self._c600_tcp_tunnel.local_port
-        if self._c600_connection_var.get() not in ("USB / SCOPE TCP Tunnel", "TCP/IP"):
+        if self._c600_connection_var.get() not in ("USB Direct Tunnel", "TCP/IP"):
             raise OSError("Desteklenmeyen C600 bağlantı tipi")
 
         # The embedded Climatix web server expects spaces in IDs as %20.
