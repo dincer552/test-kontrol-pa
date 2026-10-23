@@ -239,8 +239,23 @@ class C600ConnectionMixin:
                 scope_port,
             )
         except Exception as exc:
-            self.state.c600_connected = False
+            # Some Rainbow installations expose the TCP/IP COM bridge only
+            # through SCOPE. The C600 HTTP/JSON service is directly reachable
+            # on port 80, so keep SCOPE out of the data path and fall back to
+            # the controller's native HTTP endpoint.
             self._c600_tcp_tunnel.stop()
+            try:
+                with socket.create_connection((host, 80), timeout=3.0):
+                    pass
+                self._c600_ui(lambda: self._c600_log_write(
+                    f"Rainbow TCP tüneli kullanılamadı; doğrudan HTTP bağlantısına geçiliyor: {host}:80",
+                    "muted",
+                ))
+                self._c600_connect_worker(host, 80, host, 80)
+                return
+            except OSError:
+                pass
+            self.state.c600_connected = False
             def fail() -> None:
                 self._c600_status_var.set("Bağlantı başarısız")
                 self._c600_status_title.configure(text="TCP/IP SCOPE tüneli başarısız")
@@ -330,7 +345,7 @@ class C600ConnectionMixin:
     def _c600_json_read(self, point_id: str) -> dict:
         host = self._c600_host_var.get().strip()
         port = int(self._c600_port_var.get().strip())
-        if self._c600_connection_var.get() == "TCP/IP":
+        if self._c600_connection_var.get() == "TCP/IP" and self._c600_tcp_tunnel.running:
             host = self._c600_tcp_tunnel.local_host
             port = self._c600_tcp_tunnel.local_port
         if self._c600_connection_var.get() not in ("USB Direct Tunnel", "TCP/IP"):
@@ -434,7 +449,7 @@ class C600ConnectionMixin:
         if not self.state.c600_connected:
             self._c600_log_write("DURUM YENİLE: C600 bağlı değil.", "error")
             return
-        if self._c600_connection_var.get() == "TCP/IP":
+        if self._c600_connection_var.get() == "TCP/IP" and self._c600_tcp_tunnel.running:
             host = self._c600_tcp_tunnel.local_host
             port = self._c600_tcp_tunnel.local_port
         else:
