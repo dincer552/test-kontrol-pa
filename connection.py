@@ -130,7 +130,9 @@ class C600ConnectionMixin:
             self._c600_host_var.set("*1")
             self._c600_port_var.set("4243")
         elif mode == "TCP/IP":
-            self._c600_port_var.set("4242")
+            if self._c600_host_var.get().strip() == "*1":
+                self._c600_host_var.set("")
+            self._c600_port_var.set("80")
 
     def _c600_test(self) -> None:
         host = self._c600_host_var.get().strip()
@@ -148,9 +150,9 @@ class C600ConnectionMixin:
             threading.Thread(target=self._c600_usb_connect_worker, args=(host,), daemon=True).start()
             return
         elif mode == "TCP/IP":
-            # Keep the UI on the real SCOPE endpoint. The tunnel startup is
-            # asynchronous so the Tk UI never freezes while SCOPE connects.
-            port_text = "4242"
+            # RainbowTcpTunnel connects directly to the controller IP;
+            # SCOPE is not required for this mode.
+            port_text = "80"
             self._c600_port_var.set(port_text)
             self._c600_status_var.set(f"Bağlanıyor: {host}:{port_text}")
             self._c600_status_title.configure(text="SCOPE tüneli başlatılıyor...")
@@ -214,7 +216,7 @@ class C600ConnectionMixin:
         try:
             self._c600_tcp_tunnel.start(
                 host,
-                target_type="POL6x8",
+                target_type="0",
                 auth=C600_API_PASSWORD,
                 scope_port=scope_port,
             )
