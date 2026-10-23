@@ -280,6 +280,11 @@ class C600ConnectionMixin:
             )
             self._c600_ui(lambda: self._c600_log_write(
                 "USB Direct Tunnel hazır: USB -> 127.0.0.1:4243 -> HTTP 80", "ok"))
+            detected = self._c600_tcp_tunnel.detected_device
+            if detected:
+                self._c600_ui(lambda: self._c600_host_var.set(detected))
+                self._c600_ui(lambda: self._c600_log_write(
+                    f"USB cihazı: {detected}", "ok"))
             self._c600_tcpip_probe()
             self._c600_connect_worker(
                 self._c600_tcp_tunnel.local_host,

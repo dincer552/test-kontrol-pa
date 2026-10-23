@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 from pathlib import Path
 import socket
@@ -23,6 +24,7 @@ class TcpTunnelManager:
         self._process: subprocess.Popen | None = None
         self._target_host = ""
         self.last_diagnostics = ""
+        self.detected_device = ""
 
     @property
     def running(self) -> bool:
@@ -91,6 +93,19 @@ class TcpTunnelManager:
                     f"{name}: " + " | ".join(line.strip() for line in tail if line.strip())
                 )
         return "\n".join(lines)
+
+    def _detect_usb_device(self) -> str:
+        """Read the connected Climatix device name from Rainbow diagnostics."""
+        pattern = re.compile(r"\b(POL\d+_[A-Z0-9]+)\b", re.IGNORECASE)
+        candidates: list[str] = []
+        for path in (self._log_directory() / "Error.log", self._log_directory() / "RainbowDebugLog.log"):
+            try:
+                text = path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            candidates.extend(match.group(1).upper() for match in pattern.finditer(text))
+        self.detected_device = candidates[-1] if candidates else ""
+        return self.detected_device
 
     def stop(self) -> None:
         process = self._process
@@ -218,6 +233,8 @@ class TcpTunnelManager:
             # Port 4242 is the proprietary Siemens SCOPE protocol; the
             # RainbowTcpTunnel process must own that connection itself.
             self._wait_for_listener()
+            if interface_type == "USB":
+                self._detect_usb_device()
         except Exception as exc:
             diagnostics = self._read_diagnostics()
             if diagnostics:
