@@ -62,8 +62,10 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
     def __init__(self) -> None:
         super().__init__()
         self.title(f"Test Kontrol {VERSION} — AHU Test ve Devreye Alma")
-        self.geometry("1300x820")
-        self.minsize(1100, 700)
+        # Compact layout: keep the working height while reducing the wide
+        # desktop footprint by roughly 25%.
+        self.geometry("975x820")
+        self.minsize(900, 680)
         self.state = TestControlState()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self._status_vars: dict[str, tk.StringVar] = {}
