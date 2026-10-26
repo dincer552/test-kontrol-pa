@@ -135,26 +135,33 @@ class SensorTabMixin:
             card, text="Manuel Sensör Ekle", style="Card.TLabelframe", padding=10
         )
         manual_card.grid(row=row + 2, column=0, columnspan=3, sticky="ew", pady=(14, 0))
-        ttk.Label(manual_card, text="Sensör Adı").grid(row=0, column=0, sticky="w", padx=(0, 6), pady=3)
+        self._manual_sensor_name_label = ttk.Label(manual_card, text="Sensör Adı")
+        self._manual_sensor_name_label.grid(row=0, column=0, sticky="w", padx=(0, 6), pady=3)
         self._manual_sensor_name_var = tk.StringVar()
-        ttk.Entry(manual_card, textvariable=self._manual_sensor_name_var, width=12).grid(
-            row=0, column=1, columnspan=3, sticky="ew", pady=3
+        self._manual_sensor_name_entry = ttk.Entry(
+            manual_card, textvariable=self._manual_sensor_name_var, width=12
         )
-        ttk.Label(manual_card, text="Değer").grid(row=1, column=0, sticky="w", padx=(0, 6), pady=3)
+        self._manual_sensor_name_entry.grid(row=0, column=1, columnspan=3, sticky="ew", pady=3)
+        self._manual_sensor_value_label = ttk.Label(manual_card, text="Değer")
+        self._manual_sensor_value_label.grid(row=1, column=0, sticky="w", padx=(0, 6), pady=3)
         self._manual_sensor_value_var = tk.StringVar()
-        ttk.Entry(
+        self._manual_sensor_value_entry = ttk.Entry(
             manual_card, textvariable=self._manual_sensor_value_var, width=7, style="Green.TEntry"
-        ).grid(row=1, column=1, sticky="ew", padx=(0, 6), pady=3)
-        ttk.Label(manual_card, text="Birim").grid(row=1, column=2, sticky="w", padx=(0, 6), pady=3)
+        )
+        self._manual_sensor_value_entry.grid(row=1, column=1, sticky="ew", padx=(0, 6), pady=3)
+        self._manual_sensor_unit_label = ttk.Label(manual_card, text="Birim")
+        self._manual_sensor_unit_label.grid(row=1, column=2, sticky="w", padx=(0, 6), pady=3)
         self._manual_sensor_unit_var = tk.StringVar(value="°C")
-        ttk.Combobox(
+        self._manual_sensor_unit_combo = ttk.Combobox(
             manual_card, textvariable=self._manual_sensor_unit_var,
             values=("°C", "%RH", "ppm"), state="readonly", width=6
-        ).grid(row=1, column=3, sticky="ew", pady=3)
-        ttk.Button(
+        )
+        self._manual_sensor_unit_combo.grid(row=1, column=3, sticky="ew", pady=3)
+        self._manual_sensor_add_button = ttk.Button(
             manual_card, text="+ Sensör Ekle", style="Secondary.TButton",
             command=self._add_manual_sensor,
-        ).grid(row=2, column=0, columnspan=4, sticky="w", pady=(5, 0))
+        )
+        self._manual_sensor_add_button.grid(row=2, column=0, columnspan=4, sticky="w", pady=(5, 0))
         manual_card.columnconfigure(0, weight=0)
         manual_card.columnconfigure(1, weight=1)
         manual_card.columnconfigure(2, weight=0)
@@ -253,7 +260,97 @@ class SensorTabMixin:
             if sum(column_requirements()) <= available:
                 break
 
+        # Measure the three-row "Manuel Sensör Ekle" form separately because
+        # it is nested in its own LabelFrame and has a different grid.
+        manual_form = self._manual_sensor_form
+        manual_available = max(1, manual_form.winfo_width() - 22)
+        form_col0 = max(
+            self._manual_sensor_name_label.winfo_reqwidth()
+            + self._grid_horizontal_padding(self._manual_sensor_name_label),
+            self._manual_sensor_value_label.winfo_reqwidth()
+            + self._grid_horizontal_padding(self._manual_sensor_value_label),
+        )
+        form_col1 = (
+            self._manual_sensor_value_entry.winfo_reqwidth()
+            + self._grid_horizontal_padding(self._manual_sensor_value_entry)
+        )
+        form_col2 = (
+            self._manual_sensor_unit_label.winfo_reqwidth()
+            + self._grid_horizontal_padding(self._manual_sensor_unit_label)
+        )
+        form_col3 = (
+            self._manual_sensor_unit_combo.winfo_reqwidth()
+            + self._grid_horizontal_padding(self._manual_sensor_unit_combo)
+        )
+        form_columns_px = [form_col0, form_col1, form_col2, form_col3]
+        form_required = max(
+            sum(form_columns_px),
+            form_col0 + self._manual_sensor_name_entry.winfo_reqwidth(),
+            self._manual_sensor_add_button.winfo_reqwidth(),
+        )
+        form_width_chars = {
+            "name": int(self._manual_sensor_name_entry.cget("width")),
+            "value": int(self._manual_sensor_value_entry.cget("width")),
+            "unit": int(self._manual_sensor_unit_combo.cget("width")),
+        }
+        for width in range(12, 5, -1):
+            if form_required <= manual_available:
+                break
+            self._manual_sensor_name_entry.configure(width=width)
+            form_width_chars["name"] = width
+            form_required = max(
+                sum(form_columns_px),
+                form_col0 + self._manual_sensor_name_entry.winfo_reqwidth(),
+                self._manual_sensor_add_button.winfo_reqwidth(),
+            )
+        for width in range(7, 3, -1):
+            if form_required <= manual_available:
+                break
+            self._manual_sensor_value_entry.configure(width=width)
+            form_width_chars["value"] = width
+            form_col1 = (
+                self._manual_sensor_value_entry.winfo_reqwidth()
+                + self._grid_horizontal_padding(self._manual_sensor_value_entry)
+            )
+            form_columns_px[1] = form_col1
+            form_required = max(
+                sum(form_columns_px),
+                form_col0 + self._manual_sensor_name_entry.winfo_reqwidth(),
+                self._manual_sensor_add_button.winfo_reqwidth(),
+            )
+        for width in range(6, 3, -1):
+            if form_required <= manual_available:
+                break
+            self._manual_sensor_unit_combo.configure(width=width)
+            form_width_chars["unit"] = width
+            form_col3 = (
+                self._manual_sensor_unit_combo.winfo_reqwidth()
+                + self._grid_horizontal_padding(self._manual_sensor_unit_combo)
+            )
+            form_columns_px[3] = form_col3
+            form_required = max(
+                sum(form_columns_px),
+                form_col0 + self._manual_sensor_name_entry.winfo_reqwidth(),
+                self._manual_sensor_add_button.winfo_reqwidth(),
+            )
+
         row_widths: dict[str, int] = {}
+        row_widths["Manuel Sensör Ekle / Ad"] = (
+            self._manual_sensor_name_label.winfo_reqwidth()
+            + self._grid_horizontal_padding(self._manual_sensor_name_label)
+            + self._manual_sensor_name_entry.winfo_reqwidth()
+        )
+        row_widths["Manuel Sensör Ekle / Değer-Birim"] = (
+            self._manual_sensor_value_label.winfo_reqwidth()
+            + self._grid_horizontal_padding(self._manual_sensor_value_label)
+            + self._manual_sensor_value_entry.winfo_reqwidth()
+            + self._grid_horizontal_padding(self._manual_sensor_value_entry)
+            + self._manual_sensor_unit_label.winfo_reqwidth()
+            + self._grid_horizontal_padding(self._manual_sensor_unit_label)
+            + self._manual_sensor_unit_combo.winfo_reqwidth()
+        )
+        row_widths["Manuel Sensör Ekle / Buton"] = self._manual_sensor_add_button.winfo_reqwidth()
+
         for name, (label, entry) in self._sensor_widgets.items():
             button = self._sensor_manual_buttons[name]
             row_widths[name] = (
@@ -283,6 +380,11 @@ class SensorTabMixin:
             "remaining_px": available - sum(columns),
             "entry_width_chars": chosen_entry_width,
             "label_wrap_px": chosen_wrap,
+            "manual_form_available_px": manual_available,
+            "manual_form_column_minimums_px": form_columns_px,
+            "manual_form_required_px": form_required,
+            "manual_form_remaining_px": manual_available - form_required,
+            "manual_form_width_chars": form_width_chars,
             "row_requested_widths_px": row_widths,
         }
 
