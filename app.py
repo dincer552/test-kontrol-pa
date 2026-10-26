@@ -227,26 +227,28 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         ttk.Label(title_box, text="AHU test, devreye alma, kontrol ve raporlama", style="Muted.TLabel").pack(anchor="w")
 
         # Manual update check stays available; the install button activates only when a newer build exists.
+        # Keep update controls on their own row so they remain visible in
+        # compact 400 px windows; the title and subtitle must not push them off-screen.
         update_controls = ttk.Frame(header, style="White.TFrame")
-        update_controls.pack(side="right", padx=(6, 0))
+        update_controls.pack(side="bottom", fill="x", pady=(8, 0))
+        update_controls.columnconfigure(0, weight=1)
         self._manual_update_button = ttk.Button(
             update_controls,
-            text="↻",
+            text="↻ Güncelleme Denetle",
             style="Secondary.TButton",
-            width=2,
             command=self._manual_update_check,
         )
-        self._manual_update_button.grid(row=0, column=0, padx=(0, 6), sticky="s")
+        self._manual_update_button.grid(row=0, column=1, padx=(0, 6), sticky="e")
         self._update_button = ttk.Button(
             update_controls,
             text="Güncelle",
-            style="Secondary.TButton",
+            style="Primary.TButton",
             command=self._start_update,
             state="disabled",
         )
-        self._update_button.grid(row=0, column=1, sticky="s")
+        self._update_button.grid(row=0, column=2, sticky="e")
         self._update_build_label = ttk.Label(update_controls, text="", style="UpdateBuild.TLabel")
-        self._update_build_label.grid(row=1, column=1, pady=(2, 0), sticky="n")
+        self._update_build_label.grid(row=1, column=2, pady=(2, 0), sticky="e")
 
         # Main notebook uses the same clean white-card visual language.
         tabs = ttk.Notebook(self)
