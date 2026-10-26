@@ -215,12 +215,12 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
     def _build_ui(self) -> None:
         # Header mirrors PDF kW Selector: compact white card, blue badge and title.
-        header = ttk.Frame(self, style="White.TFrame", padding=(12, 8))
+        header = ttk.Frame(self, style="White.TFrame", padding=(6, 8))
         header.pack(fill="x", pady=(0, 8))
         if self._app_icon_image is not None:
-            tk.Label(header, image=self._app_icon_image, bg="#ffffff", borderwidth=0).pack(side="left", padx=(0, 10))
+            tk.Label(header, image=self._app_icon_image, bg="#ffffff", borderwidth=0).pack(side="left", padx=(0, 6))
         else:
-            tk.Label(header, text="T", bg="#1a56db", fg="#ffffff", font=("Segoe UI", 10, "bold"), width=5, height=1).pack(side="left", padx=(0, 10))
+            tk.Label(header, text="T", bg="#1a56db", fg="#ffffff", font=("Segoe UI", 10, "bold"), width=4, height=1).pack(side="left", padx=(0, 6))
         title_box = ttk.Frame(header, style="White.TFrame")
         title_box.pack(side="left")
         ttk.Label(title_box, text="Test Kontrol", style="Title.TLabel").pack(anchor="w")
@@ -597,8 +597,9 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
     def _add_fan(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
         notebook.add(tab, text="Fan Kontrol")
-        card = ttk.LabelFrame(body, text="Fan Kontrol", style="Card.TLabelframe", padding=12)
+        card = ttk.LabelFrame(body, text="Fan Kontrol", style="Card.TLabelframe", padding=8)
         card.pack(fill="x")
+        card.columnconfigure(1, weight=1)
 
         self._aspirator_fan_type_var = tk.StringVar(value="")
         self._aspirator_fan_count_var = tk.StringVar(value="0")
@@ -613,16 +614,16 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         ):
             ttk.Label(card, text=label).grid(row=row, column=0, sticky="w", pady=6)
             var = type_var if type_var is not None else count_var
-            ttk.Entry(card, textvariable=var, width=22, state="readonly").grid(
-                row=row, column=1, sticky="w", pady=6
+            ttk.Entry(card, textvariable=var, width=11, state="readonly").grid(
+                row=row, column=1, sticky="ew", pady=6
             )
 
         ttk.Label(card, text="Supply Debi (%25)").grid(row=4, column=0, sticky="w", pady=6)
         self._supply_airflow_var = tk.StringVar(value=self.state.supply_airflow)
         self._supply_airflow_entry = ttk.Entry(
-            card, textvariable=self._supply_airflow_var, width=22, state="readonly"
+            card, textvariable=self._supply_airflow_var, width=11, state="readonly"
         )
-        self._supply_airflow_entry.grid(row=4, column=1, sticky="w", pady=6)
+        self._supply_airflow_entry.grid(row=4, column=1, sticky="ew", pady=6)
         ttk.Button(
             card, text="Manuel Giriş", style="Secondary.TButton",
             command=lambda: self._enable_manual_airflow("supply")
@@ -631,9 +632,9 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         ttk.Label(card, text="Return Debi (%25)").grid(row=5, column=0, sticky="w", pady=6)
         self._return_airflow_var = tk.StringVar(value=self.state.return_airflow)
         self._return_airflow_entry = ttk.Entry(
-            card, textvariable=self._return_airflow_var, width=22, state="readonly"
+            card, textvariable=self._return_airflow_var, width=11, state="readonly"
         )
-        self._return_airflow_entry.grid(row=5, column=1, sticky="w", pady=6)
+        self._return_airflow_entry.grid(row=5, column=1, sticky="ew", pady=6)
         ttk.Button(
             card, text="Manuel Giriş", style="Secondary.TButton",
             command=lambda: self._enable_manual_airflow("return")
