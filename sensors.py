@@ -264,6 +264,11 @@ class SensorTabMixin:
         # it is nested in its own LabelFrame and has a different grid.
         manual_form = self._manual_sensor_form
         manual_available = max(1, manual_form.winfo_width() - 22)
+        # Reset to design defaults before measuring so a wider window restores
+        # normal field widths after an earlier narrow-layout pass.
+        self._manual_sensor_name_entry.configure(width=12)
+        self._manual_sensor_value_entry.configure(width=7)
+        self._manual_sensor_unit_combo.configure(width=6)
         form_col0 = max(
             self._manual_sensor_name_label.winfo_reqwidth()
             + self._grid_horizontal_padding(self._manual_sensor_name_label),
