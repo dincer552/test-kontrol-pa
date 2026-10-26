@@ -705,9 +705,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             for point_id in ("AIR_FLOW", "1-AIR_FLOW"):
                 result = self._c600_json_read(point_id)
                 value = str(result.get("value", "")).strip()
-                if not value:
-                    raise ValueError(f"{point_id}: değer boş")
-                results[point_id] = value
+                results[point_id] = value or "Yok"
         except Exception as exc:
             error = exc
 

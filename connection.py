@@ -370,9 +370,10 @@ class C600ConnectionMixin:
         with urllib.request.urlopen(request, timeout=3.0) as response:
             payload = response.read().decode("utf-8")
         values = json.loads(payload)
-        if not isinstance(values, list) or not values or not isinstance(values[0], dict):
+        if not isinstance(values, list) or any(not isinstance(item, dict) for item in values):
             raise ValueError(f"{point_id}: beklenmeyen JSON yanıtı")
-        return values[0]
+        # Climatix returns [] for a valid but unavailable or unused register.
+        return values[0] if values else {}
 
     def _c600_device_info_worker(self) -> None:
         try:
