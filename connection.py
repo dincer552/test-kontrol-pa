@@ -350,7 +350,7 @@ class C600ConnectionMixin:
     def _c600_json_read(self, point_id: str) -> dict:
         host = self._c600_host_var.get().strip()
         port = int(self._c600_port_var.get().strip())
-        if self._c600_connection_var.get() == "TCP/IP" and self._c600_tcp_tunnel.running:
+        if self._c600_connection_var.get() in ("USB Direct Tunnel", "TCP/IP") and self._c600_tcp_tunnel.running:
             host = self._c600_tcp_tunnel.local_host
             port = self._c600_tcp_tunnel.local_port
         if self._c600_connection_var.get() not in ("USB Direct Tunnel", "TCP/IP"):
