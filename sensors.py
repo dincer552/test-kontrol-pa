@@ -61,10 +61,10 @@ class SensorTabMixin:
         row = 0
         for name in SENSOR_NAMES:
             label = ttk.Label(card, text=name)
-            label.grid(row=row, column=0, sticky="w", pady=6, padx=(0, 20))
+            label.grid(row=row, column=0, sticky="w", pady=6, padx=(0, 8))
             var = tk.StringVar(value=self.state.sensors[name])
             self._sensor_vars[name] = var
-            entry = ttk.Entry(card, textvariable=var, width=24, state="readonly")
+            entry = ttk.Entry(card, textvariable=var, width=16, state="readonly")
             entry.grid(row=row, column=1, sticky="w", pady=6)
             self._sensor_widgets[name] = (label, entry)
             self._sensor_units[name] = "°C" if "CO2" not in name else "ppm"
@@ -83,10 +83,10 @@ class SensorTabMixin:
         self._sensor_humidity_manual_buttons: dict[str, ttk.Button] = {}
         for name in HUMIDITY_POINTS:
             label = ttk.Label(card, text=f"{name} Nem")
-            label.grid(row=row, column=0, sticky="w", pady=6, padx=(0, 20))
+            label.grid(row=row, column=0, sticky="w", pady=6, padx=(0, 8))
             var = tk.StringVar(value="-")
             self._sensor_humidity_vars[name] = var
-            entry = ttk.Entry(card, textvariable=var, width=24, state="readonly")
+            entry = ttk.Entry(card, textvariable=var, width=16, state="readonly")
             entry.grid(row=row, column=1, sticky="w", pady=6)
             self._sensor_humidity_widgets[name] = (label, entry)
             button = ttk.Button(
@@ -105,8 +105,8 @@ class SensorTabMixin:
         )
         # Ana sensör satırlarındaki kolon başlangıçlarıyla aynı hizada olsun.
         # Normal değer kutusu kolon 1 ile aynı hizada başlasın.
-        self._manual_sensor_rows_frame.grid_columnconfigure(0, minsize=231)
-        self._manual_sensor_rows_frame.grid_columnconfigure(1, minsize=193)
+        self._manual_sensor_rows_frame.grid_columnconfigure(0, minsize=150)
+        self._manual_sensor_rows_frame.grid_columnconfigure(1, minsize=110)
         row += 1
 
         self._sensor_read_button = ttk.Button(
@@ -131,13 +131,13 @@ class SensorTabMixin:
         manual_card.grid(row=row + 2, column=0, columnspan=3, sticky="ew", pady=(14, 0))
         ttk.Label(manual_card, text="Sensör Adı").grid(row=0, column=0, sticky="w", padx=(0, 8))
         self._manual_sensor_name_var = tk.StringVar()
-        ttk.Entry(manual_card, textvariable=self._manual_sensor_name_var, width=28).grid(
+        ttk.Entry(manual_card, textvariable=self._manual_sensor_name_var, width=18).grid(
             row=0, column=1, sticky="w", padx=(0, 10)
         )
         ttk.Label(manual_card, text="Değer").grid(row=0, column=2, sticky="w", padx=(0, 8))
         self._manual_sensor_value_var = tk.StringVar()
         ttk.Entry(
-            manual_card, textvariable=self._manual_sensor_value_var, width=16, style="Green.TEntry"
+            manual_card, textvariable=self._manual_sensor_value_var, width=10, style="Green.TEntry"
         ).grid(row=0, column=3, sticky="w", padx=(0, 10))
         ttk.Label(manual_card, text="Eng. Unit").grid(row=0, column=4, sticky="w", padx=(0, 8))
         self._manual_sensor_unit_var = tk.StringVar(value="°C")

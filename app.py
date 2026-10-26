@@ -64,8 +64,8 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self.title(f"Test Kontrol {VERSION} — AHU Test ve Devreye Alma")
         # Compact layout: keep the working height while reducing the wide
         # desktop footprint by roughly 25%.
-        self.geometry("975x820")
-        self.minsize(900, 680)
+        self.geometry("400x820")
+        self.minsize(400, 680)
         self.state = TestControlState()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self._status_vars: dict[str, tk.StringVar] = {}
@@ -337,7 +337,6 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         project = ttk.LabelFrame(body, text="Proje Bilgileri", style="Card.TLabelframe", padding=12)
         project.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         project.columnconfigure(1, weight=1)
-        project.columnconfigure(2, weight=0)
 
         for i, (label, attr) in enumerate((
             ("Order No", "order_no"),
@@ -352,12 +351,12 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             )
 
         # PDF kW Selector'daki PDF alma kutusunun ayni tasarim/drag davranisi.
-        pdf_box = ttk.Frame(project, style="White.TFrame", padding=(12, 0, 0, 0))
-        pdf_box.grid(row=0, column=2, rowspan=3, sticky="ne")
+        pdf_box = ttk.Frame(body, style="White.TFrame", padding=(0, 0, 0, 0))
+        pdf_box.grid(row=1, column=0, sticky="ew", pady=(0, 10))
 
         inner_box = tk.Frame(
             pdf_box, bg="#ffffff", highlightbackground="#e2e8f0",
-            highlightthickness=1, padx=8, pady=8, width=360, height=150
+            highlightthickness=1, padx=8, pady=8, width=350, height=150
         )
         inner_box.pack(fill="both", expand=True)
         inner_box.pack_propagate(False)
@@ -429,12 +428,12 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             inner_box.dnd_bind("<<Drop>>", self._drop_pdf)
 
         self._pdf_status_var = tk.StringVar(value="")
-        ttk.Label(project, textvariable=self._pdf_status_var, style="Muted.TLabel").grid(
-            row=3, column=0, columnspan=3, sticky="w", pady=(4, 0)
+        ttk.Label(body, textvariable=self._pdf_status_var, style="Muted.TLabel").grid(
+            row=2, column=0, sticky="w", pady=(0, 8)
         )
 
         checks = ttk.LabelFrame(body, text="Kontrol Durumu", style="Card.TLabelframe", padding=12)
-        checks.grid(row=1, column=0, sticky="ew")
+        checks.grid(row=3, column=0, sticky="ew")
         names = ("Fan Kontrol", "Damper Kontrol", "Filtre Kontrol", "Modüller", "Sensorler", "C600 / GenericJSON", "User", "Rapor")
         for r, name in enumerate(names):
             ttk.Label(checks, text=name).grid(row=r, column=0, sticky="w", pady=4)
@@ -612,14 +611,14 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         ):
             ttk.Label(card, text=label).grid(row=row, column=0, sticky="w", pady=6)
             var = type_var if type_var is not None else count_var
-            ttk.Entry(card, textvariable=var, width=34, state="readonly").grid(
+            ttk.Entry(card, textvariable=var, width=22, state="readonly").grid(
                 row=row, column=1, sticky="w", pady=6
             )
 
         ttk.Label(card, text="Supply Debi (%25)").grid(row=4, column=0, sticky="w", pady=6)
         self._supply_airflow_var = tk.StringVar(value=self.state.supply_airflow)
         self._supply_airflow_entry = ttk.Entry(
-            card, textvariable=self._supply_airflow_var, width=34, state="readonly"
+            card, textvariable=self._supply_airflow_var, width=22, state="readonly"
         )
         self._supply_airflow_entry.grid(row=4, column=1, sticky="w", pady=6)
         ttk.Button(
@@ -630,7 +629,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         ttk.Label(card, text="Return Debi (%25)").grid(row=5, column=0, sticky="w", pady=6)
         self._return_airflow_var = tk.StringVar(value=self.state.return_airflow)
         self._return_airflow_entry = ttk.Entry(
-            card, textvariable=self._return_airflow_var, width=34, state="readonly"
+            card, textvariable=self._return_airflow_var, width=22, state="readonly"
         )
         self._return_airflow_entry.grid(row=5, column=1, sticky="w", pady=6)
         ttk.Button(

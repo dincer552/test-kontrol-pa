@@ -32,14 +32,13 @@ class C600ConnectionMixin:
     def _add_c600(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
         notebook.add(tab, text="Bağlantı")
-        body.columnconfigure(0, weight=3)
-        body.columnconfigure(1, weight=2)
+        body.columnconfigure(0, weight=1)
         body.rowconfigure(3, weight=1)
 
-        ttk.Label(body, text="Climatix C600 / GenericJSON", style="Title.TLabel").grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 10))
+        ttk.Label(body, text="Climatix C600 / GenericJSON", style="Title.TLabel").grid(row=0, column=0, sticky="w", pady=(0, 10))
 
         conn = ttk.LabelFrame(body, text="C600 Bağlantısı", style="Card.TLabelframe", padding=14)
-        conn.grid(row=1, column=0, sticky="nsew", padx=(0, 8), pady=(0, 10))
+        conn.grid(row=1, column=0, sticky="ew", pady=(0, 10))
         conn.columnconfigure(1, weight=1)
 
         ttk.Label(conn, text="Bağlantı:").grid(row=0, column=0, sticky="w", pady=6, padx=(0, 12))
@@ -49,7 +48,7 @@ class C600ConnectionMixin:
             textvariable=self._c600_connection_var,
             state="readonly",
             values=("USB Direct Tunnel", "TCP/IP"),
-            width=34,
+            width=20,
         )
         self._c600_connection_combo.grid(row=0, column=1, sticky="ew", pady=6)
         self._c600_connection_combo.bind("<<ComboboxSelected>>", self._c600_connection_changed)
@@ -63,7 +62,7 @@ class C600ConnectionMixin:
         ttk.Entry(conn, textvariable=self._c600_port_var, width=12).grid(row=2, column=1, sticky="w", pady=6)
 
         status = tk.Frame(conn, bg="#ecfdf3", highlightbackground="#bbf7d0", highlightthickness=1)
-        status.grid(row=0, column=2, rowspan=3, sticky="nsew", padx=(28, 0), pady=2)
+        status.grid(row=3, column=0, columnspan=2, sticky="ew", padx=0, pady=(10, 2))
         self._c600_dot = tk.Label(status, text="●", bg="#ecfdf3", fg="#16a34a", font=("Segoe UI", 25, "bold"))
         self._c600_dot.grid(row=0, column=0, rowspan=3, padx=(14, 8), pady=10)
         self._c600_status_title = tk.Label(status, text="Bağlanmadı", bg="#ecfdf3", fg="#14532d", font=("Segoe UI", 12, "bold"), anchor="w")
@@ -72,7 +71,7 @@ class C600ConnectionMixin:
         self._c600_status_detail.grid(row=1, column=1, sticky="w", padx=(0, 12))
         self._c600_status_ping = tk.Label(status, text="Yanıt süresi: —", bg="#ecfdf3", fg="#166534", font=("Segoe UI", 9), anchor="w")
         self._c600_status_ping.grid(row=2, column=1, sticky="w", padx=(0, 12), pady=(2, 10))
-        conn.columnconfigure(2, weight=2)
+        status.columnconfigure(1, weight=1)
 
         buttons = ttk.Frame(body, style="White.TFrame")
         buttons.grid(row=2, column=0, sticky="w", pady=(0, 10))
