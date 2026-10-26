@@ -133,6 +133,8 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         style.map("Primary.TButton", background=[("active", "#1e40af"), ("disabled", "#cbd5e1")])
         style.configure("Secondary.TButton", background="#ffffff", foreground="#334155", font=("Segoe UI", 9), borderwidth=1, bordercolor="#cbd5e1", padding=(8, 4))
         style.map("Secondary.TButton", background=[("active", "#f1f5f9")], bordercolor=[("active", "#94a3b8")])
+        style.configure("SensorManual.TButton", background="#ffffff", foreground="#334155", font=("Segoe UI", 8), borderwidth=1, bordercolor="#cbd5e1", padding=(3, 2))
+        style.map("SensorManual.TButton", background=[("active", "#f1f5f9")], bordercolor=[("active", "#94a3b8")])
         style.configure("TNotebook", background=bg_canvas, borderwidth=0)
         style.configure("TNotebook.Tab", background="#e2e8f0", foreground=muted, font=("Segoe UI", 9, "bold"), padding=(14, 7), borderwidth=0)
         style.map("TNotebook.Tab", background=[("selected", card_bg), ("active", "#e2e8f0")], foreground=[("selected", text), ("active", text)])
