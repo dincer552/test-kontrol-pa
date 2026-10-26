@@ -63,7 +63,7 @@ class SensorTabMixin:
 
         row = 0
         for name in SENSOR_NAMES:
-            label = ttk.Label(card, text=name)
+            label = ttk.Label(card, text=name, wraplength=128)
             label.grid(row=row, column=0, sticky="w", pady=6, padx=(0, 8))
             var = tk.StringVar(value=self.state.sensors[name])
             self._sensor_vars[name] = var
@@ -74,7 +74,8 @@ class SensorTabMixin:
             button = ttk.Button(
                 card,
                 text="Manuel",
-                style="Secondary.TButton",
+                style="SensorManual.TButton",
+                width=7,
                 command=lambda sensor_name=name: self._toggle_sensor_manual(sensor_name),
             )
             button.grid(row=row, column=2, sticky="w", padx=(8, 0), pady=6)
@@ -85,7 +86,7 @@ class SensorTabMixin:
         self._sensor_humidity_widgets: dict[str, tuple[ttk.Label, ttk.Entry]] = {}
         self._sensor_humidity_manual_buttons: dict[str, ttk.Button] = {}
         for name in HUMIDITY_POINTS:
-            label = ttk.Label(card, text=f"{name} Nem")
+            label = ttk.Label(card, text=f"{name} Nem", wraplength=128)
             label.grid(row=row, column=0, sticky="w", pady=6, padx=(0, 8))
             var = tk.StringVar(value="-")
             self._sensor_humidity_vars[name] = var
@@ -95,7 +96,8 @@ class SensorTabMixin:
             button = ttk.Button(
                 card,
                 text="Manuel",
-                style="Secondary.TButton",
+                style="SensorManual.TButton",
+                width=7,
                 command=lambda sensor_name=name: self._toggle_sensor_manual(f"{sensor_name} Humidity"),
             )
             button.grid(row=row, column=2, sticky="w", padx=(8, 0), pady=6)
@@ -108,8 +110,9 @@ class SensorTabMixin:
         )
         # Ana sensör satırlarındaki kolon başlangıçlarıyla aynı hizada olsun.
         # Normal değer kutusu kolon 1 ile aynı hizada başlasın.
-        self._manual_sensor_rows_frame.grid_columnconfigure(0, weight=1)
+        self._manual_sensor_rows_frame.grid_columnconfigure(0, weight=0)
         self._manual_sensor_rows_frame.grid_columnconfigure(1, weight=1)
+        self._manual_sensor_rows_frame.grid_columnconfigure(2, weight=0)
         row += 1
 
         self._sensor_read_button = ttk.Button(
@@ -152,11 +155,136 @@ class SensorTabMixin:
             manual_card, text="+ Sensör Ekle", style="Secondary.TButton",
             command=self._add_manual_sensor,
         ).grid(row=2, column=0, columnspan=4, sticky="w", pady=(5, 0))
-        for column in range(4):
-            manual_card.columnconfigure(column, weight=1)
+        manual_card.columnconfigure(0, weight=0)
+        manual_card.columnconfigure(1, weight=1)
+        manual_card.columnconfigure(2, weight=0)
+        manual_card.columnconfigure(3, weight=1)
         self._manual_sensor_form = manual_card
 
         self._set_sensor_visibility({name: {"temperature": False, "humidity": False, "co2": False} for name in SENSOR_NAMES})
+
+        # Measure actual Tk pixel widths after geometry settles and whenever resized.
+        self._sensor_fit_pending = False
+        self._sensor_width_measurements: dict[str, object] = {}
+        self._sensor_card.bind("<Configure>", self._queue_sensor_width_fit, add="+")
+        self.after_idle(self._fit_sensor_row_widths)
+
+    def _queue_sensor_width_fit(self, _event=None) -> None:
+        if getattr(self, "_sensor_fit_pending", False):
+            return
+        self._sensor_fit_pending = True
+        self.after_idle(self._fit_sensor_row_widths)
+
+    @staticmethod
+    def _grid_horizontal_padding(widget) -> int:
+        value = widget.grid_info().get("padx", 0)
+        if isinstance(value, (tuple, list)):
+            return sum(int(part) for part in value)
+        if isinstance(value, str):
+            try:
+                return sum(int(part) for part in value.split())
+            except ValueError:
+                return 0
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return 0
+
+    def _fit_sensor_row_widths(self) -> None:
+        """Measure the real pixel budget and shrink sensor fields only if needed."""
+        self._sensor_fit_pending = False
+        card = getattr(self, "_sensor_card", None)
+        if card is None or not card.winfo_exists() or card.winfo_width() < 50:
+            return
+
+        standard_labels = [pair[0] for pair in self._sensor_widgets.values()]
+        humidity_labels = [pair[0] for pair in self._sensor_humidity_widgets.values()]
+        dynamic_labels = [pair[0] for pair in self._manual_sensor_rows.values()]
+        labels = standard_labels + humidity_labels + dynamic_labels
+        entries = (
+            [pair[1] for pair in self._sensor_widgets.values()]
+            + [pair[1] for pair in self._sensor_humidity_widgets.values()]
+        )
+        manual_buttons = list(self._sensor_manual_buttons.values()) + list(
+            self._sensor_humidity_manual_buttons.values()
+        )
+
+        # LabelFrame padding is 14 px on each side, plus its border.
+        available = max(1, card.winfo_width() - 32)
+
+        def column_requirements() -> tuple[int, int, int]:
+            col0 = max(
+                [label.winfo_reqwidth() + self._grid_horizontal_padding(label) for label in labels]
+                + [
+                    self._sensor_read_button.winfo_reqwidth()
+                    + self._grid_horizontal_padding(self._sensor_read_button)
+                ]
+            )
+            col1 = max(
+                [entry.winfo_reqwidth() + self._grid_horizontal_padding(entry) for entry in entries]
+                + [
+                    self._sensor_save_button.winfo_reqwidth()
+                    + self._grid_horizontal_padding(self._sensor_save_button)
+                ]
+            )
+            col2 = max(
+                button.winfo_reqwidth() + self._grid_horizontal_padding(button)
+                for button in manual_buttons
+            ) if manual_buttons else 0
+            return col0, col1, col2
+
+        # Start with the intended size, then reduce flexible value fields first.
+        chosen_entry_width = 8
+        for width in range(8, 3, -1):
+            for entry in entries:
+                entry.configure(width=width)
+            chosen_entry_width = width
+            if sum(column_requirements()) <= available:
+                break
+
+        # If controls still exceed the available pixels, wrap labels more tightly.
+        chosen_wrap = 128
+        for wrap in range(128, 71, -8):
+            for label in standard_labels + humidity_labels:
+                label.configure(wraplength=wrap)
+            for label in dynamic_labels:
+                label.configure(wraplength=min(110, wrap))
+            chosen_wrap = wrap
+            if sum(column_requirements()) <= available:
+                break
+
+        row_widths: dict[str, int] = {}
+        for name, (label, entry) in self._sensor_widgets.items():
+            button = self._sensor_manual_buttons[name]
+            row_widths[name] = (
+                label.winfo_reqwidth() + self._grid_horizontal_padding(label)
+                + entry.winfo_reqwidth() + self._grid_horizontal_padding(entry)
+                + button.winfo_reqwidth() + self._grid_horizontal_padding(button)
+            )
+        for name, (label, entry) in self._sensor_humidity_widgets.items():
+            button = self._sensor_humidity_manual_buttons[name]
+            row_widths[f"{name} Nem"] = (
+                label.winfo_reqwidth() + self._grid_horizontal_padding(label)
+                + entry.winfo_reqwidth() + self._grid_horizontal_padding(entry)
+                + button.winfo_reqwidth() + self._grid_horizontal_padding(button)
+            )
+        for name, (label, entry, unit_box) in self._manual_sensor_rows.items():
+            row_widths[f"Manuel: {name}"] = (
+                label.winfo_reqwidth() + self._grid_horizontal_padding(label)
+                + entry.winfo_reqwidth() + self._grid_horizontal_padding(entry)
+                + unit_box.winfo_reqwidth() + self._grid_horizontal_padding(unit_box)
+            )
+
+        columns = column_requirements()
+        self._sensor_width_measurements = {
+            "available_px": available,
+            "column_minimums_px": columns,
+            "required_px": sum(columns),
+            "remaining_px": available - sum(columns),
+            "entry_width_chars": chosen_entry_width,
+            "label_wrap_px": chosen_wrap,
+            "row_requested_widths_px": row_widths,
+        }
 
     def _toggle_sensor_manual(self, name: str) -> None:
         if name in self._sensor_widgets:
@@ -184,17 +312,21 @@ class SensorTabMixin:
             return
         row = len(self._manual_sensor_rows)
         unit = self._manual_sensor_unit_var.get().strip() or "°C"
-        label = ttk.Label(frame, text=name)
-        label.grid(row=row, column=0, sticky="w", pady=6, padx=(0, 20))
-        entry = ttk.Entry(frame, width=10, style="Green.TEntry")
+        label = ttk.Label(frame, text=name, wraplength=110)
+        label.grid(row=row, column=0, sticky="w", pady=6, padx=(0, 4))
+        entry = ttk.Entry(frame, width=7, style="Green.TEntry")
         entry.insert(0, value)
-        entry.grid(row=row, column=1, sticky="w", pady=6)
+        entry.grid(row=row, column=1, sticky="ew", pady=6)
         unit_box = ttk.Combobox(
-            frame, values=("°C", "%RH", "ppm"), state="readonly", width=8
+            frame, values=("°C", "%RH", "ppm"), state="readonly", width=6
         )
         unit_box.set(unit)
-        unit_box.grid(row=row, column=2, sticky="w", pady=6, padx=(8, 0))
+        unit_box.grid(row=row, column=2, sticky="w", pady=6, padx=(4, 0))
         self._manual_sensor_rows[name] = (label, entry, unit_box)
+        frame.grid_columnconfigure(0, weight=0)
+        frame.grid_columnconfigure(1, weight=1)
+        frame.grid_columnconfigure(2, weight=0)
+        self._queue_sensor_width_fit()
         self.state.manual_sensors[name] = value
         self.state.manual_sensor_units[name] = unit
         self._manual_sensor_name_var.set("")
@@ -258,7 +390,7 @@ class SensorTabMixin:
         self.state.manual_sensor_units.clear()
         for name, entry_pair in self._sensor_widgets.items():
             entry_pair[1].configure(state="readonly", style="TEntry")
-            self._sensor_manual_buttons[name].configure(text="Manuel Giriş")
+            self._sensor_manual_buttons[name].configure(text="Manuel")
         self.state.manual_sensors.clear()
         self._set_sensor_visibility(
             {name: {"temperature": False, "humidity": False, "co2": False} for name in SENSOR_NAMES}
