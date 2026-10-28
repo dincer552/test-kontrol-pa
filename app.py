@@ -238,6 +238,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             update_controls,
             text="↻ Güncelleme Denetle",
             style="Secondary.TButton",
+            width=17,
             command=self._manual_update_check,
         )
         self._manual_update_button.grid(row=0, column=1, padx=(0, 6), sticky="e")
@@ -245,12 +246,13 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             update_controls,
             text="Güncelle",
             style="Primary.TButton",
+            width=10,
             command=self._start_update,
             state="disabled",
         )
         self._update_button.grid(row=0, column=2, sticky="e")
         self._update_build_label = ttk.Label(update_controls, text="", style="UpdateBuild.TLabel")
-        self._update_build_label.grid(row=1, column=2, pady=(2, 0), sticky="e")
+        self._update_build_label.grid(row=1, column=1, columnspan=2, pady=(2, 0), sticky="e")
 
         # Main notebook uses the same clean white-card visual language.
         tabs = ttk.Notebook(self)
