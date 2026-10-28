@@ -789,7 +789,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             # Replace the temporary label with a stored widget so the whole row
             # can be hidden without hiding the complete module card.
             label_widget.grid(row=row, column=0, sticky="w", padx=12, pady=7)
-            entry = ttk.Entry(card, textvariable=var, width=28, state="readonly")
+            entry = ttk.Entry(card, textvariable=var, width=16, state="readonly")
             entry.grid(row=row, column=1, sticky="w", pady=7)
             self._module_rows[key] = (label_widget, entry)
 
@@ -825,8 +825,8 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         })
 
     def _create_heater_table(self, parent: ttk.Frame, kind: str, title: str, row: int) -> None:
-        frame = ttk.LabelFrame(parent, text=title, style="Card.TLabelframe", padding=10)
-        frame.grid(row=row, column=0, columnspan=3, sticky="w", padx=12, pady=(6, 2))
+        frame = ttk.LabelFrame(parent, text=title, style="Card.TLabelframe", padding=6)
+        frame.grid(row=row, column=0, columnspan=3, sticky="w", padx=6, pady=(4, 2))
         self._heater_table_frames[kind] = frame
 
         header = ttk.Frame(frame, style="White.TFrame")
@@ -871,18 +871,18 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 child.destroy()
 
         self._heater_table_values[kind] = {}
-        ttk.Label(frame, text="Faz / Kademe").grid(row=1, column=0, padx=10, pady=5, sticky="w")
+        ttk.Label(frame, text="Faz / Kademe").grid(row=1, column=0, padx=4, pady=3, sticky="w")
         for col in range(1, stage_count + 1):
-            ttk.Label(frame, text=f"Kademe {col}").grid(row=1, column=col, padx=10, pady=5, sticky="w")
+            ttk.Label(frame, text=f"K{col}").grid(row=1, column=col, padx=4, pady=3, sticky="w")
 
         for row, phase in enumerate(("R", "S", "T"), start=2):
-            ttk.Label(frame, text=phase).grid(row=row, column=0, padx=10, pady=5, sticky="w")
+            ttk.Label(frame, text=phase).grid(row=row, column=0, padx=4, pady=3, sticky="w")
             for col in range(1, stage_count + 1):
                 index = {"R": 0, "S": 3, "T": 6}[phase] + (col - 1)
                 var = tk.StringVar(value=str(old_values[index]))
                 self._heater_table_values[kind][(phase, col)] = var
-                ttk.Entry(frame, textvariable=var, width=12, style="Green.TEntry").grid(
-                    row=row, column=col, padx=10, pady=5, sticky="w"
+                ttk.Entry(frame, textvariable=var, width=7, style="Green.TEntry").grid(
+                    row=row, column=col, padx=4, pady=3, sticky="w"
                 )
 
     def _set_module_visibility(self, visibility: dict[str, bool]) -> None:
