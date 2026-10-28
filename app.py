@@ -136,7 +136,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         style.configure("SensorManual.TButton", background="#ffffff", foreground="#334155", font=("Segoe UI", 8), borderwidth=1, bordercolor="#cbd5e1", padding=(3, 2))
         style.map("SensorManual.TButton", background=[("active", "#f1f5f9")], bordercolor=[("active", "#94a3b8")])
         style.configure("TNotebook", background=bg_canvas, borderwidth=0)
-        style.configure("TNotebook.Tab", background="#e2e8f0", foreground=muted, font=("Segoe UI", 9, "bold"), padding=(14, 7), borderwidth=0)
+        style.configure("TNotebook.Tab", background="#e2e8f0", foreground=muted, font=("Segoe UI", 8, "bold"), padding=(4, 5), borderwidth=0)
         style.map("TNotebook.Tab", background=[("selected", card_bg), ("active", "#e2e8f0")], foreground=[("selected", text), ("active", text)])
         style.configure("TLabelframe", background=card_bg, bordercolor=border, borderwidth=1, relief="solid")
         style.configure("TLabelframe.Label", background=card_bg, foreground=text, font=("Segoe UI", 9, "bold"))
@@ -272,10 +272,6 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
     def _configure_tab_flow(self) -> None:
         """Unlock workflow tabs in order; BAĞLANTI is the only initial tab."""
         tab_ids = self.tabs.tabs()
-        self._tab_ids = {
-            self.tabs.tab(i, "text"): tab_ids[i]
-            for i in range(len(tab_ids))
-        }
         self._tab_sequence = (
             "Bağlantı",
             "Proje",
@@ -286,6 +282,12 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             "Sensörler",
             "Rapor",
         )
+        # Visible captions are compact for the 400 px layout; workflow logic
+        # continues to use the full internal names above.
+        self._tab_ids = {
+            name: tab_ids[i]
+            for i, name in enumerate(self._tab_sequence)
+        }
         self._tab_positions = {
             name: index for index, name in enumerate(self._tab_sequence)
         }
@@ -600,7 +602,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
     def _add_fan(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="Fan Kontrol")
+        notebook.add(tab, text="Fan")
         card = ttk.LabelFrame(body, text="Fan Kontrol", style="Card.TLabelframe", padding=8)
         card.pack(fill="x")
         card.columnconfigure(1, weight=1)
@@ -751,7 +753,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
     def _add_filters(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="Filtre Kontrol")
+        notebook.add(tab, text="Filtre")
         card = ttk.LabelFrame(body, text="Filtreler", style="Card.TLabelframe", padding=14)
         card.pack(fill="x")
         self._filter_vars: dict[str, tk.BooleanVar] = {}
@@ -763,7 +765,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
     def _add_modules(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="Modüller")
+        notebook.add(tab, text="Modül")
         card = ttk.LabelFrame(body, text="Modül Konfigürasyonu", style="Card.TLabelframe", padding=14)
         card.pack(fill="x")
         card.columnconfigure(1, weight=1)

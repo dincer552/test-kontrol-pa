@@ -54,7 +54,7 @@ class DamperTabMixin:
 
     def _add_damper(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="Damper Kontrol")
+        notebook.add(tab, text="Damper")
 
         card = ttk.LabelFrame(
             body,

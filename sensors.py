@@ -39,7 +39,7 @@ class SensorTabMixin:
 
     def _add_sensors(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="Sensörler")
+        notebook.add(tab, text="Sensör")
 
         card = ttk.LabelFrame(
             body,
