@@ -219,6 +219,9 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         # Header mirrors PDF kW Selector: compact white card, blue badge and title.
         header = ttk.Frame(self, style="White.TFrame", padding=(6, 8))
         header.pack(fill="x", pady=(0, 8))
+        # Keep the compact header tall enough for a distinct bottom update row.
+        header.configure(height=82)
+        header.pack_propagate(False)
         if self._app_icon_image is not None:
             tk.Label(header, image=self._app_icon_image, bg="#ffffff", borderwidth=0).pack(side="left", padx=(0, 6))
         else:
