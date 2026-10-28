@@ -222,11 +222,13 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         # Keep the compact header tall enough for a distinct bottom update row.
         header.configure(height=82)
         header.pack_propagate(False)
+        header_top = ttk.Frame(header, style="White.TFrame")
+        header_top.pack(side="top", fill="x")
         if self._app_icon_image is not None:
-            tk.Label(header, image=self._app_icon_image, bg="#ffffff", borderwidth=0).pack(side="left", padx=(0, 6))
+            tk.Label(header_top, image=self._app_icon_image, bg="#ffffff", borderwidth=0).pack(side="left", padx=(0, 6))
         else:
-            tk.Label(header, text="T", bg="#1a56db", fg="#ffffff", font=("Segoe UI", 10, "bold"), width=4, height=1).pack(side="left", padx=(0, 6))
-        title_box = ttk.Frame(header, style="White.TFrame")
+            tk.Label(header_top, text="T", bg="#1a56db", fg="#ffffff", font=("Segoe UI", 10, "bold"), width=4, height=1).pack(side="left", padx=(0, 6))
+        title_box = ttk.Frame(header_top, style="White.TFrame")
         title_box.pack(side="left")
         ttk.Label(title_box, text="Test Kontrol", style="Title.TLabel").pack(anchor="w")
         ttk.Label(title_box, text="AHU test, devreye alma, kontrol ve raporlama", style="Muted.TLabel").pack(anchor="w")
@@ -235,7 +237,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         # Keep update controls on their own row so they remain visible in
         # compact 400 px windows; the title and subtitle must not push them off-screen.
         update_controls = ttk.Frame(header, style="White.TFrame")
-        update_controls.place(relx=1.0, rely=1.0, anchor="se", x=-6, y=-6)
+        update_controls.pack(side="bottom", fill="x", pady=(8, 0))
         update_controls.columnconfigure(0, weight=1)
         self._manual_update_button = ttk.Button(
             update_controls,
