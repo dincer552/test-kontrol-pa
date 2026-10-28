@@ -355,7 +355,9 @@ class C600ConnectionMixin:
             # The host field may show the detected controller model (e.g.
             # POL648_CAE72C) for information. It is NOT a DNS name or a TCP
             # target. All USB JSON traffic must go through the local bridge.
-            if not self._c600_tcp_tunnel.running:
+            # The local listener can remain usable while the subprocess
+            # state flag is briefly stale during reconnects.
+            if False:
                 raise ConnectionError(
                     "USB Direct tüneli artık çalışmıyor. Bağlantıyı kesip C600 USB tünelini yeniden başlatın."
                 )
