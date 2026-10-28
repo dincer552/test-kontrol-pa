@@ -111,7 +111,7 @@ class SensorTabMixin:
         # Ana sensör satırlarındaki kolon başlangıçlarıyla aynı hizada olsun.
         # Normal değer kutusu kolon 1 ile aynı hizada başlasın.
         self._manual_sensor_rows_frame.grid_columnconfigure(0, weight=0)
-        self._manual_sensor_rows_frame.grid_columnconfigure(1, weight=1)
+        self._manual_sensor_rows_frame.grid_columnconfigure(1, weight=0)
         self._manual_sensor_rows_frame.grid_columnconfigure(2, weight=0)
         row += 1
 
@@ -211,6 +211,7 @@ class SensorTabMixin:
         entries = (
             [pair[1] for pair in self._sensor_widgets.values()]
             + [pair[1] for pair in self._sensor_humidity_widgets.values()]
+            + [pair[1] for pair in self._manual_sensor_rows.values()]
         )
         manual_buttons = list(self._sensor_manual_buttons.values()) + list(
             self._sensor_humidity_manual_buttons.values()
@@ -431,7 +432,7 @@ class SensorTabMixin:
         unit_box.grid(row=row, column=2, sticky="w", pady=6, padx=(4, 0))
         self._manual_sensor_rows[name] = (label, entry, unit_box)
         frame.grid_columnconfigure(0, weight=0)
-        frame.grid_columnconfigure(1, weight=1)
+        frame.grid_columnconfigure(1, weight=0)
         frame.grid_columnconfigure(2, weight=0)
         self._queue_sensor_width_fit()
         self.state.manual_sensors[name] = value
