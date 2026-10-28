@@ -235,7 +235,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         # Keep update controls on their own row so they remain visible in
         # compact 400 px windows; the title and subtitle must not push them off-screen.
         update_controls = ttk.Frame(header, style="White.TFrame")
-        update_controls.pack(side="bottom", fill="x", pady=(8, 0))
+        update_controls.place(relx=1.0, rely=1.0, anchor="se", x=-6, y=-6)
         update_controls.columnconfigure(0, weight=1)
         self._manual_update_button = ttk.Button(
             update_controls,
