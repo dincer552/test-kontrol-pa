@@ -346,6 +346,16 @@ class C600ConnectionMixin:
         """Read C600 identity values through the Climatix JSON API."""
         threading.Thread(target=self._c600_device_info_worker, daemon=True).start()
 
+    def _c600_local_tunnel_available(self) -> bool:
+        try:
+            with socket.create_connection(
+                (self._c600_tcp_tunnel.local_host, self._c600_tcp_tunnel.local_port),
+                timeout=0.5,
+            ):
+                return True
+        except OSError:
+            return False
+
     def _c600_json_read(self, point_id: str) -> dict:
         mode = self._c600_connection_var.get()
         host = self._c600_host_var.get().strip()
@@ -357,7 +367,7 @@ class C600ConnectionMixin:
             # target. All USB JSON traffic must go through the local bridge.
             # The local listener can remain usable while the subprocess
             # state flag is briefly stale during reconnects.
-            if False:
+            if not self._c600_tcp_tunnel.running and not self._c600_local_tunnel_available():
                 raise ConnectionError(
                     "USB Direct tüneli artık çalışmıyor. Bağlantıyı kesip C600 USB tünelini yeniden başlatın."
                 )
