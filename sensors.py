@@ -220,6 +220,21 @@ class SensorTabMixin:
         # LabelFrame padding is 14 px on each side, plus its border.
         available = max(1, card.winfo_width() - 32)
 
+        # Manual rows live in a nested frame, so explicitly copy the first
+        # two column widths from the automatic sensor grid. This keeps every
+        # manually added value box aligned with the standard value boxes.
+        standard_col0 = max(
+            [label.winfo_reqwidth() + self._grid_horizontal_padding(label)
+             for label in standard_labels + humidity_labels] or [0]
+        )
+        standard_col1 = max(
+            [entry.winfo_reqwidth() + self._grid_horizontal_padding(entry)
+             for entry in entries if entry not in [pair[1] for pair in self._manual_sensor_rows.values()]]
+            or [0]
+        )
+        self._manual_sensor_rows_frame.grid_columnconfigure(0, minsize=standard_col0)
+        self._manual_sensor_rows_frame.grid_columnconfigure(1, minsize=standard_col1, weight=0)
+
         def column_requirements() -> tuple[int, int, int]:
             col0 = max(
                 [label.winfo_reqwidth() + self._grid_horizontal_padding(label) for label in labels]
