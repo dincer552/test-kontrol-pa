@@ -31,7 +31,7 @@ class C600ConnectionMixin:
 
     def _add_c600(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
-        notebook.add(tab, text="Bağlantı")
+        notebook.add(tab, text="Bağ")
         body.columnconfigure(0, weight=1)
         body.rowconfigure(3, weight=1)
 
@@ -157,7 +157,8 @@ class C600ConnectionMixin:
             self._c600_status_title.configure(text="SCOPE tüneli başlatılıyor...")
             self._c600_status_detail.configure(text=f"{host}:{port_text} adresine SCOPE TCP tüneli kuruluyor...")
             try:
-                scope_port = int(port_text)
+                # Port 80 is the remote HTTP API; SCOPE itself uses 4242.
+                scope_port = 4242
                 if not 1 <= scope_port <= 65535:
                     raise ValueError
             except ValueError:
