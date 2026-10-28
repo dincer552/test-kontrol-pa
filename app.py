@@ -233,31 +233,8 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         ttk.Label(title_box, text="Test Kontrol", style="Title.TLabel").pack(anchor="w")
         ttk.Label(title_box, text="AHU test, devreye alma, kontrol ve raporlama", style="Muted.TLabel").pack(anchor="w")
 
-        # Manual update check stays available; the install button activates only when a newer build exists.
-        # Keep update controls on their own row so they remain visible in
-        # compact 400 px windows; the title and subtitle must not push them off-screen.
-        update_controls = ttk.Frame(header, style="White.TFrame")
-        update_controls.pack(side="bottom", fill="x", pady=(8, 0))
-        update_controls.columnconfigure(0, weight=1)
-        self._manual_update_button = ttk.Button(
-            update_controls,
-            text="↻ Güncelleme Denetle",
-            style="Secondary.TButton",
-            width=17,
-            command=self._manual_update_check,
-        )
-        self._manual_update_button.grid(row=0, column=1, padx=(0, 6), sticky="e")
-        self._update_button = ttk.Button(
-            update_controls,
-            text="Güncelle",
-            style="Primary.TButton",
-            width=10,
-            command=self._start_update,
-            state="disabled",
-        )
-        self._update_button.grid(row=0, column=2, sticky="e")
-        self._update_build_label = ttk.Label(update_controls, text="", style="UpdateBuild.TLabel")
-        self._update_build_label.grid(row=1, column=1, columnspan=2, pady=(2, 0), sticky="e")
+        # Update controls live in the bottom dock (right side) so the
+        # Güncelle button never gets clipped by the compact 400 px header.
 
         # Main notebook uses the same clean white-card visual language.
         tabs = ttk.Notebook(self)
@@ -1034,6 +1011,29 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         dock.pack(side="bottom", fill="x", padx=10, pady=(6, 0))
         ttk.Button(dock, text="↻ Temizle", style="Secondary.TButton", command=self._clear).pack(side="left", padx=3)
         ttk.Button(dock, text="▣ Rapor", style="Secondary.TButton", command=self._report).pack(side="left", padx=3)
+
+        # Keep update actions visible at the bottom-right in compact windows.
+        update_controls = ttk.Frame(dock, style="White.TFrame")
+        update_controls.pack(side="right", padx=(4, 0))
+        self._update_button = ttk.Button(
+            update_controls,
+            text="Güncelle",
+            style="Primary.TButton",
+            width=10,
+            command=self._start_update,
+            state="disabled",
+        )
+        self._update_button.pack(side="right")
+        self._manual_update_button = ttk.Button(
+            update_controls,
+            text="↻ Denetle",
+            style="Secondary.TButton",
+            width=9,
+            command=self._manual_update_check,
+        )
+        self._manual_update_button.pack(side="right", padx=(0, 6))
+        self._update_build_label = ttk.Label(update_controls, text="", style="UpdateBuild.TLabel")
+        self._update_build_label.pack(side="right", padx=(0, 6))
 
     def _log(self, message: str, tag: str = "muted") -> None:
         """Write every user-visible operation to the central process log."""
