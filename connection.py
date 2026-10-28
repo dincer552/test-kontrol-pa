@@ -347,12 +347,27 @@ class C600ConnectionMixin:
         threading.Thread(target=self._c600_device_info_worker, daemon=True).start()
 
     def _c600_json_read(self, point_id: str) -> dict:
+        mode = self._c600_connection_var.get()
         host = self._c600_host_var.get().strip()
         port = int(self._c600_port_var.get().strip())
-        if self._c600_connection_var.get() in ("USB Direct Tunnel", "TCP/IP") and self._c600_tcp_tunnel.running:
+
+        if mode == "USB Direct Tunnel":
+            # The host field may show the detected controller model (e.g.
+            # POL648_CAE72C) for information. It is NOT a DNS name or a TCP
+            # target. All USB JSON traffic must go through the local bridge.
+            if not self._c600_tcp_tunnel.running:
+                raise ConnectionError(
+                    "USB Direct tüneli artık çalışmıyor. Bağlantıyı kesip C600 USB tünelini yeniden başlatın."
+                )
             host = self._c600_tcp_tunnel.local_host
             port = self._c600_tcp_tunnel.local_port
-        if self._c600_connection_var.get() not in ("USB Direct Tunnel", "TCP/IP"):
+        elif mode == "TCP/IP":
+            # Use the local HTTP bridge while RainbowTcpTunnel is alive.
+            # Otherwise retain the user-entered controller IP for direct HTTP.
+            if self._c600_tcp_tunnel.running:
+                host = self._c600_tcp_tunnel.local_host
+                port = self._c600_tcp_tunnel.local_port
+        else:
             raise OSError("Desteklenmeyen C600 bağlantı tipi")
 
         # The embedded Climatix web server expects spaces in IDs as %20.
