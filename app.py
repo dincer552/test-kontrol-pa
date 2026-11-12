@@ -50,6 +50,8 @@ MODULE_REGISTER_POINTS = {
 }
 
 
+MANUAL_FAN_TYPE_OPTIONS = ("Ziehl-Abegg", "ebm-papst", "Standart + Plug", "Yok")
+
 VERSION = BUILD_VERSION
 UPDATE_CHECK_INTERVAL_MS = 2 * 60 * 1000
 UPDATE_URL = "https://github.com/dincer552/test-kontrol-pa/releases/latest"
@@ -758,7 +760,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 (
                     "aspirator_type", "Aspiratör Fan Markası / Tipi",
                     self._aspirator_fan_type_var.get(),
-                    ("Ziehl-Abegg", "ebm-papst", "Standart + Plug", "Yok"),
+                    MANUAL_FAN_TYPE_OPTIONS,
                 ),
                 ("aspirator_count", "Aspiratör Fan Adedi", self._aspirator_fan_count_var.get()),
                 (
