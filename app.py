@@ -878,7 +878,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
     def _add_manual_filter(self) -> None:
         def apply(values: dict[str, str]) -> bool:
             name = values["name"].strip()
-            detail = values["detail"].strip()
+            detail = values["detail"].strip() or "Var"
             if not name:
                 raise ValueError("Filtre adı boş olamaz.")
             self.state.manual_filters[name] = detail
