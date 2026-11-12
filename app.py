@@ -192,9 +192,11 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                         version = str(update.get("version") or "").strip()
                         display_version = version.lstrip("vV")
                         label = f"Yeni: v{display_version}" if display_version else "Yeni sürüm mevcut"
-                        build_label.configure(text=label)
+                        build_label.configure(text=label, state="normal")
                     else:
-                        build_label.configure(text=f"Güncel: {VERSION}")
+                        # No available update: keep the version indicator inactive
+                        # and empty rather than showing the installed version.
+                        build_label.configure(text="", state="disabled")
                 manual_button = self._manual_update_button
                 if manual_button is not None:
                     manual_button.configure(state="normal")
@@ -1268,9 +1270,10 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._update_button.pack(side="top", fill="x")
         self._update_build_label = ttk.Label(
             update_stack,
-            text=f"Güncel: {VERSION}",
+            text="",
             style="UpdateBuild.TLabel",
             anchor="center",
+            state="disabled",
         )
         self._update_build_label.pack(side="top", fill="x", pady=(1, 0))
 
