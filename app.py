@@ -867,6 +867,48 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             self._filter_vars[name] = var
             ttk.Checkbutton(card, text=name, variable=var).grid(row=i // 3, column=i % 3, sticky="w", padx=12, pady=6)
         ttk.Button(card, text="Kaydet", style="Primary.TButton", command=lambda: self._save_and_unlock("Modüller")).grid(row=2, column=0, sticky="w", pady=(12, 0))
+        ttk.Button(
+            card, text="Filtre Bilgisi Ekle", style="Secondary.TButton",
+            command=self._add_manual_filter,
+        ).grid(row=3, column=0, sticky="w", pady=(8, 0))
+        self._manual_filter_list = ttk.Frame(card, style="White.TFrame")
+        self._manual_filter_list.grid(row=4, column=0, columnspan=3, sticky="ew", pady=(6, 0))
+        self._render_manual_filters()
+
+    def _add_manual_filter(self) -> None:
+        def apply(values: dict[str, str]) -> bool:
+            name = values["name"].strip()
+            detail = values["detail"].strip()
+            if not name:
+                raise ValueError("Filtre adı boş olamaz.")
+            self.state.manual_filters[name] = detail
+            self._render_manual_filters()
+            self._update_statuses()
+            self._log(f"FİLTRE KONTROL: {name} bilgisi kaydedildi.", "ok")
+            return True
+
+        self._open_manual_form_dialog(
+            "Filtre Bilgisi",
+            (("name", "Filtre Adı", ""), ("detail", "Filtre Tipi / Bilgisi", "")),
+            apply,
+        )
+
+    def _render_manual_filters(self) -> None:
+        frame = getattr(self, "_manual_filter_list", None)
+        if frame is None:
+            return
+        for child in frame.winfo_children():
+            child.destroy()
+        if not self.state.manual_filters:
+            return
+        ttk.Label(frame, text="Ek Filtreler", style="White.TLabel").grid(
+            row=0, column=0, columnspan=2, sticky="w", pady=(2, 4)
+        )
+        for row, (name, detail) in enumerate(self.state.manual_filters.items(), start=1):
+            ttk.Label(frame, text=name).grid(row=row, column=0, sticky="w", padx=(4, 12), pady=2)
+            ttk.Label(frame, text=detail or "—", style="White.TLabel").grid(
+                row=row, column=1, sticky="w", pady=2
+            )
 
     def _add_modules(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
@@ -905,8 +947,18 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._create_heater_table(card, "electrical", "Elektrikli Isıtıcı R/S/T Akım", row=5)
         self._create_heater_table(card, "pre_electrical", "Pre Elektrikli Isıtıcı R/S/T Akım", row=6)
 
+        ttk.Button(
+            card,
+            text="Modül Bilgisi Ekle",
+            style="Secondary.TButton",
+            command=self._add_manual_module,
+        ).grid(row=7, column=0, columnspan=3, sticky="w", pady=(12, 0))
+        self._manual_module_list = ttk.Frame(card, style="White.TFrame")
+        self._manual_module_list.grid(row=8, column=0, columnspan=3, sticky="ew", pady=(6, 0))
+        self._render_manual_modules()
+
         buttons = ttk.Frame(card, style="White.TFrame")
-        buttons.grid(row=7, column=0, columnspan=3, sticky="w", pady=(12, 0))
+        buttons.grid(row=9, column=0, columnspan=3, sticky="w", pady=(12, 0))
         self._module_read_button = ttk.Button(
             buttons, text="Verileri Çek", style="Secondary.TButton", command=self._read_module_data
         )
@@ -925,6 +977,41 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             "humidifier": self.state.humidifier_enabled,
             "rotor": self.state.rotor_enabled,
         })
+
+    def _add_manual_module(self) -> None:
+        def apply(values: dict[str, str]) -> bool:
+            name = values["name"].strip()
+            detail = values["detail"].strip()
+            if not name:
+                raise ValueError("Modül adı boş olamaz.")
+            self.state.manual_modules[name] = detail or "Var"
+            self._render_manual_modules()
+            self._update_statuses()
+            self._log(f"MODÜLLER: {name} bilgisi kaydedildi.", "ok")
+            return True
+
+        self._open_manual_form_dialog(
+            "Modül Bilgisi",
+            (("name", "Modül Adı", ""), ("detail", "Değer / Açıklama", "Var")),
+            apply,
+        )
+
+    def _render_manual_modules(self) -> None:
+        frame = getattr(self, "_manual_module_list", None)
+        if frame is None:
+            return
+        for child in frame.winfo_children():
+            child.destroy()
+        if not self.state.manual_modules:
+            return
+        ttk.Label(frame, text="Ek Modüller", style="White.TLabel").grid(
+            row=0, column=0, columnspan=2, sticky="w", pady=(2, 4)
+        )
+        for row, (name, detail) in enumerate(self.state.manual_modules.items(), start=1):
+            ttk.Label(frame, text=name).grid(row=row, column=0, sticky="w", padx=(4, 12), pady=2)
+            ttk.Label(frame, text=detail, style="White.TLabel").grid(
+                row=row, column=1, sticky="w", pady=2
+            )
 
     def _create_heater_table(self, parent: ttk.Frame, kind: str, title: str, row: int) -> None:
         frame = ttk.LabelFrame(parent, text=title, style="Card.TLabelframe", padding=6)
@@ -1260,6 +1347,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._clear_damper_ui()
         for name, var in self._filter_vars.items():
             var.set(str(self.state.filters[name]))
+        self._render_manual_filters()
         if hasattr(self, "_module_vars"):
             self._module_vars["rotor"].set("Yok")
             self._module_vars["run_around"].set("")
@@ -1270,6 +1358,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             self._heater_stage_vars["pre_electrical"].set("3")
             self._rebuild_heater_table("electrical")
             self._rebuild_heater_table("pre_electrical")
+            self._render_manual_modules()
             self._set_module_visibility({
                 "electrical_heater": False,
                 "pre_electrical_heater": False,
