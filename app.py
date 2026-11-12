@@ -1196,14 +1196,23 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         card.pack(fill="x")
         ttk.Label(card, text="Kullanıcı").grid(row=0, column=0, sticky="w", pady=6)
         self._user_var = tk.StringVar(value="")
-        ttk.Entry(card, textvariable=self._user_var, width=40).grid(row=0, column=1, sticky="w", pady=6)
-        ttk.Button(card, text="Kaydet", style="Primary.TButton", command=self._save).grid(row=1, column=0, sticky="w", pady=(12, 0))
-        ttk.Button(
-            card,
-            text="Test Raporu Oluştur",
-            style="Primary.TButton",
-            command=self._generate_test_report,
-        ).grid(row=2, column=0, sticky="w", pady=(12, 0))
+        ttk.Entry(card, textvariable=self._user_var, width=32).grid(row=0, column=1, sticky="w", pady=6)
+        ttk.Label(card, text="Rapor Tarihi").grid(row=1, column=0, sticky="w", pady=6)
+        self._report_date_var = tk.StringVar(value="")
+        self._report_date_entry = ttk.Entry(card, textvariable=self._report_date_var, width=16, state="readonly")
+        self._report_date_entry.grid(row=1, column=1, sticky="w", pady=6)
+        ttk.Button(card, text="Manuel Tarih", style="Secondary.TButton", command=self._enable_manual_report_date).grid(row=1, column=2, sticky="w", padx=(8, 0), pady=6)
+        ttk.Label(card, text="GG.AA.YYYY formatında").grid(row=2, column=1, sticky="w")
+        ttk.Button(card, text="Kaydet", style="Primary.TButton", command=self._save).grid(row=3, column=0, sticky="w", pady=(12, 0))
+        ttk.Button(card, text="Test Raporu Oluştur", style="Primary.TButton", command=self._generate_test_report).grid(row=4, column=0, sticky="w", pady=(12, 0))
+
+    def _enable_manual_report_date(self) -> None:
+        from datetime import datetime
+        if not self._report_date_var.get().strip():
+            self._report_date_var.set(datetime.now().strftime("%d.%m.%Y"))
+        self._report_date_entry.configure(state="normal", style="Green.TEntry")
+        self._report_date_entry.focus_set()
+        self._report_date_entry.selection_range(0, "end")
 
     def _build_bottom_dock(self) -> None:
         dock = ttk.Frame(self, style="White.TFrame", padding=(10, 6))
@@ -1306,6 +1315,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._save_module_state()
         self._save_sensor_state()
         self.state.user_name = self._user_var.get()
+        self.state.report_date = self._report_date_var.get().strip() if hasattr(self, "_report_date_var") else ""
         self._update_statuses()
 
     def _clear(self) -> None:
@@ -1347,6 +1357,9 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             })
         self._clear_sensor_ui()
         self._user_var.set("")
+        if hasattr(self, "_report_date_var"):
+            self._report_date_var.set("")
+            self._report_date_entry.configure(state="readonly", style="TEntry")
         self._update_statuses()
 
     def _generate_test_report(self) -> None:
