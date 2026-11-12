@@ -303,6 +303,60 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         """A successful C600 connection unlocks the project tab."""
         self._set_tab_visible("Proje", True)
 
+    def _open_manual_form_dialog(self, title: str, fields, on_save) -> None:
+        """Show a compact form and pass its entered values to a page callback."""
+        dialog = tk.Toplevel(self)
+        dialog.title(title)
+        dialog.transient(self)
+        dialog.resizable(False, False)
+        dialog.configure(bg="#f0f4f9")
+
+        frame = ttk.Frame(dialog, padding=14)
+        frame.pack(fill="both", expand=True)
+        entries: dict[str, ttk.Entry] = {}
+        for row, (key, label_text, initial) in enumerate(fields):
+            ttk.Label(frame, text=label_text).grid(
+                row=row, column=0, sticky="w", padx=(0, 10), pady=5
+            )
+            entry = ttk.Entry(frame, width=26)
+            entry.insert(0, str(initial or ""))
+            entry.grid(row=row, column=1, sticky="ew", pady=5)
+            entries[key] = entry
+
+        frame.columnconfigure(1, weight=1)
+        error_var = tk.StringVar(value="")
+        ttk.Label(frame, textvariable=error_var, style="Muted.TLabel").grid(
+            row=len(fields), column=0, columnspan=2, sticky="w", pady=(4, 0)
+        )
+        buttons = ttk.Frame(frame, style="White.TFrame")
+        buttons.grid(row=len(fields) + 1, column=0, columnspan=2, sticky="e", pady=(12, 0))
+
+        def save() -> None:
+            values = {key: entry.get().strip() for key, entry in entries.items()}
+            try:
+                result = on_save(values)
+            except (TypeError, ValueError) as exc:
+                error_var.set(str(exc))
+                return
+            if result is not False:
+                dialog.destroy()
+
+        ttk.Button(buttons, text="İptal", style="Secondary.TButton", command=dialog.destroy).pack(
+            side="right", padx=(6, 0)
+        )
+        ttk.Button(buttons, text="Kaydet", style="Primary.TButton", command=save).pack(side="right")
+        dialog.bind("<Return>", lambda _event: save())
+        dialog.bind("<Escape>", lambda _event: dialog.destroy())
+        dialog.update_idletasks()
+        width = max(300, dialog.winfo_reqwidth())
+        height = dialog.winfo_reqheight()
+        x = self.winfo_rootx() + max(0, (self.winfo_width() - width) // 2)
+        y = self.winfo_rooty() + max(0, (self.winfo_height() - height) // 3)
+        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        dialog.grab_set()
+        if entries:
+            next(iter(entries.values())).focus_set()
+
     def _tab_frame(self, notebook: ttk.Notebook) -> tuple[ttk.Frame, ttk.Frame]:
         outer = ttk.Frame(notebook, style="White.TFrame")
         outer.columnconfigure(0, weight=1)
@@ -339,6 +393,13 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             ttk.Label(project, textvariable=var, style="White.TLabel").grid(
                 row=i, column=1, sticky="w", pady=6
             )
+
+        ttk.Button(
+            project,
+            text="Bilgileri Manuel Gir",
+            style="Secondary.TButton",
+            command=self._open_manual_project_entry,
+        ).grid(row=3, column=0, columnspan=2, sticky="w", pady=(8, 2))
 
         # PDF kW Selector'daki PDF alma kutusunun ayni tasarim/drag davranisi.
         pdf_box = ttk.Frame(body, style="White.TFrame", padding=(0, 0, 0, 0))
@@ -559,6 +620,27 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             self._ahu_name_var.set(result.ahu_name)
             self.state.ahu_name = result.ahu_name
 
+    def _open_manual_project_entry(self) -> None:
+        def apply(values: dict[str, str]) -> bool:
+            self._order_no_var.set(values["order_no"])
+            self._project_name_var.set(values["project_name"])
+            self._ahu_name_var.set(values["ahu_name"])
+            self.state.order_no = values["order_no"]
+            self.state.project_name = values["project_name"]
+            self.state.ahu_name = values["ahu_name"]
+            self._log("PROJE: Bilgiler kaydedildi.", "ok")
+            return True
+
+        self._open_manual_form_dialog(
+            "Proje Bilgileri",
+            (
+                ("order_no", "Order No", self._order_no_var.get()),
+                ("project_name", "Proje Adı", self._project_name_var.get()),
+                ("ahu_name", "AHU Adı", self._ahu_name_var.get()),
+            ),
+            apply,
+        )
+
     def _confirm_sensor_matches(self, candidates: dict[str, str]) -> None:
         if not candidates:
             return
@@ -638,7 +720,48 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         ttk.Button(
             buttons, text="Kaydet", style="Primary.TButton",
             command=self._save_fan_and_unlock_damper
+        ).pack(side="left", padx=(0, 8))
+        ttk.Button(
+            buttons, text="Fan Bilgisi Gir", style="Secondary.TButton",
+            command=self._open_manual_fan_entry,
         ).pack(side="left")
+
+    def _open_manual_fan_entry(self) -> None:
+        def apply(values: dict[str, str]) -> bool:
+            try:
+                aspirator_count = int(values["aspirator_count"])
+                ventilator_count = int(values["ventilator_count"])
+            except ValueError as exc:
+                raise ValueError("Fan adetleri tam sayı olmalı.") from exc
+            if aspirator_count < 0 or ventilator_count < 0:
+                raise ValueError("Fan adetleri negatif olamaz.")
+
+            self._aspirator_fan_type_var.set(values["aspirator_type"] or "Yok")
+            self._aspirator_fan_count_var.set(str(aspirator_count))
+            self._ventilator_fan_type_var.set(values["ventilator_type"] or "Yok")
+            self._ventilator_fan_count_var.set(str(ventilator_count))
+            self.state.return_fan_type = values["aspirator_type"] or "Yok"
+            self.state.supply_fan_type = values["ventilator_type"] or "Yok"
+            self.state.return_fan_count = aspirator_count
+            self.state.supply_fan_count = ventilator_count
+            self.state.fan_type = (
+                f"Aspiratör: {self.state.return_fan_type} | "
+                f"Vantilatör: {self.state.supply_fan_type}"
+            )
+            self._update_statuses()
+            self._log("FAN KONTROL: Fan tipi ve adetleri kaydedildi.", "ok")
+            return True
+
+        self._open_manual_form_dialog(
+            "Fan Bilgileri",
+            (
+                ("aspirator_type", "Aspiratör Fan Tipi", self._aspirator_fan_type_var.get()),
+                ("aspirator_count", "Aspiratör Fan Sayısı", self._aspirator_fan_count_var.get()),
+                ("ventilator_type", "Vantilatör Fan Tipi", self._ventilator_fan_type_var.get()),
+                ("ventilator_count", "Vantilatör Fan Sayısı", self._ventilator_fan_count_var.get()),
+            ),
+            apply,
+        )
 
     def _enable_manual_airflow(self, side: str) -> None:
         """Allow a PLC airflow field to be edited manually when requested."""
