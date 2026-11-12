@@ -21,6 +21,7 @@ class TestControlState:
     project_name: str = ""
     ahu_name: str = ""
     user_name: str = ""
+    report_date: str = ""
     notlar: str = ""
 
     fan_type: str = "Danfoss Ziehl-Abegg"
