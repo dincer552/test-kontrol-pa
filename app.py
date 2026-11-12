@@ -398,6 +398,10 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             ttk.Label(project, textvariable=var, style="White.TLabel").grid(
                 row=i, column=1, sticky="w", pady=6
             )
+            ttk.Button(
+                project, text="Sil", style="SensorManual.TButton", width=4,
+                command=lambda field=attr: self._clear_project_field(field),
+            ).grid(row=i, column=2, sticky="e", padx=(6, 0), pady=4)
 
         ttk.Button(
             project,
@@ -624,6 +628,13 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             self._ahu_name_var.set(result.ahu_name)
             self.state.ahu_name = result.ahu_name
 
+    def _clear_project_field(self, field: str) -> None:
+        if field not in ("order_no", "project_name", "ahu_name"):
+            return
+        getattr(self, f"_{field}_var").set("")
+        setattr(self.state, field, "")
+        self._log(f"PROJE: {field} bilgisi silindi.", "muted")
+
     def _open_manual_project_entry(self) -> None:
         def apply(values: dict[str, str]) -> bool:
             self._order_no_var.set(values["order_no"])
@@ -702,6 +713,10 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             card, text="Manuel Giriş", style="Secondary.TButton",
             command=lambda: self._enable_manual_airflow("supply")
         ).grid(row=4, column=2, sticky="w", padx=(8, 0), pady=6)
+        ttk.Button(
+            card, text="Sil", style="SensorManual.TButton", width=4,
+            command=lambda: self._clear_manual_airflow("supply"),
+        ).grid(row=4, column=3, sticky="w", padx=(4, 0), pady=6)
 
         ttk.Label(card, text="Return Debi (%25)").grid(row=5, column=0, sticky="w", pady=6)
         self._return_airflow_var = tk.StringVar(value=self.state.return_airflow)
@@ -713,6 +728,10 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             card, text="Manuel Giriş", style="Secondary.TButton",
             command=lambda: self._enable_manual_airflow("return")
         ).grid(row=5, column=2, sticky="w", padx=(8, 0), pady=6)
+        ttk.Button(
+            card, text="Sil", style="SensorManual.TButton", width=4,
+            command=lambda: self._clear_manual_airflow("return"),
+        ).grid(row=5, column=3, sticky="w", padx=(4, 0), pady=6)
 
         buttons = ttk.Frame(card, style="White.TFrame")
         buttons.grid(row=6, column=0, columnspan=3, sticky="w", pady=(12, 0))
@@ -728,6 +747,10 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         ttk.Button(
             buttons, text="Fan Bilgisi Gir", style="Secondary.TButton",
             command=self._open_manual_fan_entry,
+        ).pack(side="left", padx=(0, 6))
+        ttk.Button(
+            buttons, text="Sil", style="SensorManual.TButton", width=4,
+            command=self._clear_manual_fan_info,
         ).pack(side="left")
 
     def _open_manual_fan_entry(self) -> None:
@@ -775,12 +798,41 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             apply,
         )
 
+    def _clear_manual_fan_info(self) -> None:
+        self._aspirator_fan_type_var.set("Yok")
+        self._aspirator_fan_count_var.set("0")
+        self._ventilator_fan_type_var.set("Yok")
+        self._ventilator_fan_count_var.set("0")
+        self.state.return_fan_type = ""
+        self.state.supply_fan_type = ""
+        self.state.return_fan_count = 0
+        self.state.supply_fan_count = 0
+        self.state.return_fan_driver = ""
+        self.state.supply_fan_driver = ""
+        self.state.fan_type = ""
+        self._update_statuses()
+        self._log("FAN KONTROL: Manuel fan bilgileri silindi.", "muted")
+
     def _enable_manual_airflow(self, side: str) -> None:
         """Allow a PLC airflow field to be edited manually when requested."""
         entry = self._supply_airflow_entry if side == "supply" else self._return_airflow_entry
         entry.configure(state="normal", style="Green.TEntry")
         entry.focus_set()
         entry.selection_range(0, "end")
+
+    def _clear_manual_airflow(self, side: str) -> None:
+        if side == "supply":
+            entry, variable = self._supply_airflow_entry, self._supply_airflow_var
+            self.state.supply_airflow = ""
+        elif side == "return":
+            entry, variable = self._return_airflow_entry, self._return_airflow_var
+            self.state.return_airflow = ""
+        else:
+            return
+        variable.set("")
+        entry.configure(state="readonly", style="TEntry")
+        self._update_statuses()
+        self._log(f"FAN KONTROL: {side} debi değeri silindi.", "muted")
 
     def _read_fan_airflows(self) -> None:
         """Read Supply/Return airflow values from the C600 GenericJSON points."""
@@ -914,13 +966,25 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         if not self.state.manual_filters:
             return
         ttk.Label(frame, text="Ek Filtreler", style="White.TLabel").grid(
-            row=0, column=0, columnspan=2, sticky="w", pady=(2, 4)
+            row=0, column=0, columnspan=3, sticky="w", pady=(2, 4)
         )
         for row, (name, detail) in enumerate(self.state.manual_filters.items(), start=1):
             ttk.Label(frame, text=name).grid(row=row, column=0, sticky="w", padx=(4, 12), pady=2)
             ttk.Label(frame, text=detail or "—", style="White.TLabel").grid(
                 row=row, column=1, sticky="w", pady=2
             )
+            ttk.Button(
+                frame, text="Sil", style="SensorManual.TButton", width=4,
+                command=lambda item=name: self._delete_manual_filter(item),
+            ).grid(row=row, column=2, sticky="e", padx=(8, 0), pady=1)
+
+    def _delete_manual_filter(self, name: str) -> None:
+        if name not in self.state.manual_filters:
+            return
+        del self.state.manual_filters[name]
+        self._render_manual_filters()
+        self._update_statuses()
+        self._log(f"FİLTRE KONTROL: Manuel {name} kaydı silindi.", "muted")
 
     def _add_modules(self, notebook: ttk.Notebook) -> None:
         tab, body = self._tab_frame(notebook)
@@ -1017,13 +1081,25 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         if not self.state.manual_modules:
             return
         ttk.Label(frame, text="Ek Modüller", style="White.TLabel").grid(
-            row=0, column=0, columnspan=2, sticky="w", pady=(2, 4)
+            row=0, column=0, columnspan=3, sticky="w", pady=(2, 4)
         )
         for row, (name, detail) in enumerate(self.state.manual_modules.items(), start=1):
             ttk.Label(frame, text=name).grid(row=row, column=0, sticky="w", padx=(4, 12), pady=2)
             ttk.Label(frame, text=detail, style="White.TLabel").grid(
                 row=row, column=1, sticky="w", pady=2
             )
+            ttk.Button(
+                frame, text="Sil", style="SensorManual.TButton", width=4,
+                command=lambda item=name: self._delete_manual_module(item),
+            ).grid(row=row, column=2, sticky="e", padx=(8, 0), pady=1)
+
+    def _delete_manual_module(self, name: str) -> None:
+        if name not in self.state.manual_modules:
+            return
+        del self.state.manual_modules[name]
+        self._render_manual_modules()
+        self._update_statuses()
+        self._log(f"MODÜLLER: Manuel {name} kaydı silindi.", "muted")
 
     def _create_heater_table(self, parent: ttk.Frame, kind: str, title: str, row: int) -> None:
         frame = ttk.LabelFrame(parent, text=title, style="Card.TLabelframe", padding=6)
@@ -1219,15 +1295,37 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         card.pack(fill="x")
         ttk.Label(card, text="Kullanıcı").grid(row=0, column=0, sticky="w", pady=6)
         self._user_var = tk.StringVar(value="")
-        ttk.Entry(card, textvariable=self._user_var, width=32).grid(row=0, column=1, sticky="w", pady=6)
+        self._user_entry = ttk.Entry(card, textvariable=self._user_var, width=32)
+        self._user_entry.grid(row=0, column=1, sticky="w", pady=6)
+        ttk.Button(
+            card, text="Sil", style="SensorManual.TButton", width=4,
+            command=lambda: self._clear_report_field("user"),
+        ).grid(row=0, column=2, sticky="w", padx=(6, 0), pady=4)
         ttk.Label(card, text="Rapor Tarihi").grid(row=1, column=0, sticky="w", pady=6)
         self._report_date_var = tk.StringVar(value="")
         self._report_date_entry = ttk.Entry(card, textvariable=self._report_date_var, width=16, state="readonly")
         self._report_date_entry.grid(row=1, column=1, sticky="w", pady=6)
         ttk.Button(card, text="Manuel Tarih", style="Secondary.TButton", command=self._enable_manual_report_date).grid(row=1, column=2, sticky="w", padx=(8, 0), pady=6)
+        ttk.Button(
+            card, text="Sil", style="SensorManual.TButton", width=4,
+            command=lambda: self._clear_report_field("date"),
+        ).grid(row=1, column=3, sticky="w", padx=(4, 0), pady=4)
         ttk.Label(card, text="GG.AA.YYYY formatında").grid(row=2, column=1, sticky="w")
         ttk.Button(card, text="Kaydet", style="Primary.TButton", command=self._save).grid(row=3, column=0, sticky="w", pady=(12, 0))
         ttk.Button(card, text="Test Raporu Oluştur", style="Primary.TButton", command=self._generate_test_report).grid(row=4, column=0, sticky="w", pady=(12, 0))
+
+    def _clear_report_field(self, field: str) -> None:
+        if field == "user":
+            self._user_var.set("")
+            self.state.user_name = ""
+        elif field == "date":
+            self._report_date_var.set("")
+            self.state.report_date = ""
+            self._report_date_entry.configure(state="readonly", style="TEntry")
+        else:
+            return
+        self._update_statuses()
+        self._log(f"RAPOR: {field} alanı silindi.", "muted")
 
     def _enable_manual_report_date(self) -> None:
         from datetime import datetime
