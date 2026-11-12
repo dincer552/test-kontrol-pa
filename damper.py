@@ -66,6 +66,7 @@ class DamperTabMixin:
 
         self._damper_vars: dict[str, tk.StringVar] = {}
         self._damper_widgets: dict[str, tuple[ttk.Label, ttk.Entry, ttk.Button]] = {}
+        self._damper_clear_buttons: dict[str, ttk.Button] = {}
         for row, name in enumerate(DAMPER_NAMES):
             label = ttk.Label(card, text=f"{name} Damper Sayısı")
             label.grid(row=row, column=0, sticky="w", pady=7)
@@ -82,6 +83,12 @@ class DamperTabMixin:
             )
             manual_button.grid(row=row, column=2, sticky="w", padx=(8, 0), pady=7)
             self._damper_widgets[name] = (label, entry, manual_button)
+            clear_button = ttk.Button(
+                card, text="Sil", style="SensorManual.TButton", width=4,
+                command=lambda damper=name: self._clear_damper_value(damper),
+            )
+            clear_button.grid(row=row, column=3, sticky="w", padx=(4, 0), pady=7)
+            self._damper_clear_buttons[name] = clear_button
 
         # Controller values determine visibility during normal operation.
         self._set_damper_visibility({name: False for name in DAMPER_NAMES})
@@ -90,7 +97,7 @@ class DamperTabMixin:
         buttons.grid(
             row=len(DAMPER_NAMES),
             column=0,
-            columnspan=3,
+            columnspan=4,
             sticky="w",
             pady=(12, 0),
         )
@@ -119,7 +126,7 @@ class DamperTabMixin:
 
         self._manual_damper_list = ttk.Frame(card, style="White.TFrame")
         self._manual_damper_list.grid(
-            row=len(DAMPER_NAMES) + 1, column=0, columnspan=3, sticky="ew", pady=(8, 0)
+            row=len(DAMPER_NAMES) + 1, column=0, columnspan=4, sticky="ew", pady=(8, 0)
         )
         self._render_manual_dampers()
         self._set_damper_entries_state(False)
@@ -163,6 +170,29 @@ class DamperTabMixin:
             ttk.Label(frame, text=str(count), style="White.TLabel").grid(
                 row=row, column=1, sticky="w", pady=2
             )
+            ttk.Button(
+                frame, text="Sil", style="SensorManual.TButton", width=4,
+                command=lambda item=name: self._delete_manual_damper(item),
+            ).grid(row=row, column=2, sticky="e", padx=(8, 0), pady=1)
+
+    def _delete_manual_damper(self, name: str) -> None:
+        if name not in self.state.manual_dampers:
+            return
+        del self.state.manual_dampers[name]
+        self._render_manual_dampers()
+        self._update_statuses()
+        self._log(f"DAMPER KONTROL: Manuel {name} kaydı silindi.", "muted")
+
+    def _clear_damper_value(self, name: str) -> None:
+        if name not in self._damper_vars:
+            return
+        self._damper_vars[name].set("0")
+        self.state.damper_counts[name] = 0
+        entry = self._damper_widgets[name][1]
+        entry.configure(state="readonly", style="TEntry")
+        self._apply_damper_visibility_from_values()
+        self._update_statuses()
+        self._log(f"DAMPER KONTROL: {name} değeri silindi.", "muted")
 
     def _set_damper_visibility(self, visibility: dict[str, bool]) -> None:
         for name, widgets in self._damper_widgets.items():
