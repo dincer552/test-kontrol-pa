@@ -1161,6 +1161,17 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 ttk.Entry(frame, textvariable=var, width=7, style="Green.TEntry").grid(
                     row=row, column=col, padx=4, pady=3, sticky="w"
                 )
+            ttk.Button(
+                frame, text="Sil", style="SensorManual.TButton", width=4,
+                command=lambda heater_kind=kind, phase_name=phase:
+                    self._clear_heater_phase(heater_kind, phase_name),
+            ).grid(row=row, column=stage_count + 1, padx=(4, 0), pady=3, sticky="w")
+
+    def _clear_heater_phase(self, kind: str, phase: str) -> None:
+        for (stored_phase, _stage), variable in self._heater_table_values.get(kind, {}).items():
+            if stored_phase == phase:
+                variable.set("")
+        self._log(f"MODÜLLER: {kind} {phase} fazı manuel akım değerleri silindi.", "muted")
 
     def _set_module_visibility(self, visibility: dict[str, bool]) -> None:
         mapping = {
