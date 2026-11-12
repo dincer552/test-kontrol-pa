@@ -236,7 +236,6 @@ class SensorTabMixin:
             list(self._sensor_clear_buttons.values())
             + list(self._sensor_humidity_clear_buttons.values())
         )
-        manual_delete_buttons = list(self._manual_sensor_delete_buttons.values())
 
         # LabelFrame padding is 14 px on each side, plus its border.
         available = max(1, card.winfo_width() - 32)
@@ -260,7 +259,7 @@ class SensorTabMixin:
         )
         self._manual_sensor_rows_frame.grid_columnconfigure(3, minsize=standard_clear_width, weight=0)
 
-        def column_requirements() -> tuple[int, int, int]:
+        def column_requirements() -> tuple[int, int, int, int]:
             col0 = max(
                 [label.winfo_reqwidth() + self._grid_horizontal_padding(label) for label in labels]
                 + [
