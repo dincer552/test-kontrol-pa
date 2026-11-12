@@ -109,9 +109,60 @@ class DamperTabMixin:
             style="Primary.TButton",
             command=lambda: self._save_and_unlock("Filtre Kontrol"),
         )
-        self._damper_save_button.pack(side="left")
+        self._damper_save_button.pack(side="left", padx=(0, 8))
+        ttk.Button(
+            buttons,
+            text="Damper Bilgisi Ekle",
+            style="Secondary.TButton",
+            command=self._add_manual_damper,
+        ).pack(side="left")
 
+        self._manual_damper_list = ttk.Frame(card, style="White.TFrame")
+        self._manual_damper_list.grid(
+            row=len(DAMPER_NAMES) + 1, column=0, columnspan=3, sticky="ew", pady=(8, 0)
+        )
+        self._render_manual_dampers()
         self._set_damper_entries_state(False)
+
+    def _add_manual_damper(self) -> None:
+        def apply(values: dict[str, str]) -> bool:
+            name = values["name"].strip()
+            if not name:
+                raise ValueError("Damper adı boş olamaz.")
+            try:
+                count = int(values["count"])
+            except ValueError as exc:
+                raise ValueError("Damper adedi tam sayı olmalı.") from exc
+            if count < 0:
+                raise ValueError("Damper adedi negatif olamaz.")
+            self.state.manual_dampers[name] = count
+            self._render_manual_dampers()
+            self._update_statuses()
+            self._log(f"DAMPER KONTROL: {name} = {count}", "ok")
+            return True
+
+        self._open_manual_form_dialog(
+            "Damper Bilgisi",
+            (("name", "Damper Adı", ""), ("count", "Damper Adedi", "1")),
+            apply,
+        )
+
+    def _render_manual_dampers(self) -> None:
+        frame = getattr(self, "_manual_damper_list", None)
+        if frame is None:
+            return
+        for child in frame.winfo_children():
+            child.destroy()
+        if not self.state.manual_dampers:
+            return
+        ttk.Label(frame, text="Ek Damperler", style="White.TLabel").grid(
+            row=0, column=0, sticky="w", pady=(2, 4)
+        )
+        for row, (name, count) in enumerate(self.state.manual_dampers.items(), start=1):
+            ttk.Label(frame, text=name).grid(row=row, column=0, sticky="w", padx=(4, 12), pady=2)
+            ttk.Label(frame, text=str(count), style="White.TLabel").grid(
+                row=row, column=1, sticky="w", pady=2
+            )
 
     def _set_damper_visibility(self, visibility: dict[str, bool]) -> None:
         for name, widgets in self._damper_widgets.items():
@@ -245,3 +296,4 @@ class DamperTabMixin:
             var.set(str(self.state.damper_counts[name]))
         self._set_damper_entries_state(False)
         self._apply_damper_visibility_from_values()
+        self._render_manual_dampers()
