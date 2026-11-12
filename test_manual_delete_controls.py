@@ -1,5 +1,6 @@
 """Windows UI regression tests for removing manually entered records and overrides."""
 import sys
+import tkinter.ttk as ttk
 
 import pytest
 
@@ -117,7 +118,7 @@ def test_manual_list_rows_expose_a_sil_button():
             app._manual_module_list,
         ):
             assert any(
-                isinstance(widget, app.ttk.Button)
+                isinstance(widget, ttk.Button)
                 and widget.cget("text") == "Sil"
                 for widget in frame.winfo_children()
             )
