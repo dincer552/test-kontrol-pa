@@ -109,8 +109,8 @@ def _header_table(styles, page_no: str, updated: str) -> Table:
     logo_path = _asset_path("SYSR.ST.png")
     logo = Image(str(logo_path), width=28 * mm, height=20 * mm, kind="proportional") if logo_path.exists() else Paragraph("systemair", styles["title"])
     meta = [
-        ["Rapor Tarihi / Report Date", updated],
-        ["Sayfa No / Page No", page_no],
+        [Paragraph("Rapor Tarihi<br/>Report Date", styles["small_bold"]), updated],
+        [Paragraph("Sayfa No<br/>Page No", styles["small_bold"]), page_no],
     ]
     meta_table = _grid(meta, (29 * mm, 31 * mm), 6.5)
     title = Paragraph(
