@@ -69,11 +69,11 @@ def test_report_date_and_bilingual_fan_labels_are_printed(tmp_path):
     text = "\n".join(page.extract_text() or "" for page in PdfReader(str(output)).pages)
 
     assert "05-Mar-26" in text
-    assert "Üfleme Fan Tipi / Supply Fan Type" in text
+    assert "Ufleme Fan Tipi / Supply Fan Type" in text
     assert "Egzoz Fan Tipi / Exhaust Fan Type" in text
-    assert "Üfleme Debisi (%25) / Supply Airflow" in text
+    assert "Ufleme Debisi (%25) / Supply Airflow" in text
     assert "Egzoz Debisi (%25) / Exhaust Airflow" in text
-    assert "Üfleme Fan Adedi / Supply Fan Qty." in text
+    assert "Ufleme Fan Adedi / Supply Fan Qty." in text
     assert "Egzoz Fan Adedi / Exhaust Fan Qty." in text
 
 
