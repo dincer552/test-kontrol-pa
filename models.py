@@ -75,11 +75,13 @@ class TestControlState:
 
     @property
     def damper_control_ok(self) -> bool:
-        return any(value > 0 for value in self.damper_counts.values())
+        return any(value > 0 for value in self.damper_counts.values()) or any(
+            int(value or 0) > 0 for value in self.manual_dampers.values()
+        )
 
     @property
     def filter_control_ok(self) -> bool:
-        return any(self.filters.values())
+        return any(self.filters.values()) or bool(self.manual_filters)
 
     @property
     def modules_ok(self) -> bool:
@@ -93,6 +95,7 @@ class TestControlState:
             self.change_over,
             self.room_bms,
             self.temp_avg_en,
+            bool(self.manual_modules),
         ))
 
     @property
