@@ -54,7 +54,7 @@ def test_update_button_is_compact_above_green_version_label_at_400px():
         assert button_info.get("side") == "top"
         assert label_info.get("side") == "top"
         assert app._update_button.master is app._update_build_label.master
-        assert app._update_build_label.cget("foreground") == "#16a34a"
+        assert app.tk.call("ttk::style", "lookup", "UpdateBuild.TLabel", "-foreground") == "#16a34a"
         assert app._update_button.winfo_width() <= app.winfo_width()
         assert "Güncel:" in app._update_build_label.cget("text")
     finally:
