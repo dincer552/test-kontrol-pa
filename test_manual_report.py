@@ -86,3 +86,30 @@ def test_invalid_manual_report_date_is_rejected(tmp_path):
         assert "GG.AA.YYYY" in str(exc)
     else:
         raise AssertionError("Invalid manual report date was accepted")
+
+
+
+def test_unselected_electrical_heater_is_not_printed_and_selected_stages_are_bilingual(tmp_path):
+    state = TestControlState()
+    state.electrical_heater = False
+    state.pre_electrical_heater = False
+    output = tmp_path / "heater-not-selected.pdf"
+    build_test_report(state, output)
+    text = "\\n".join(page.extract_text() or "" for page in PdfReader(str(output)).pages)
+    assert "ELECTRICAL HEATER" not in text
+    assert "Elektrikli Isitici" not in text
+
+    state.electrical_heater = True
+    state.electrical_stage_count = 2
+    state.electrical_values = ["10", "20", "", "", "", "", "", "", ""]
+    state.pre_electrical_heater = True
+    state.pre_electrical_stage_count = 1
+    output = tmp_path / "heater-selected.pdf"
+    build_test_report(state, output)
+    text = "\\n".join(page.extract_text() or "" for page in PdfReader(str(output)).pages)
+    assert "Rapor Tarihi" in text
+    assert "Report Date" in text
+    assert "Sayfa No" in text
+    assert "Page No" in text
+    assert "1. Kademe / Stage 1" in text
+    assert "2. Kademe / Stage 2" in text
