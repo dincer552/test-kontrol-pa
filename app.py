@@ -304,13 +304,23 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
         frame = ttk.Frame(dialog, padding=14)
         frame.pack(fill="both", expand=True)
-        entries: dict[str, ttk.Entry] = {}
-        for row, (key, label_text, initial) in enumerate(fields):
+        entries: dict[str, ttk.Widget] = {}
+        for row, field in enumerate(fields):
+            key, label_text, initial = field[:3]
+            options = field[3] if len(field) > 3 else None
             ttk.Label(frame, text=label_text).grid(
                 row=row, column=0, sticky="w", padx=(0, 10), pady=5
             )
-            entry = ttk.Entry(frame, width=26)
-            entry.insert(0, str(initial or ""))
+            if options:
+                current = str(initial or "")
+                selected = current if current in options else options[0]
+                entry = ttk.Combobox(
+                    frame, width=24, values=options, state="readonly"
+                )
+                entry.set(selected)
+            else:
+                entry = ttk.Entry(frame, width=26)
+                entry.insert(0, str(initial or ""))
             entry.grid(row=row, column=1, sticky="ew", pady=5)
             entries[key] = entry
 
@@ -745,10 +755,18 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._open_manual_form_dialog(
             "Fan Bilgileri",
             (
-                ("aspirator_type", "Aspiratör Fan Tipi", self._aspirator_fan_type_var.get()),
-                ("aspirator_count", "Aspiratör Fan Sayısı", self._aspirator_fan_count_var.get()),
-                ("ventilator_type", "Vantilatör Fan Tipi", self._ventilator_fan_type_var.get()),
-                ("ventilator_count", "Vantilatör Fan Sayısı", self._ventilator_fan_count_var.get()),
+                (
+                    "aspirator_type", "Aspiratör Fan Markası / Tipi",
+                    self._aspirator_fan_type_var.get(),
+                    ("Ziehl-Abegg", "ebm-papst", "Standart + Plug", "Yok"),
+                ),
+                ("aspirator_count", "Aspiratör Fan Adedi", self._aspirator_fan_count_var.get()),
+                (
+                    "ventilator_type", "Vantilatör Fan Markası / Tipi",
+                    self._ventilator_fan_type_var.get(),
+                    ("Ziehl-Abegg", "ebm-papst", "Standart + Plug", "Yok"),
+                ),
+                ("ventilator_count", "Vantilatör Fan Adedi", self._ventilator_fan_count_var.get()),
             ),
             apply,
         )
