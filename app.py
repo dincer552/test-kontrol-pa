@@ -126,7 +126,9 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         style.configure("TLabel", background=bg_canvas, foreground=text, font=("Segoe UI", 9))
         style.configure("White.TLabel", background=card_bg, foreground=text, font=("Segoe UI", 9))
         style.configure("Muted.TLabel", background=card_bg, foreground=muted, font=("Segoe UI", 8))
-        style.configure("UpdateBuild.TLabel", background=card_bg, foreground="#16a34a", font=("Segoe UI", 8, "bold"))
+        style.configure("UpdateBuild.TLabel", background=card_bg, foreground="#16a34a", font=("Segoe UI", 7, "bold"))
+        style.configure("CompactUpdate.TButton", background=primary, foreground="#ffffff", font=("Segoe UI", 8, "bold"), borderwidth=0, padding=(7, 2))
+        style.map("CompactUpdate.TButton", background=[("active", "#1e40af"), ("disabled", "#cbd5e1")])
         style.configure("Title.TLabel", background=card_bg, foreground=text, font=("Segoe UI", 13, "bold"))
         style.configure("Badge.TLabel", background="#eff6ff", foreground=primary, font=("Segoe UI", 8, "bold"), padding=(6, 2))
         style.configure("Primary.TButton", background=primary, foreground="#ffffff", font=("Segoe UI", 9, "bold"), borderwidth=0, padding=(12, 6))
@@ -184,14 +186,13 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                     )
                 build_label = self._update_build_label
                 if build_label is not None:
-                    # Only show a version when an actually newer build exists.
                     if available and update:
                         version = str(update.get("version") or "").strip()
                         display_version = version.lstrip("vV")
-                        label = f"v{display_version}" if display_version else "Yeni sürüm"
+                        label = f"Yeni: v{display_version}" if display_version else "Yeni sürüm mevcut"
                         build_label.configure(text=label)
                     else:
-                        build_label.configure(text="")
+                        build_label.configure(text=f"Güncel: {VERSION}")
                 manual_button = self._manual_update_button
                 if manual_button is not None:
                     manual_button.configure(state="normal")
@@ -1220,18 +1221,11 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         ttk.Button(dock, text="↻ Temizle", style="Secondary.TButton", command=self._clear).pack(side="left", padx=3)
         ttk.Button(dock, text="▣ Rapor", style="Secondary.TButton", command=self._report).pack(side="left", padx=3)
 
-        # Keep update actions visible at the bottom-right in compact windows.
+        # Keep the update check beside a compact, vertically stacked update
+        # control. The button is shorter; the installed/new version sits below.
         update_controls = ttk.Frame(dock, style="White.TFrame")
         update_controls.pack(side="right", padx=(4, 0))
-        self._update_button = ttk.Button(
-            update_controls,
-            text="Güncelle",
-            style="Primary.TButton",
-            width=10,
-            command=self._start_update,
-            state="disabled",
-        )
-        self._update_button.pack(side="right")
+
         self._manual_update_button = ttk.Button(
             update_controls,
             text="↻ Denetle",
@@ -1239,9 +1233,26 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             width=9,
             command=self._manual_update_check,
         )
-        self._manual_update_button.pack(side="right", padx=(0, 6))
-        self._update_build_label = ttk.Label(update_controls, text="", style="UpdateBuild.TLabel")
-        self._update_build_label.pack(side="right", padx=(0, 6))
+        self._manual_update_button.pack(side="left", padx=(0, 6), anchor="n")
+
+        update_stack = ttk.Frame(update_controls, style="White.TFrame")
+        update_stack.pack(side="left", anchor="n")
+        self._update_button = ttk.Button(
+            update_stack,
+            text="Güncelle",
+            style="CompactUpdate.TButton",
+            width=10,
+            command=self._start_update,
+            state="disabled",
+        )
+        self._update_button.pack(side="top", fill="x")
+        self._update_build_label = ttk.Label(
+            update_stack,
+            text=f"Güncel: {VERSION}",
+            style="UpdateBuild.TLabel",
+            anchor="center",
+        )
+        self._update_build_label.pack(side="top", fill="x", pady=(1, 0))
 
     def _log(self, message: str, tag: str = "muted") -> None:
         """Write every user-visible operation to the central process log."""
