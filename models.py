@@ -36,7 +36,10 @@ class TestControlState:
     pressure_control_ok: bool = False
 
     damper_counts: Dict[str, int] = field(default_factory=lambda: {name: 0 for name in DAMPER_NAMES})
+    manual_dampers: Dict[str, int] = field(default_factory=dict)
     filters: Dict[str, bool] = field(default_factory=lambda: {name: False for name in FILTER_IDS})
+    manual_filters: Dict[str, str] = field(default_factory=dict)
+    manual_modules: Dict[str, str] = field(default_factory=dict)
     sensors: Dict[str, str] = field(default_factory=lambda: {name: "-" for name in SENSOR_NAMES})
     manual_sensors: Dict[str, str] = field(default_factory=dict)
     manual_sensor_units: Dict[str, str] = field(default_factory=dict)
