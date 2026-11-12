@@ -51,3 +51,38 @@ def test_manual_equipment_updates_section_statuses():
     assert state.damper_control_ok is True
     assert state.filter_control_ok is True
     assert state.modules_ok is True
+
+
+
+def test_report_date_and_bilingual_fan_labels_are_printed(tmp_path):
+    state = TestControlState()
+    state.report_date = "05.03.2026"
+    state.supply_fan_type = "EC plug fan"
+    state.return_fan_type = "Danfoss exhaust fan"
+    state.supply_fan_count = 2
+    state.return_fan_count = 1
+    state.supply_airflow = "12500"
+    state.return_airflow = "10800"
+
+    output = tmp_path / "dated-bilingual-report.pdf"
+    build_test_report(state, output)
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(str(output)).pages)
+
+    assert "05-Mar-26" in text
+    assert "Üfleme Fan Tipi / Supply Fan Type" in text
+    assert "Egzoz Fan Tipi / Exhaust Fan Type" in text
+    assert "Üfleme Debisi (%25) / Supply Airflow" in text
+    assert "Egzoz Debisi (%25) / Exhaust Airflow" in text
+    assert "Üfleme Fan Adedi / Supply Fan Qty." in text
+    assert "Egzoz Fan Adedi / Exhaust Fan Qty." in text
+
+
+def test_invalid_manual_report_date_is_rejected(tmp_path):
+    state = TestControlState()
+    state.report_date = "31.02.2026"
+    try:
+        build_test_report(state, tmp_path / "invalid-date.pdf")
+    except ValueError as exc:
+        assert "GG.AA.YYYY" in str(exc)
+    else:
+        raise AssertionError("Invalid manual report date was accepted")
