@@ -202,6 +202,12 @@ class DamperTabMixin:
                     widget.grid()
                 else:
                     widget.grid_remove()
+            clear_button = self._damper_clear_buttons.get(name)
+            if clear_button is not None:
+                if visible:
+                    clear_button.grid()
+                else:
+                    clear_button.grid_remove()
 
     def _set_damper_entries_state(self, editable: bool) -> None:
         for _name, (_label, entry, _button) in self._damper_widgets.items():
