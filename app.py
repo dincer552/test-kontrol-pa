@@ -252,7 +252,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._build_bottom_dock()
 
     def _configure_tab_flow(self) -> None:
-        """Unlock workflow tabs in order; BAĞLANTI is the only initial tab."""
+        """Register tab names and leave every page available from startup."""
         tab_ids = self.tabs.tabs()
         self._tab_sequence = (
             "Bağlantı",
@@ -264,8 +264,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             "Sensörler",
             "Rapor",
         )
-        # Visible captions are compact for the 400 px layout; workflow logic
-        # continues to use the full internal names above.
+        # Internal workflow names map to the notebook pages in creation order.
         self._tab_ids = {
             name: tab_ids[i]
             for i, name in enumerate(self._tab_sequence)
@@ -273,35 +272,26 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._tab_positions = {
             name: index for index, name in enumerate(self._tab_sequence)
         }
-        # Use the notebook tab state consistently. `hide()` removes a tab from
-        # the visible tab bar but is not restored by `tab(..., state="normal")`.
-        # The workflow unlocker below restores tabs via the state API, so the
-        # initial lock must use the same mechanism.
-        for tab_name in self._tab_sequence[1:]:
-            tab_id = self._tab_ids.get(tab_name)
-            if tab_id is not None:
-                self.tabs.tab(tab_id, state="hidden")
+
+        # No page is locked behind connection, PDF discovery or a previous
+        # page's Save button. Keep every notebook tab visible at all times.
+        for tab_id in tab_ids:
+            self.tabs.tab(tab_id, state="normal")
         self.tabs.select(self._tab_ids["Bağlantı"])
 
     def _set_tab_visible(self, tab_name: str, visible: bool = True) -> None:
-        """Show/hide an already-created ttk.Notebook tab without changing its order."""
+        """Compatibility helper: all top-level pages are always visible."""
         tab_id = getattr(self, "_tab_ids", {}).get(tab_name)
         if tab_id is None:
             return
         try:
-            if visible:
-                # The tab remains in Notebook.tabs() even while hidden.
-                # Re-adding/inserting it is therefore unnecessary and can
-                # leave the tab hidden. Explicitly restore its state instead.
-                self.tabs.tab(tab_id, state="normal")
-            else:
-                self.tabs.tab(tab_id, state="hidden")
+            self.tabs.tab(tab_id, state="normal")
         except tk.TclError:
             return
 
     def _on_c600_connection_success(self) -> None:
-        """A successful C600 connection unlocks the project tab."""
-        self._set_tab_visible("Proje", True)
+        """Connection success updates status; it does not control page access."""
+        return
 
     def _open_manual_form_dialog(self, title: str, fields, on_save) -> None:
         """Show a compact form and pass its entered values to a page callback."""
@@ -608,8 +598,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._confirm_sensor_matches(result.sensor_match_candidates)
         # Damper visibility is now driven by controller registers, not PDF discovery.
         self._apply_pdf_sensor_visibility(result.sensor_types)
-        # PDF is the approval/input point for opening the next sequential tab.
-        self._set_tab_visible("Fan Kontrol", True)
+        # PDF discovery fills what it can, but page navigation is unrestricted.
         if result.order_no:
             self._order_no_var.set(result.order_no)
             self.state.order_no = result.order_no
@@ -1284,31 +1273,19 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 f"FAN KONTROL: KAYDET — fan={self.state.fan_type}, supply_fan={self.state.supply_fan_count}, return_fan={self.state.return_fan_count}, supply_airflow={self.state.supply_airflow}, return_airflow={self.state.return_airflow}",
                 "ok",
             )
-            self._set_tab_visible("Damper Kontrol", True)
-            self._log("İŞ AKIŞI: DAMPER KONTROL sekmesi açıldı.", "ok")
+            self._log("FAN KONTROL: Bilgiler kaydedildi.", "ok")
         except (TypeError, ValueError) as exc:
             messagebox.showwarning("FAN KONTROL", f"Fan bilgileri kontrol edilmeli:\n{exc}", parent=self)
 
     def _save_and_unlock(self, tab_name: str) -> None:
-        """Save the current page and explicitly unlock its next workflow tab."""
+        """Save the current page; all other pages remain directly accessible."""
         self._save()
-        self._log(f"{self.tabs.tab(self.tabs.select(), 'text')}: KAYDET", "ok")
-        self._set_tab_visible(tab_name, True)
-        self._log(f"İŞ AKIŞI: {tab_name} sekmesi açıldı.", "ok")
+        current = self.tabs.tab(self.tabs.select(), "text")
+        self._log(f"{current}: KAYDET", "ok")
 
     def _unlock_next_tab_after_save(self) -> None:
-        """Unlock the next tab according to the fixed workflow order."""
-        current = self.tabs.tab(self.tabs.select(), "text")
-        next_tabs = {
-            "Fan Kontrol": "Damper Kontrol",
-            "Damper Kontrol": "Filtre Kontrol",
-            "Filtre Kontrol": "Modüller",
-            "Modüller": "Sensörler",
-            "Sensörler": "Rapor",
-        }
-        next_tab = next_tabs.get(current)
-        if next_tab:
-            self._set_tab_visible(next_tab, True)
+        """Legacy hook retained for compatibility; tabs need no unlocking."""
+        return
 
     def _save(self) -> None:
         self.state.order_no = self._order_no_var.get()
