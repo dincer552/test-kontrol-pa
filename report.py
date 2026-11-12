@@ -152,7 +152,14 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         "small_bold": ParagraphStyle("report_small_bold", parent=base["Normal"], fontName="Helvetica-Bold", fontSize=7, leading=8),
     }
 
-    now = datetime.now().strftime("%d-%b-%y %H:%M:%S")
+    if str(getattr(state, "report_date", "")).strip():
+        try:
+            report_day = datetime.strptime(state.report_date.strip(), "%d.%m.%Y")
+        except ValueError as exc:
+            raise ValueError("Rapor tarihi GG.AA.YYYY formatında olmalı (ör. 12.11.2026).") from exc
+        now = report_day.strftime("%d-%b-%y")
+    else:
+        now = datetime.now().strftime("%d-%b-%y")
     story = [_header_table(styles, "1/2", now), Spacer(1, 4)]
     # PROJE: grup basligi tablo icinde; bilgiler kendi kutularinda
     # baslik ustte, deger altta olacak sekilde gosterilir.
@@ -180,19 +187,19 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
     exhaust_fan_type = _value(getattr(state, "return_fan_type", "")) or "Yok"
     fan_rows = [
         ["FANLAR / FANS", "", "", ""],
-        ["Üfleme Fan Tipi", _value(supply_fan_type),
-         "Egzoz Fan Tipi", _value(exhaust_fan_type)],
-        ["Ü. Hava Debi (%25)", f"{_value(state.supply_airflow)} m3/h",
-         "Egzoz Debi (%25)", f"{_value(state.return_airflow)} m3/h"],
-        ["Üfleme Fan Sayısı", state.supply_fan_count,
-         "Egzoz Fan Sayısı", state.return_fan_count],
+        ["Üfleme Fan Tipi / Supply Fan Type", _value(supply_fan_type),
+         "Egzoz Fan Tipi / Exhaust Fan Type", _value(exhaust_fan_type)],
+        ["Üfleme Debisi (%25) / Supply Airflow", f"{_value(state.supply_airflow)} m3/h",
+         "Egzoz Debisi (%25) / Exhaust Airflow", f"{_value(state.return_airflow)} m3/h"],
+        ["Üfleme Fan Adedi / Supply Fan Qty.", state.supply_fan_count,
+         "Egzoz Fan Adedi / Exhaust Fan Qty.", state.return_fan_count],
     ]
     if _value(state.supply_fan_driver):
-        fan_rows.append(["Üfleme Sürücü Tipi", _value(state.supply_fan_driver),
-                         "Egzoz Sürücü Tipi", _value(state.return_fan_driver)])
+        fan_rows.append(["Üfleme Sürücü Tipi / Supply Drive Type", _value(state.supply_fan_driver),
+                         "Egzoz Sürücü Tipi / Exhaust Drive Type", _value(state.return_fan_driver)])
     elif _value(state.return_fan_driver):
-        fan_rows.append(["Üfleme Sürücü Tipi", "-",
-                         "Egzoz Sürücü Tipi", _value(state.return_fan_driver)])
+        fan_rows.append(["Üfleme Sürücü Tipi / Supply Drive Type", "-",
+                         "Egzoz Sürücü Tipi / Exhaust Drive Type", _value(state.return_fan_driver)])
     fan_table = _grid(fan_rows, (56 * mm, 37 * mm, 56 * mm, 37 * mm), 7)
     fan_table.setStyle(TableStyle([
         ("SPAN", (0, 0), (-1, 0)),
