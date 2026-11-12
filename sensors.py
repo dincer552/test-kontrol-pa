@@ -56,9 +56,11 @@ class SensorTabMixin:
         self._sensor_vars: dict[str, tk.StringVar] = {}
         self._sensor_widgets: dict[str, tuple[ttk.Label, ttk.Entry]] = {}
         self._sensor_manual_buttons: dict[str, ttk.Button] = {}
+        self._sensor_clear_buttons: dict[str, ttk.Button] = {}
         self._sensor_units: dict[str, str] = {}
         self._sensor_visibility: dict[str, dict[str, bool]] = {}
         self._manual_sensor_rows: dict[str, tuple[ttk.Label, ttk.Entry, ttk.Combobox]] = {}
+        self._manual_sensor_delete_buttons: dict[str, ttk.Button] = {}
         self._manual_sensor_rows_frame: ttk.Frame | None = None
 
         row = 0
@@ -80,11 +82,18 @@ class SensorTabMixin:
             )
             button.grid(row=row, column=2, sticky="w", padx=(8, 0), pady=6)
             self._sensor_manual_buttons[name] = button
+            clear_button = ttk.Button(
+                card, text="Sil", style="SensorManual.TButton", width=4,
+                command=lambda sensor_name=name: self._clear_sensor_value(sensor_name),
+            )
+            clear_button.grid(row=row, column=3, sticky="w", padx=(4, 0), pady=6)
+            self._sensor_clear_buttons[name] = clear_button
             row += 1
 
         self._sensor_humidity_vars: dict[str, tk.StringVar] = {}
         self._sensor_humidity_widgets: dict[str, tuple[ttk.Label, ttk.Entry]] = {}
         self._sensor_humidity_manual_buttons: dict[str, ttk.Button] = {}
+        self._sensor_humidity_clear_buttons: dict[str, ttk.Button] = {}
         for name in HUMIDITY_POINTS:
             label = ttk.Label(card, text=f"{name} Nem", wraplength=128)
             label.grid(row=row, column=0, sticky="w", pady=6, padx=(0, 8))
@@ -102,6 +111,12 @@ class SensorTabMixin:
             )
             button.grid(row=row, column=2, sticky="w", padx=(8, 0), pady=6)
             self._sensor_humidity_manual_buttons[name] = button
+            clear_button = ttk.Button(
+                card, text="Sil", style="SensorManual.TButton", width=4,
+                command=lambda sensor_name=name: self._clear_sensor_value(sensor_name, humidity=True),
+            )
+            clear_button.grid(row=row, column=3, sticky="w", padx=(4, 0), pady=6)
+            self._sensor_humidity_clear_buttons[name] = clear_button
             row += 1
 
         self._manual_sensor_rows_frame = ttk.Frame(card)
@@ -113,6 +128,7 @@ class SensorTabMixin:
         self._manual_sensor_rows_frame.grid_columnconfigure(0, weight=0)
         self._manual_sensor_rows_frame.grid_columnconfigure(1, weight=0)
         self._manual_sensor_rows_frame.grid_columnconfigure(2, weight=0)
+        self._manual_sensor_rows_frame.grid_columnconfigure(3, weight=0)
         row += 1
 
         self._sensor_read_button = ttk.Button(
@@ -216,6 +232,11 @@ class SensorTabMixin:
         manual_buttons = list(self._sensor_manual_buttons.values()) + list(
             self._sensor_humidity_manual_buttons.values()
         )
+        clear_buttons = (
+            list(self._sensor_clear_buttons.values())
+            + list(self._sensor_humidity_clear_buttons.values())
+        )
+        manual_delete_buttons = list(self._manual_sensor_delete_buttons.values())
 
         # LabelFrame padding is 14 px on each side, plus its border.
         available = max(1, card.winfo_width() - 32)
@@ -234,6 +255,10 @@ class SensorTabMixin:
         )
         self._manual_sensor_rows_frame.grid_columnconfigure(0, minsize=standard_col0)
         self._manual_sensor_rows_frame.grid_columnconfigure(1, minsize=standard_col1, weight=0)
+        standard_clear_width = max(
+            (button.winfo_reqwidth() for button in clear_buttons), default=0
+        )
+        self._manual_sensor_rows_frame.grid_columnconfigure(3, minsize=standard_clear_width, weight=0)
 
         def column_requirements() -> tuple[int, int, int]:
             col0 = max(
@@ -254,7 +279,11 @@ class SensorTabMixin:
                 button.winfo_reqwidth() + self._grid_horizontal_padding(button)
                 for button in manual_buttons
             ) if manual_buttons else 0
-            return col0, col1, col2
+            col3 = max(
+                button.winfo_reqwidth() + self._grid_horizontal_padding(button)
+                for button in clear_buttons
+            ) if clear_buttons else 0
+            return col0, col1, col2, col3
 
         # Start with the intended size, then reduce flexible value fields first.
         chosen_entry_width = 8
@@ -387,10 +416,12 @@ class SensorTabMixin:
                 + button.winfo_reqwidth() + self._grid_horizontal_padding(button)
             )
         for name, (label, entry, unit_box) in self._manual_sensor_rows.items():
+            delete_button = self._manual_sensor_delete_buttons[name]
             row_widths[f"Manuel: {name}"] = (
                 label.winfo_reqwidth() + self._grid_horizontal_padding(label)
                 + entry.winfo_reqwidth() + self._grid_horizontal_padding(entry)
                 + unit_box.winfo_reqwidth() + self._grid_horizontal_padding(unit_box)
+                + delete_button.winfo_reqwidth() + self._grid_horizontal_padding(delete_button)
             )
 
         columns = column_requirements()
@@ -445,7 +476,13 @@ class SensorTabMixin:
         )
         unit_box.set(unit)
         unit_box.grid(row=row, column=2, sticky="w", pady=6, padx=(4, 0))
+        delete_button = ttk.Button(
+            frame, text="Sil", style="SensorManual.TButton", width=4,
+            command=lambda sensor_name=name: self._delete_manual_sensor(sensor_name),
+        )
+        delete_button.grid(row=row, column=3, sticky="w", padx=(4, 0), pady=6)
         self._manual_sensor_rows[name] = (label, entry, unit_box)
+        self._manual_sensor_delete_buttons[name] = delete_button
         frame.grid_columnconfigure(0, weight=0)
         frame.grid_columnconfigure(1, weight=0)
         frame.grid_columnconfigure(2, weight=0)
@@ -456,6 +493,43 @@ class SensorTabMixin:
         self._manual_sensor_value_var.set("")
         if hasattr(self, "_log"):
             self._log(f"SENSÖRLER: Manuel sensör eklendi — {name} = {value}", "ok")
+
+    def _delete_manual_sensor(self, name: str) -> None:
+        widgets = self._manual_sensor_rows.pop(name, None)
+        delete_button = self._manual_sensor_delete_buttons.pop(name, None)
+        if widgets is None:
+            return
+        for widget in (*widgets, delete_button):
+            if widget is not None:
+                widget.destroy()
+        self.state.manual_sensors.pop(name, None)
+        self.state.manual_sensor_units.pop(name, None)
+        for row, sensor_name in enumerate(self._manual_sensor_rows):
+            for widget in (*self._manual_sensor_rows[sensor_name],
+                           self._manual_sensor_delete_buttons[sensor_name]):
+                widget.grid_configure(row=row)
+        self._queue_sensor_width_fit()
+        if hasattr(self, "_update_statuses"):
+            self._update_statuses()
+        if hasattr(self, "_log"):
+            self._log(f"SENSÖRLER: Manuel {name} kaydı silindi.", "muted")
+
+    def _clear_sensor_value(self, name: str, humidity: bool = False) -> None:
+        if humidity:
+            variable = self._sensor_humidity_vars.get(name)
+            widgets = self._sensor_humidity_widgets.get(name)
+            key = f"{name} Humidity"
+        else:
+            variable = self._sensor_vars.get(name)
+            widgets = self._sensor_widgets.get(name)
+            key = name
+        if variable is None or widgets is None:
+            return
+        variable.set("-")
+        self.state.sensors[key] = "-"
+        widgets[1].configure(state="readonly", style="TEntry")
+        if hasattr(self, "_log"):
+            self._log(f"SENSÖRLER: {name} {'nem ' if humidity else ''}değeri silindi.", "muted")
 
     def _set_widget_visible(self, widgets: tuple[ttk.Label, ttk.Entry], visible: bool) -> None:
         for widget in widgets:
@@ -470,20 +544,32 @@ class SensorTabMixin:
             visible = bool(spec.get("temperature") or spec.get("co2"))
             self._set_widget_visible(widgets, visible)
             button = self._sensor_manual_buttons.get(name)
+            clear_button = self._sensor_clear_buttons.get(name)
             if button is not None:
                 if visible:
                     button.grid()
                 else:
                     button.grid_remove()
+            if clear_button is not None:
+                if visible:
+                    clear_button.grid()
+                else:
+                    clear_button.grid_remove()
         for name, widgets in self._sensor_humidity_widgets.items():
             visible = bool(visibility.get(name, {}).get("humidity"))
             self._set_widget_visible(widgets, visible)
             button = self._sensor_humidity_manual_buttons.get(name)
+            clear_button = self._sensor_humidity_clear_buttons.get(name)
             if button is not None:
                 if visible:
                     button.grid()
                 else:
                     button.grid_remove()
+            if clear_button is not None:
+                if visible:
+                    clear_button.grid()
+                else:
+                    clear_button.grid_remove()
 
     def _apply_pdf_sensor_visibility(self, sensor_types: dict[str, dict[str, bool]]) -> None:
         self._sensor_visibility = sensor_types
@@ -510,6 +596,9 @@ class SensorTabMixin:
             entry.destroy()
             unit_box.destroy()
         self._manual_sensor_rows.clear()
+        for button in self._manual_sensor_delete_buttons.values():
+            button.destroy()
+        self._manual_sensor_delete_buttons.clear()
         self.state.manual_sensor_units.clear()
         for name, entry_pair in self._sensor_widgets.items():
             entry_pair[1].configure(state="readonly", style="TEntry")
