@@ -47,7 +47,7 @@ def _header_footer(canvas, doc) -> None:
     canvas.saveState()
     canvas.setFont("Helvetica", 7)
     canvas.drawString(15 * mm, 8 * mm, _ascii("Systemair HSK Havalandırma Endüstri San. Ve Tic. A. Ş."))
-    canvas.drawRightString(195 * mm, 8 * mm, _ascii(f"Sayfa {doc.page}"))
+    canvas.drawRightString(195 * mm, 8 * mm, _ascii(f"Sayfa / Page {doc.page}"))
     canvas.restoreState()
 
 
@@ -109,8 +109,8 @@ def _header_table(styles, page_no: str, updated: str) -> Table:
     logo_path = _asset_path("SYSR.ST.png")
     logo = Image(str(logo_path), width=28 * mm, height=20 * mm, kind="proportional") if logo_path.exists() else Paragraph("systemair", styles["title"])
     meta = [
-        ["Rapor Tarihi", updated],
-        ["Sayfa No", page_no],
+        ["Rapor Tarihi / Report Date", updated],
+        ["Sayfa No / Page No", page_no],
     ]
     meta_table = _grid(meta, (29 * mm, 31 * mm), 6.5)
     title = Paragraph(
@@ -374,39 +374,42 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
     story.append(sensor_table)
     story.append(Spacer(1, 5 * mm))
 
-    heater = [["Electrical Heater", "R(A)", "S(A)", "T(A)"]]
-    stage_count = max(1, min(3, int(state.electrical_stage_count or 1)))
-    for stage in range(stage_count):
-        stage_number = stage + 1
-        heater.append([
-            f"{stage_number}.Kademe",
-            _value(state.electrical_values[stage]),
-            _value(state.electrical_values[3 + stage]),
-            _value(state.electrical_values[6 + stage]),
-        ])
-    heater = [["ELEKTRIKLI ISITICI / ELECTRICAL HEATER", "", "", ""], *heater]
-    ht = _grid(heater, (56 * mm, 37 * mm, 56 * mm, 37 * mm), 7)
-    ht.setStyle(TableStyle([
-        ("SPAN", (0, 0), (-1, 0)),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, 0), 9),
-        ("BACKGROUND", (0, 2), (0, -1), colors.HexColor("#eeeeee")),
-        ("BACKGROUND", (0, 1), (3, 1), colors.HexColor("#eeeeee")),
-        ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
-        ("ALIGN", (1, 2), (-1, -1), "CENTER"),
-        ("ALIGN", (1, 1), (-1, 1), "CENTER"),
-    ]))
-    story.append(ht)
+    # Ana elektrikli isitici secili degilse raporda bu tabloyu hic olusturma.
+    if state.electrical_heater:
+        heater = [["Elektrik / Electrical", "R(A)", "S(A)", "T(A)"]]
+        stage_count = max(1, min(3, int(state.electrical_stage_count or 1)))
+        for stage in range(stage_count):
+            stage_number = stage + 1
+            heater.append([
+                f"{stage_number}. Kademe / Stage {stage_number}",
+                _value(state.electrical_values[stage]),
+                _value(state.electrical_values[3 + stage]),
+                _value(state.electrical_values[6 + stage]),
+            ])
+        heater = [["ELEKTRIKLI ISITICI / ELECTRICAL HEATER", "", "", ""], *heater]
+        ht = _grid(heater, (56 * mm, 37 * mm, 56 * mm, 37 * mm), 7)
+        ht.setStyle(TableStyle([
+            ("SPAN", (0, 0), (-1, 0)),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 9),
+            ("BACKGROUND", (0, 2), (0, -1), colors.HexColor("#eeeeee")),
+            ("BACKGROUND", (0, 1), (3, 1), colors.HexColor("#eeeeee")),
+            ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
+            ("ALIGN", (1, 2), (-1, -1), "CENTER"),
+            ("ALIGN", (1, 1), (-1, 1), "CENTER"),
+        ]))
+        story.append(Spacer(1, 5 * mm))
+        story.append(ht)
 
     # Pre elektrikli isitici: ana elektrikli isitici ile ayni tablo mantigi.
     if state.pre_electrical_heater:
         story.append(Spacer(1, 5 * mm))
-        pre_heater = [["Pre Electrical Heater", "R(A)", "S(A)", "T(A)"]]
+        pre_heater = [["Elektrik / Electrical", "R(A)", "S(A)", "T(A)"]]
         pre_stage_count = max(1, min(3, int(state.pre_electrical_stage_count or 1)))
         for stage in range(pre_stage_count):
             stage_number = stage + 1
             pre_heater.append([
-                f"{stage_number}.Kademe",
+                f"{stage_number}. Kademe / Stage {stage_number}",
                 _value(state.pre_electrical_values[stage]),
                 _value(state.pre_electrical_values[3 + stage]),
                 _value(state.pre_electrical_values[6 + stage]),
