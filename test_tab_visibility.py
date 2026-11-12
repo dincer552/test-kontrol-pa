@@ -37,3 +37,25 @@ def test_all_top_level_tabs_are_visible_and_selectable_without_unlock_steps():
             assert app.tabs.select() == tab_id
     finally:
         app.destroy()
+
+
+
+def test_update_button_is_compact_above_green_version_label_at_400px():
+    app = TestControlApp()
+    try:
+        app.geometry("400x820")
+        app.update_idletasks()
+
+        assert app._update_button.winfo_manager() == "pack"
+        assert app._update_build_label.winfo_manager() == "pack"
+        button_info = app._update_button.pack_info()
+        label_info = app._update_build_label.pack_info()
+
+        assert button_info.get("side") == "top"
+        assert label_info.get("side") == "top"
+        assert app._update_button.master is app._update_build_label.master
+        assert app._update_build_label.cget("foreground") == "#16a34a"
+        assert app._update_button.winfo_width() <= app.winfo_width()
+        assert "Güncel:" in app._update_build_label.cget("text")
+    finally:
+        app.destroy()
