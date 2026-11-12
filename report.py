@@ -225,6 +225,11 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         module_items.append(("Pre Elektrikli Isitici", _checked(True)))
     if state.room_bms:
         module_items.append(("Room BMS", _checked(True)))
+    for name, detail in getattr(state, "manual_modules", {}).items():
+        clean_name = _value(name)
+        clean_detail = _value(detail) or _checked(True)
+        if clean_name != "-":
+            module_items.append((clean_name, clean_detail))
 
     if module_items:
         module_rows = [["MODULLER / MODULES", "", "", ""]]
@@ -245,15 +250,20 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         story.append(module_table)
         story.append(Spacer(1, 5 * mm))
 
-    # DAMPERLER: sadece adedi 0'dan buyuk olanlar.
+    # DAMPERLER: sabit ve eklenen tüm damperler aynı tabloda gösterilir.
+    damper_values = {
+        name: state.damper_counts.get(name, 0)
+        for name in DAMPER_NAMES
+    }
+    damper_values.update(getattr(state, "manual_dampers", {}))
     active_dampers = []
-    for name in DAMPER_NAMES:
+    for name, raw_count in damper_values.items():
         try:
-            count = int(state.damper_counts.get(name, 0) or 0)
+            count = int(raw_count or 0)
         except (TypeError, ValueError):
             count = 0
         if count > 0:
-            active_dampers.append((name, count))
+            active_dampers.append((_value(name), count))
 
     if active_dampers:
         damper_rows = [["DAMPERLER / DAMPERS", "", "", ""]]
@@ -279,11 +289,14 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         story.append(Spacer(1, 5 * mm))
 
     filter_rows = [["FILTRELER / FILTERS", "", "", ""]]
-    filter_items = [
-        (name, _checked(state.filters.get(name, False)))
+    filter_values = {
+        name: _checked(state.filters.get(name, False))
         for name in FILTER_IDS
         if state.filters.get(name, False)
-    ]
+    }
+    for name, detail in getattr(state, "manual_filters", {}).items():
+        filter_values[_value(name)] = _value(detail) or _checked(True)
+    filter_items = list(filter_values.items())
     for i in range(0, len(filter_items), 2):
         left = filter_items[i]
         right = filter_items[i + 1] if i + 1 < len(filter_items) else ("", "")
