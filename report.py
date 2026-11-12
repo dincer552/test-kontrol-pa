@@ -295,7 +295,8 @@ def build_test_report(state: TestControlState, output_path: str | os.PathLike[st
         if state.filters.get(name, False)
     }
     for name, detail in getattr(state, "manual_filters", {}).items():
-        filter_values[_value(name)] = _value(detail) or _checked(True)
+        detail_text = _value(detail)
+        filter_values[_value(name)] = detail_text if detail_text != "-" else _checked(True)
     filter_items = list(filter_values.items())
     for i in range(0, len(filter_items), 2):
         left = filter_items[i]
