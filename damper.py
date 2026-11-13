@@ -84,7 +84,7 @@ class DamperTabMixin:
             manual_button.grid(row=row, column=2, sticky="w", padx=(8, 0), pady=7)
             self._damper_widgets[name] = (label, entry, manual_button)
             clear_button = ttk.Button(
-                card, text="Sil", style="SensorManual.TButton", width=4,
+                card, text="Sil", style="SensorManual.TButton", width=3,
                 command=lambda damper=name: self._clear_damper_value(damper),
             )
             clear_button.grid(row=row, column=3, sticky="w", padx=(4, 0), pady=7)
@@ -171,7 +171,7 @@ class DamperTabMixin:
                 row=row, column=1, sticky="w", pady=2
             )
             ttk.Button(
-                frame, text="Sil", style="SensorManual.TButton", width=4,
+                frame, text="Sil", style="SensorManual.TButton", width=3,
                 command=lambda item=name: self._delete_manual_damper(item),
             ).grid(row=row, column=2, sticky="e", padx=(8, 0), pady=1)
 
