@@ -399,7 +399,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 row=i, column=1, sticky="w", pady=6
             )
             ttk.Button(
-                project, text="Sil", style="SensorManual.TButton", width=4,
+                project, text="Sil", style="SensorManual.TButton", width=3,
                 command=lambda field=attr: self._clear_project_field(field),
             ).grid(row=i, column=2, sticky="e", padx=(6, 0), pady=4)
 
@@ -714,7 +714,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             command=lambda: self._enable_manual_airflow("supply")
         ).grid(row=4, column=2, sticky="w", padx=(8, 0), pady=6)
         ttk.Button(
-            card, text="Sil", style="SensorManual.TButton", width=4,
+            card, text="Sil", style="SensorManual.TButton", width=3,
             command=lambda: self._clear_manual_airflow("supply"),
         ).grid(row=4, column=3, sticky="w", padx=(4, 0), pady=6)
 
@@ -729,7 +729,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             command=lambda: self._enable_manual_airflow("return")
         ).grid(row=5, column=2, sticky="w", padx=(8, 0), pady=6)
         ttk.Button(
-            card, text="Sil", style="SensorManual.TButton", width=4,
+            card, text="Sil", style="SensorManual.TButton", width=3,
             command=lambda: self._clear_manual_airflow("return"),
         ).grid(row=5, column=3, sticky="w", padx=(4, 0), pady=6)
 
@@ -749,7 +749,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             command=self._open_manual_fan_entry,
         ).pack(side="left", padx=(0, 6))
         ttk.Button(
-            buttons, text="Sil", style="SensorManual.TButton", width=4,
+            buttons, text="Sil", style="SensorManual.TButton", width=3,
             command=self._clear_manual_fan_info,
         ).pack(side="left")
 
@@ -974,7 +974,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 row=row, column=1, sticky="w", pady=2
             )
             ttk.Button(
-                frame, text="Sil", style="SensorManual.TButton", width=4,
+                frame, text="Sil", style="SensorManual.TButton", width=3,
                 command=lambda item=name: self._delete_manual_filter(item),
             ).grid(row=row, column=2, sticky="e", padx=(8, 0), pady=1)
 
@@ -1089,7 +1089,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                 row=row, column=1, sticky="w", pady=2
             )
             ttk.Button(
-                frame, text="Sil", style="SensorManual.TButton", width=4,
+                frame, text="Sil", style="SensorManual.TButton", width=3,
                 command=lambda item=name: self._delete_manual_module(item),
             ).grid(row=row, column=2, sticky="e", padx=(8, 0), pady=1)
 
@@ -1162,7 +1162,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
                     row=row, column=col, padx=4, pady=3, sticky="w"
                 )
             ttk.Button(
-                frame, text="Sil", style="SensorManual.TButton", width=4,
+                frame, text="Sil", style="SensorManual.TButton", width=3,
                 command=lambda heater_kind=kind, phase_name=phase:
                     self._clear_heater_phase(heater_kind, phase_name),
             ).grid(row=row, column=stage_count + 1, padx=(4, 0), pady=3, sticky="w")
@@ -1309,7 +1309,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._user_entry = ttk.Entry(card, textvariable=self._user_var, width=32)
         self._user_entry.grid(row=0, column=1, sticky="w", pady=6)
         ttk.Button(
-            card, text="Sil", style="SensorManual.TButton", width=4,
+            card, text="Sil", style="SensorManual.TButton", width=3,
             command=lambda: self._clear_report_field("user"),
         ).grid(row=0, column=2, sticky="w", padx=(6, 0), pady=4)
         ttk.Label(card, text="Rapor Tarihi").grid(row=1, column=0, sticky="w", pady=6)
@@ -1318,7 +1318,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._report_date_entry.grid(row=1, column=1, sticky="w", pady=6)
         ttk.Button(card, text="Manuel Tarih", style="Secondary.TButton", command=self._enable_manual_report_date).grid(row=1, column=2, sticky="w", padx=(8, 0), pady=6)
         ttk.Button(
-            card, text="Sil", style="SensorManual.TButton", width=4,
+            card, text="Sil", style="SensorManual.TButton", width=3,
             command=lambda: self._clear_report_field("date"),
         ).grid(row=1, column=3, sticky="w", padx=(4, 0), pady=4)
         ttk.Label(card, text="GG.AA.YYYY formatında").grid(row=2, column=1, sticky="w")
