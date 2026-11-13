@@ -83,7 +83,7 @@ class SensorTabMixin:
             button.grid(row=row, column=2, sticky="w", padx=(8, 0), pady=6)
             self._sensor_manual_buttons[name] = button
             clear_button = ttk.Button(
-                card, text="Sil", style="SensorManual.TButton", width=4,
+                card, text="Sil", style="SensorManual.TButton", width=3,
                 command=lambda sensor_name=name: self._clear_sensor_value(sensor_name),
             )
             clear_button.grid(row=row, column=3, sticky="w", padx=(4, 0), pady=6)
@@ -112,7 +112,7 @@ class SensorTabMixin:
             button.grid(row=row, column=2, sticky="w", padx=(8, 0), pady=6)
             self._sensor_humidity_manual_buttons[name] = button
             clear_button = ttk.Button(
-                card, text="Sil", style="SensorManual.TButton", width=4,
+                card, text="Sil", style="SensorManual.TButton", width=3,
                 command=lambda sensor_name=name: self._clear_sensor_value(sensor_name, humidity=True),
             )
             clear_button.grid(row=row, column=3, sticky="w", padx=(4, 0), pady=6)
@@ -476,7 +476,7 @@ class SensorTabMixin:
         unit_box.set(unit)
         unit_box.grid(row=row, column=2, sticky="w", pady=6, padx=(4, 0))
         delete_button = ttk.Button(
-            frame, text="Sil", style="SensorManual.TButton", width=4,
+            frame, text="Sil", style="SensorManual.TButton", width=3,
             command=lambda sensor_name=name: self._delete_manual_sensor(sensor_name),
         )
         delete_button.grid(row=row, column=3, sticky="w", padx=(4, 0), pady=6)
