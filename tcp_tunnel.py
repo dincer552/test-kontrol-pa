@@ -179,15 +179,15 @@ class TcpTunnelManager:
         script = communication_dir / "register_rainbow_com.cmd"
         script.write_text(
             "@echo off\r\n"
-            "cd /d \\"%~dp0\\"\r\n"
+            'cd /d "%~dp0"\r\n'
             'set "REGSVR=%SystemRoot%\\SysWOW64\\regsvr32.exe"\r\n'
             'if not exist "%REGSVR%" set "REGSVR=%SystemRoot%\\System32\\regsvr32.exe"\r\n'
-            '"%REGSVR%" /u /s "%~dp0RainbowComHandler.dll" > "%~dp0register_rainbow_com.log" 2>&1\\r\\n'
-            '"%~dp0RainbowComHandler.exe" /RegServer >> "%~dp0register_rainbow_com.log" 2>&1\\r\\n'
+            '"%REGSVR%" /u /s "%~dp0RainbowComHandler.dll" > "%~dp0register_rainbow_com.log" 2>&1\r\n'
+            '"%~dp0RainbowComHandler.exe" /RegServer >> "%~dp0register_rainbow_com.log" 2>&1\r\n'
             "if errorlevel 1 exit /b 1\r\n"
-            '"%REGSVR%" /s "%~dp0RainbowComHandlerPS.dll" >> "%~dp0register_rainbow_com.log" 2>&1\\r\\n'
-            "if errorlevel 1 exit /b 1\\r\\n"
-            "exit /b 0\\r\\n",
+            '"%REGSVR%" /s "%~dp0RainbowComHandlerPS.dll" >> "%~dp0register_rainbow_com.log" 2>&1\r\n'
+            "if errorlevel 1 exit /b 1\r\n"
+            "exit /b 0\r\n",
             encoding="utf-8",
         )
 
