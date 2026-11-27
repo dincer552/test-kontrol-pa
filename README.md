@@ -62,16 +62,13 @@ Mevcut yapılandırma:
 
 C600 modülünde TCP 4242, Climatix `/json.html` okuma, cihaz kimliği ve System Clock işlemleri bulunur.
 
-## Taşınabilir SCOPE / Rainbow TCP Tunnel
+## SCOPE / Rainbow TCP Tunnel bağımlılığı
 
-- Uygulama tam SCOPE arayüzünü kurmaz; Climatix iletişimi için gereken `RainbowTcpTunnel.exe` çalışma paketini kullanır.
-- Paket `Communication/` klasörü olarak veya `Communication.zip` adıyla EXE'nin içine eklenebilir. Windows build iş akışı bu iki biçimi otomatik algılar.
-- Paket EXE içine eklenmemişse, `Communication.zip` dosyası EXE'nin yanına konabilir. Uygulama ilk bağlantıda dosyaları `%LOCALAPPDATA%\\TestKontrol\\Communication` klasörüne güvenli biçimde çıkarır.
-- İlk kullanımda Siemens Rainbow COM bileşeni kayıtlı değilse Windows yönetici izni istenir. Var olan geçerli COM kaydı değiştirilmez.
-- Paket yoksa mevcut Siemens SCOPE/Communication kurulumundaki Rainbow tüneli bulunmaya çalışılır.
-- Siemens'e ait ikili dosyalar bu açık kaynak depoya eklenmeden önce ilgili dağıtım/lisans izni doğrulanmalıdır. Bu nedenle CI, paket depoda mevcut olduğunda gömer; yoksa derlemeyi bozmadan yan dosya veya kurulu Siemens bileşenine geri dönüş sağlar.
-
-Böylece uygulama kullanıcı profiline veya belirli bir `C:\\Program Files\\Siemens` kurulum yoluna bağlı kalmaz.
+- Test Kontrol, tünel için her bilgisayarda kurulu olan Siemens SCOPE/Communication bileşenini kullanır.
+- Uygulama RainbowTcpTunnel.exe dosyasını Windows PATH, Siemens kurulum kayıtları ve standart Siemens klasörlerinden otomatik bulur; kurulum klasörünün sabit bir sürücüde olmasını gerektirmez.
+- SCOPE'un kurduğu Rainbow COM bileşeninin kayıtlı olması gerekir. Kayıt eksikse Test Kontrol kendi başına Siemens bileşeni kaydetmez; SCOPE kurulumunun yönetici yetkisiyle Onar (Repair) edilmesini ister.
+- Kullanıcıdan Communication.zip indirmesi, uygulama yanına koyması veya elle klasör seçmesi istenmez.
+- SCOPE/Communication kurulu değilse bağlantı başlatılmaz ve eksik kurulum açıkça bildirilir.
 
 ## Güncelleme mimarisi
 

@@ -65,19 +65,8 @@ jobs:
             "--name", "Test_Kontrol_$env:APP_VERSION"
           )
 
-          # Bundle the Siemens Rainbow tunnel runtime when the licensed vendor
-          # package is present in the repository. A ZIP is also supported and
-          # is extracted to the user's LocalAppData at first connection.
-          if (Test-Path -LiteralPath "Communication") {
-            $pyiArgs += @("--add-data", "Communication;Communication")
-            Write-Host "Embedding Communication folder into the one-file EXE."
-          } elseif (Test-Path -LiteralPath "Communication.zip") {
-            $pyiArgs += @("--add-data", "Communication.zip;.")
-            Write-Host "Embedding Communication.zip into the one-file EXE."
-          } else {
-            Write-Warning "Communication runtime not embedded; app will use adjacent Communication.zip or an existing Siemens installation."
-          }
-
+          # The tunnel runtime is provided by the locally installed Siemens SCOPE.
+          # Do not download, embed, or redistribute Siemens Communication binaries.
           $pyiArgs += "app.py"
           pyinstaller @pyiArgs
 

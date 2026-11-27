@@ -1,7 +1,4 @@
 from pathlib import Path
-import zipfile
-
-import pytest
 
 from tcp_tunnel import TcpTunnelManager
 
@@ -12,7 +9,6 @@ REQUIRED_FILES = (
     "CommandLine.dll",
     "log4net.dll",
     "Interop.RAINBOWCOMHANDLERLib.dll",
-    "TcpTunnel.log4net.config",
 )
 
 
@@ -22,77 +18,40 @@ def _write_communication_folder(folder: Path) -> None:
         (folder / name).write_bytes(b"test-runtime")
 
 
-def _write_communication_zip(path: Path, *, extra=()) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        for name in REQUIRED_FILES:
-            archive.writestr(f"Communication/{name}", b"test-runtime")
-        for name, payload in extra:
-            archive.writestr(name, payload)
+def test_installed_scope_tunnel_is_preferred(tmp_path, monkeypatch):
+    scope_dir = tmp_path / "Program Files" / "Siemens" / "SCOPE" / "Communication"
+    _write_communication_folder(scope_dir)
+    manager = TcpTunnelManager()
+    monkeypatch.setattr(manager, "_find_installed_tunnel", lambda: scope_dir / "RainbowTcpTunnel.exe")
+    assert manager._tunnel_exe() == scope_dir / "RainbowTcpTunnel.exe"
 
 
-def test_communication_zip_extracts_to_local_runtime(tmp_path):
-    archive = tmp_path / "Communication.zip"
-    destination = tmp_path / "LocalAppData" / "TestKontrol" / "Communication"
-    _write_communication_zip(archive)
-
-    resolved = TcpTunnelManager._safe_extract_communication_zip(archive, destination)
-
-    assert resolved == destination
-    assert TcpTunnelManager._has_tunnel_files(resolved)
-    assert (resolved / "RainbowTcpTunnel.exe").read_bytes() == b"test-runtime"
-
-
-def test_communication_zip_rejects_path_traversal(tmp_path):
-    archive = tmp_path / "Communication.zip"
-    destination = tmp_path / "LocalAppData" / "TestKontrol" / "Communication"
-    _write_communication_zip(
-        archive,
-        extra=(("Communication/../../escaped.txt", b"not allowed"),),
-    )
-
-    with pytest.raises(ValueError, match="Güvensiz Communication ZIP yolu"):
-        TcpTunnelManager._safe_extract_communication_zip(archive, destination)
-
-    assert not (tmp_path / "LocalAppData" / "TestKontrol" / "escaped.txt").exists()
+def test_scope_installation_can_be_found_under_registry_install_root(tmp_path, monkeypatch):
+    scope_root = tmp_path / "custom-drive" / "Siemens" / "SCOPE"
+    communication = scope_root / "Communication"
+    _write_communication_folder(communication)
+    monkeypatch.setattr(TcpTunnelManager, "_registry_install_roots", staticmethod(lambda: [scope_root]))
+    monkeypatch.setattr(TcpTunnelManager, "_scope_search_roots", staticmethod(lambda: [scope_root]))
+    manager = TcpTunnelManager()
+    found = manager._find_installed_tunnel()
+    assert found == communication / "RainbowTcpTunnel.exe"
 
 
-def test_sidecar_communication_zip_is_discovered_automatically(tmp_path, monkeypatch):
-    app_dir = tmp_path / "portable"
-    archive = app_dir / "Communication.zip"
-    runtime = tmp_path / "LocalAppData" / "TestKontrol" / "Communication"
-    _write_communication_zip(archive)
-
-    monkeypatch.setattr(TcpTunnelManager, "_resource_root", staticmethod(lambda: app_dir))
-    monkeypatch.setattr(TcpTunnelManager, "_application_dir", staticmethod(lambda: app_dir))
-    monkeypatch.setattr(TcpTunnelManager, "_runtime_dir", staticmethod(lambda: runtime))
-
-    resolved = TcpTunnelManager()._communication_dir()
-
-    assert resolved == runtime
-    assert TcpTunnelManager._has_tunnel_files(resolved)
+def test_no_scope_installation_returns_clear_error(monkeypatch):
+    monkeypatch.setattr(TcpTunnelManager, "_scope_search_roots", staticmethod(lambda: []))
+    monkeypatch.setattr("tcp_tunnel.shutil.which", lambda _name: None)
+    manager = TcpTunnelManager()
+    try:
+        manager._tunnel_exe()
+    except FileNotFoundError as exc:
+        assert "SCOPE/Communication kurulumu bulunamadı" in str(exc)
+        assert "Communication.zip indirmez" in str(exc)
+    else:
+        raise AssertionError("Missing SCOPE installation should be reported")
 
 
-def test_bundled_communication_folder_is_copied_to_stable_location(tmp_path, monkeypatch):
-    bundle_root = tmp_path / "pyinstaller"
-    bundled = bundle_root / "Communication"
-    runtime = tmp_path / "LocalAppData" / "TestKontrol" / "Communication"
-    _write_communication_folder(bundled)
-
-    monkeypatch.setattr(TcpTunnelManager, "_resource_root", staticmethod(lambda: bundle_root))
-    monkeypatch.setattr(TcpTunnelManager, "_application_dir", staticmethod(lambda: tmp_path / "app"))
-    monkeypatch.setattr(TcpTunnelManager, "_runtime_dir", staticmethod(lambda: runtime))
-
-    resolved = TcpTunnelManager()._communication_dir()
-
-    assert resolved == runtime
-    assert TcpTunnelManager._has_tunnel_files(resolved)
-    assert (resolved / "RainbowTcpTunnel.exe").read_bytes() == b"test-runtime"
-
-
-def test_incomplete_communication_package_is_not_accepted(tmp_path):
+def test_incomplete_scope_communication_folder_is_rejected(tmp_path):
     folder = tmp_path / "Communication"
     folder.mkdir()
     (folder / "RainbowTcpTunnel.exe").write_bytes(b"exe")
-
     assert not TcpTunnelManager._has_tunnel_files(folder)

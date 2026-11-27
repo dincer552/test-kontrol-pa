@@ -31,22 +31,6 @@ class TcpTunnelManager:
         return self._process is not None and self._process.poll() is None
 
     @staticmethod
-    def _resource_root() -> Path:
-        return Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
-
-    @staticmethod
-    def _application_dir() -> Path:
-        if getattr(sys, "frozen", False):
-            return Path(sys.executable).resolve().parent
-        return Path(__file__).resolve().parent
-
-    @staticmethod
-    def _runtime_dir() -> Path:
-        local_app_data = os.environ.get("LOCALAPPDATA")
-        root = Path(local_app_data) if local_app_data else Path.home() / ".test-kontrol"
-        return root / "TestKontrol" / "Communication"
-
-    @staticmethod
     def _has_tunnel_files(folder: Path) -> bool:
         required = (
             "RainbowTcpTunnel.exe",
@@ -54,227 +38,173 @@ class TcpTunnelManager:
             "CommandLine.dll",
             "log4net.dll",
             "Interop.RAINBOWCOMHANDLERLib.dll",
-            "TcpTunnel.log4net.config",
         )
         return folder.is_dir() and all((folder / name).is_file() for name in required)
 
     @staticmethod
-    def _safe_extract_communication_zip(archive_path: Path, destination: Path) -> Path:
-        """Extract the supplied Siemens Communication archive without allowing ZIP path traversal."""
-        import hashlib
-        import zipfile
-        from pathlib import PurePosixPath
+    def _registry_install_roots() -> list[Path]:
+        """Read SCOPE/Rainbow installation locations without relying on a fixed drive."""
+        if sys.platform != "win32":
+            return []
 
-        digest = hashlib.sha256(archive_path.read_bytes()).hexdigest()
-        marker = destination.parent / f".communication-{digest}.ready"
-        if marker.is_file() and TcpTunnelManager._has_tunnel_files(destination):
-            return destination
+        import winreg
 
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        if destination.exists():
-            shutil.rmtree(destination)
-        destination.mkdir(parents=True, exist_ok=True)
-
-        try:
-            with zipfile.ZipFile(archive_path) as archive:
-                for info in archive.infolist():
-                    if info.is_dir():
-                        continue
-                    raw_name = info.filename.replace("\\", "/")
-                    member = PurePosixPath(raw_name)
-                    if member.is_absolute() or ".." in member.parts:
-                        raise ValueError(f"Güvensiz Communication ZIP yolu: {info.filename}")
-                    parts = member.parts
-                    if parts and parts[0].lower() == "communication":
-                        parts = parts[1:]
-                    if not parts:
-                        continue
-                    target = destination.joinpath(*parts)
-                    resolved_target = target.resolve()
-                    resolved_root = destination.resolve()
-                    if resolved_root not in resolved_target.parents:
-                        raise ValueError(f"ZIP hedef klasörünün dışına çıkıyor: {info.filename}")
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    with archive.open(info) as source, target.open("wb") as output:
-                        shutil.copyfileobj(source, output)
-        except Exception:
-            shutil.rmtree(destination, ignore_errors=True)
-            raise
-
-        if not TcpTunnelManager._has_tunnel_files(destination):
-            raise FileNotFoundError(
-                "Communication.zip bulundu ancak RainbowTcpTunnel için gerekli dosyalar eksik."
-            )
-        marker.write_text(digest, encoding="ascii")
-        return destination
-
-    def _communication_dir(self) -> Path:
-        resource_root = self._resource_root()
-        app_dir = self._application_dir()
-        runtime_dir = self._runtime_dir()
-
-        # In a PyInstaller --onefile build, _MEIPASS is temporary. Copy the
-        # communication runtime to LocalAppData so COM registration always
-        # points to a stable path between application launches.
-        bundled_folder = resource_root / "Communication"
-        if self._has_tunnel_files(bundled_folder):
-            if bundled_folder.resolve() == runtime_dir.resolve():
-                return bundled_folder
-            shutil.copytree(bundled_folder, runtime_dir, dirs_exist_ok=True)
-            if self._has_tunnel_files(runtime_dir):
-                return runtime_dir
-
-        # A side-by-side folder is useful for portable development or ZIP builds.
-        side_by_side = app_dir / "Communication"
-        if self._has_tunnel_files(side_by_side):
-            if side_by_side.resolve() == runtime_dir.resolve():
-                return side_by_side
-            shutil.copytree(side_by_side, runtime_dir, dirs_exist_ok=True)
-            if self._has_tunnel_files(runtime_dir):
-                return runtime_dir
-
-        # Also accept the original Communication.zip next to the EXE, so users
-        # can move the application and the vendor runtime to another PC without
-        # installing the complete SCOPE application.
-        zip_candidates = (
-            app_dir / "Communication.zip",
-            resource_root / "Communication.zip",
+        roots: list[Path] = []
+        views = (
+            getattr(winreg, "KEY_WOW64_32KEY", 0),
+            getattr(winreg, "KEY_WOW64_64KEY", 0),
         )
-        for archive_path in zip_candidates:
-            if archive_path.is_file():
-                return self._safe_extract_communication_zip(archive_path, runtime_dir)
+        uninstall_paths = (
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+            r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+        )
+        for view in views:
+            for uninstall_path in uninstall_paths:
+                try:
+                    with winreg.OpenKey(
+                        winreg.HKEY_LOCAL_MACHINE,
+                        uninstall_path,
+                        0,
+                        winreg.KEY_READ | view,
+                    ) as uninstall:
+                        count = winreg.QueryInfoKey(uninstall)[0]
+                        for index in range(count):
+                            try:
+                                subkey_name = winreg.EnumKey(uninstall, index)
+                                with winreg.OpenKey(uninstall, subkey_name) as item:
+                                    display_name, _ = winreg.QueryValueEx(item, "DisplayName")
+                                    if not re.search(r"(siemens.*scope|scope.*siemens|rainbow)", str(display_name), re.I):
+                                        continue
+                                    try:
+                                        install_location, _ = winreg.QueryValueEx(item, "InstallLocation")
+                                    except OSError:
+                                        continue
+                                    if install_location:
+                                        roots.append(Path(os.path.expandvars(str(install_location))))
+                            except OSError:
+                                continue
+                except OSError:
+                    continue
 
-        if self._has_tunnel_files(runtime_dir):
-            return runtime_dir
-        return runtime_dir
+            app_path = r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\RainbowTcpTunnel.exe"
+            try:
+                with winreg.OpenKey(
+                    winreg.HKEY_LOCAL_MACHINE,
+                    app_path,
+                    0,
+                    winreg.KEY_READ | view,
+                ) as key:
+                    exe_path, _ = winreg.QueryValueEx(key, "")
+                    if exe_path:
+                        roots.append(Path(os.path.expandvars(str(exe_path).strip('"'))).parent)
+            except OSError:
+                pass
+
+        unique: list[Path] = []
+        seen: set[str] = set()
+        for root in roots:
+            key = os.path.normcase(os.path.abspath(str(root)))
+            if key not in seen:
+                seen.add(key)
+                unique.append(root)
+        return unique
+
+    @staticmethod
+    def _scope_search_roots() -> list[Path]:
+        roots: list[Path] = []
+        for variable in ("ProgramFiles", "ProgramFiles(x86)", "ProgramW6432"):
+            value = os.environ.get(variable)
+            if value:
+                roots.append(Path(value) / "Siemens")
+        for variable in ("CommonProgramFiles", "CommonProgramFiles(x86)"):
+            value = os.environ.get(variable)
+            if value:
+                roots.append(Path(value) / "Rainbow")
+        roots.extend(TcpTunnelManager._registry_install_roots())
+
+        unique: list[Path] = []
+        seen: set[str] = set()
+        for root in roots:
+            key = os.path.normcase(os.path.abspath(str(root)))
+            if key not in seen:
+                seen.add(key)
+                unique.append(root)
+        return unique
+
+    def _find_installed_tunnel(self) -> Path | None:
+        """Find the Rainbow tunnel supplied and registered by the local SCOPE installation."""
+        direct = shutil.which("RainbowTcpTunnel.exe")
+        if direct:
+            candidate = Path(direct)
+            if self._has_tunnel_files(candidate.parent):
+                return candidate
+
+        candidates: list[Path] = []
+        for root in self._scope_search_roots():
+            if not root.exists():
+                continue
+            if root.is_file() and root.name.lower() == "rainbowtcptunnel.exe":
+                candidates.append(root)
+                continue
+            try:
+                candidates.extend(
+                    path for path in root.rglob("RainbowTcpTunnel.exe")
+                    if self._has_tunnel_files(path.parent)
+                )
+            except (OSError, PermissionError):
+                continue
+
+        if not candidates:
+            return None
+        return max(candidates, key=lambda path: path.stat().st_mtime)
 
     @staticmethod
     def _is_com_handler_registered() -> bool:
-        """Check the 32-bit Siemens Rainbow COM local-server registration."""
+        """Check whether the locally installed SCOPE Rainbow COM server is registered."""
         if sys.platform != "win32":
             return True
         try:
             import winreg
 
             clsid_root = r"CLSID\{B14C61DD-E5EB-4735-941E-03E400367B2E}"
-            access = winreg.KEY_READ | getattr(winreg, "KEY_WOW64_32KEY", 0)
-            for server_kind in ("LocalServer32", "InprocServer32"):
-                try:
-                    with winreg.OpenKey(
-                        winreg.HKEY_CLASSES_ROOT,
-                        clsid_root + "\\" + server_kind,
-                        0,
-                        access,
-                    ) as key:
-                        server, _ = winreg.QueryValueEx(key, "")
-                except OSError:
-                    continue
-                match = re.match(r'\s*"([^"]+)"', str(server))
-                server_path = match.group(1) if match else str(server).split(" ", 1)[0]
-                if Path(os.path.expandvars(server_path)).is_file():
-                    return True
+            views = (
+                getattr(winreg, "KEY_WOW64_32KEY", 0),
+                getattr(winreg, "KEY_WOW64_64KEY", 0),
+            )
+            for view in views:
+                for server_kind in ("LocalServer32", "InprocServer32"):
+                    try:
+                        with winreg.OpenKey(
+                            winreg.HKEY_CLASSES_ROOT,
+                            clsid_root + "\\" + server_kind,
+                            0,
+                            winreg.KEY_READ | view,
+                        ) as key:
+                            server, _ = winreg.QueryValueEx(key, "")
+                    except OSError:
+                        continue
+                    match = re.match(r'\s*"([^"]+)"', str(server))
+                    server_path = match.group(1) if match else str(server).split(" ", 1)[0]
+                    if Path(os.path.expandvars(server_path)).is_file():
+                        return True
             return False
         except (OSError, ImportError, ValueError):
             return False
 
-    def _ensure_com_handler_registered(self, communication_dir: Path) -> None:
-        """Register the bundled COM helper on first use, without touching an existing SCOPE registration."""
-        if sys.platform != "win32" or self._is_com_handler_registered():
-            return
-
-        handler_exe = communication_dir / "RainbowComHandler.exe"
-        handler_dll = communication_dir / "RainbowComHandler.dll"
-        proxy_dll = communication_dir / "RainbowComHandlerPS.dll"
-        if not (handler_exe.is_file() and handler_dll.is_file() and proxy_dll.is_file()):
-            raise RuntimeError(
-                "Siemens Rainbow COM bileşeni kayıtlı değil ve Communication paketinde "
-                "kayıt için gereken dosyalar bulunamadı."
-            )
-
-        script = communication_dir / "register_rainbow_com.cmd"
-        script.write_text(
-            "@echo off\r\n"
-            'cd /d "%~dp0"\r\n'
-            'set "REGSVR=%SystemRoot%\\SysWOW64\\regsvr32.exe"\r\n'
-            'if not exist "%REGSVR%" set "REGSVR=%SystemRoot%\\System32\\regsvr32.exe"\r\n'
-            '"%REGSVR%" /u /s "%~dp0RainbowComHandler.dll" > "%~dp0register_rainbow_com.log" 2>&1\r\n'
-            '"%~dp0RainbowComHandler.exe" /RegServer >> "%~dp0register_rainbow_com.log" 2>&1\r\n'
-            "if errorlevel 1 exit /b 1\r\n"
-            '"%REGSVR%" /s "%~dp0RainbowComHandlerPS.dll" >> "%~dp0register_rainbow_com.log" 2>&1\r\n'
-            "if errorlevel 1 exit /b 1\r\n"
-            "exit /b 0\r\n",
-            encoding="utf-8",
-        )
-
-        import ctypes
-        command = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "cmd.exe")
-        params = f'/c "{script}"'
-        result = ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", command, params, str(communication_dir), 0
-        )
-        if result <= 32:
-            raise RuntimeError(
-                "Siemens Rainbow COM bileşeni için kayıt gerekiyor. Windows yönetici izni "
-                "verilmediği için otomatik kurulum başlatılamadı."
-            )
-
-        deadline = time.monotonic() + 20.0
-        while time.monotonic() < deadline:
-            if self._is_com_handler_registered():
-                return
-            time.sleep(0.25)
-
-        log_path = communication_dir / "register_rainbow_com.log"
-        detail = ""
-        try:
-            if log_path.is_file():
-                detail = log_path.read_text(encoding="utf-8", errors="replace")[-1200:]
-        except OSError:
-            pass
-        raise RuntimeError(
-            "Siemens Rainbow COM bileşeni kaydedilemedi. SCOPE kurmadan devam etmek için "
-            "Communication paketinin Windows kayıt işlemi tamamlanmalı. "
-            + detail
-        )
-
     def _tunnel_exe(self) -> Path:
-        bundled_dir = self._communication_dir()
-        bundled = bundled_dir / "RainbowTcpTunnel.exe"
+        installed = self._find_installed_tunnel()
+        if installed is not None:
+            return installed
+
+        resource_root = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+        bundled_dir = resource_root / "Communication"
         if self._has_tunnel_files(bundled_dir):
-            return bundled
-
-        found = shutil.which("RainbowTcpTunnel.exe")
-        if found:
-            return Path(found)
-
-        candidates: list[Path] = []
-        roots = (
-            Path(r"C:\Program Files\Siemens"),
-            Path(r"C:\Program Files (x86)\Siemens"),
-            Path(r"C:\Program Files\Common Files\Rainbow"),
-            Path(r"C:\Program Files (x86)\Common Files\Rainbow"),
-        )
-        for root in roots:
-            if not root.exists():
-                continue
-            try:
-                candidates.extend(root.rglob("RainbowTcpTunnel.exe"))
-            except OSError:
-                continue
-
-        valid = [
-            path for path in candidates
-            if self._has_tunnel_files(path.parent)
-        ]
-        if valid:
-            return max(valid, key=lambda path: path.stat().st_mtime)
-
-        if candidates:
-            return max(candidates, key=lambda path: path.stat().st_mtime)
+            return bundled_dir / "RainbowTcpTunnel.exe"
 
         raise FileNotFoundError(
-            "RainbowTcpTunnel çalışma paketi bulunamadı. EXE yanına Communication.zip "
-            "koyun, Communication klasörünü ekleyin veya Siemens SCOPE/Communication kurun."
+            "Siemens SCOPE/Communication kurulumu bulunamadı. "
+            "Bu bilgisayara SCOPE kurun veya kurulumun Communication bileşenini onarın. "
+            "Test Kontrol ayrıca Communication.zip indirmez."
         )
 
     def _log_directory(self) -> Path:
@@ -368,7 +298,12 @@ class TcpTunnelManager:
 
         exe = self._tunnel_exe()
         communication_dir = exe.parent
-        self._ensure_com_handler_registered(communication_dir)
+        if not self._is_com_handler_registered():
+            raise RuntimeError(
+                "Siemens SCOPE kurulu görünüyor ancak Rainbow COM bileşeni kayıtlı değil. "
+                "SCOPE kurulumunu yönetici olarak Onar (Repair) seçeneğiyle tamamlayıp "
+                "bilgisayarı yeniden başlatın."
+            )
         interface_parameters = f"{host},{auth}"
 
         args = [
