@@ -127,7 +127,11 @@ class TcpTunnelManager:
         # A side-by-side folder is useful for portable development or ZIP builds.
         side_by_side = app_dir / "Communication"
         if self._has_tunnel_files(side_by_side):
-            return side_by_side
+            if side_by_side.resolve() == runtime_dir.resolve():
+                return side_by_side
+            shutil.copytree(side_by_side, runtime_dir, dirs_exist_ok=True)
+            if self._has_tunnel_files(runtime_dir):
+                return runtime_dir
 
         # Also accept the original Communication.zip next to the EXE, so users
         # can move the application and the vendor runtime to another PC without
@@ -152,13 +156,24 @@ class TcpTunnelManager:
         try:
             import winreg
 
-            clsid = r"CLSID\{B14C61DD-E5EB-4735-941E-03E400367B2E}\LocalServer32"
+            clsid_root = r"CLSID\{B14C61DD-E5EB-4735-941E-03E400367B2E}"
             access = winreg.KEY_READ | getattr(winreg, "KEY_WOW64_32KEY", 0)
-            with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, clsid, 0, access) as key:
-                server, _ = winreg.QueryValueEx(key, "")
-            match = re.match(r'\s*"([^"]+)"', str(server))
-            server_path = match.group(1) if match else str(server).split(" ", 1)[0]
-            return Path(os.path.expandvars(server_path)).is_file()
+            for server_kind in ("LocalServer32", "InprocServer32"):
+                try:
+                    with winreg.OpenKey(
+                        winreg.HKEY_CLASSES_ROOT,
+                        clsid_root + "\\" + server_kind,
+                        0,
+                        access,
+                    ) as key:
+                        server, _ = winreg.QueryValueEx(key, "")
+                except OSError:
+                    continue
+                match = re.match(r'\s*"([^"]+)"', str(server))
+                server_path = match.group(1) if match else str(server).split(" ", 1)[0]
+                if Path(os.path.expandvars(server_path)).is_file():
+                    return True
+            return False
         except (OSError, ImportError, ValueError):
             return False
 

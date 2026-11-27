@@ -55,7 +55,31 @@ jobs:
         shell: pwsh
         env:
           APP_VERSION: v0.1.0.${{ github.run_number }}
-        run: pyinstaller --noconfirm --clean --onefile --windowed --collect-all tkinterdnd2 --add-data "SYSR.ST.png;." --add-data "app_icon.png;." --icon "app_icon.ico" --name "Test_Kontrol_$env:APP_VERSION" app.py
+        run: |
+          $pyiArgs = @(
+            "--noconfirm", "--clean", "--onefile", "--windowed",
+            "--collect-all", "tkinterdnd2",
+            "--add-data", "SYSR.ST.png;.",
+            "--add-data", "app_icon.png;.",
+            "--icon", "app_icon.ico",
+            "--name", "Test_Kontrol_$env:APP_VERSION"
+          )
+
+          # Bundle the Siemens Rainbow tunnel runtime when the licensed vendor
+          # package is present in the repository. A ZIP is also supported and
+          # is extracted to the user's LocalAppData at first connection.
+          if (Test-Path -LiteralPath "Communication") {
+            $pyiArgs += @("--add-data", "Communication;Communication")
+            Write-Host "Embedding Communication folder into the one-file EXE."
+          } elseif (Test-Path -LiteralPath "Communication.zip") {
+            $pyiArgs += @("--add-data", "Communication.zip;.")
+            Write-Host "Embedding Communication.zip into the one-file EXE."
+          } else {
+            Write-Warning "Communication runtime not embedded; app will use adjacent Communication.zip or an existing Siemens installation."
+          }
+
+          $pyiArgs += "app.py"
+          pyinstaller @pyiArgs
 
       - name: Smoke test packaged EXE startup
         shell: pwsh
