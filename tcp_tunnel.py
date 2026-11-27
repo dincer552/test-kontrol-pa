@@ -152,11 +152,11 @@ class TcpTunnelManager:
         try:
             import winreg
 
-            clsid = r"CLSID\\{B14C61DD-E5EB-4735-941E-03E400367B2E}\\LocalServer32"
+            clsid = r"CLSID\{B14C61DD-E5EB-4735-941E-03E400367B2E}\LocalServer32"
             access = winreg.KEY_READ | getattr(winreg, "KEY_WOW64_32KEY", 0)
             with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, clsid, 0, access) as key:
                 server, _ = winreg.QueryValueEx(key, "")
-            match = re.match(r'\\s*"([^"]+)"', str(server))
+            match = re.match(r'\s*"([^"]+)"', str(server))
             server_path = match.group(1) if match else str(server).split(" ", 1)[0]
             return Path(os.path.expandvars(server_path)).is_file()
         except (OSError, ImportError, ValueError):
@@ -178,13 +178,13 @@ class TcpTunnelManager:
 
         script = communication_dir / "register_rainbow_com.cmd"
         script.write_text(
-            "@echo off\\r\\n"
-            "cd /d \\"%~dp0\\"\\r\\n"
-            'set "REGSVR=%SystemRoot%\\\\SysWOW64\\\\regsvr32.exe"\\r\\n'
-            'if not exist "%REGSVR%" set "REGSVR=%SystemRoot%\\\\System32\\\\regsvr32.exe"\\r\\n'
+            "@echo off\r\n"
+            "cd /d \\"%~dp0\\"\r\n"
+            'set "REGSVR=%SystemRoot%\\SysWOW64\\regsvr32.exe"\r\n'
+            'if not exist "%REGSVR%" set "REGSVR=%SystemRoot%\\System32\\regsvr32.exe"\r\n'
             '"%REGSVR%" /u /s "%~dp0RainbowComHandler.dll" > "%~dp0register_rainbow_com.log" 2>&1\\r\\n'
             '"%~dp0RainbowComHandler.exe" /RegServer >> "%~dp0register_rainbow_com.log" 2>&1\\r\\n'
-            "if errorlevel 1 exit /b 1\\r\\n"
+            "if errorlevel 1 exit /b 1\r\n"
             '"%REGSVR%" /s "%~dp0RainbowComHandlerPS.dll" >> "%~dp0register_rainbow_com.log" 2>&1\\r\\n'
             "if errorlevel 1 exit /b 1\\r\\n"
             "exit /b 0\\r\\n",
@@ -192,7 +192,7 @@ class TcpTunnelManager:
         )
 
         import ctypes
-        command = os.path.join(os.environ.get("SystemRoot", r"C:\\Windows"), "System32", "cmd.exe")
+        command = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "cmd.exe")
         params = f'/c "{script}"'
         result = ctypes.windll.shell32.ShellExecuteW(
             None, "runas", command, params, str(communication_dir), 0
@@ -234,10 +234,10 @@ class TcpTunnelManager:
 
         candidates: list[Path] = []
         roots = (
-            Path(r"C:\\Program Files\\Siemens"),
-            Path(r"C:\\Program Files (x86)\\Siemens"),
-            Path(r"C:\\Program Files\\Common Files\\Rainbow"),
-            Path(r"C:\\Program Files (x86)\\Common Files\\Rainbow"),
+            Path(r"C:\Program Files\Siemens"),
+            Path(r"C:\Program Files (x86)\Siemens"),
+            Path(r"C:\Program Files\Common Files\Rainbow"),
+            Path(r"C:\Program Files (x86)\Common Files\Rainbow"),
         )
         for root in roots:
             if not root.exists():
