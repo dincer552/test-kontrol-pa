@@ -33,6 +33,22 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: python -m pytest -q -s
 
+      - name: Commit PDF discovery report
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -d io_discovery_results ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add io_discovery_results
+            if ! git diff --cached --quiet; then
+              git commit -m "Update POL648 PDF discovery results [skip ci]"
+              git push
+            fi
+          fi
+
       - name: Embed build metadata
         shell: pwsh
         env:
