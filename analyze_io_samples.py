@@ -42,6 +42,7 @@ def main() -> int:
                 "project": rel,
                 "status": "ok",
                 "pages_scanned": diagnostics.get("pages_scanned", 0),
+                "pol648_pages": diagnostics.get("pol648_pages", []),
                 "connections_found": len(rows),
                 "terminals": sorted({row["terminal"] for row in rows}),
                 "ocr_pages": diagnostics.get("ocr_pages", []),
@@ -54,7 +55,8 @@ def main() -> int:
                 "connections": rows,
             })
             print(
-                f"{rel}: {len(rows)} connection(s), "
+                f"{rel}: {len(rows)} input candidate(s), "
+                f"POL648 page(s)={diagnostics.get('pol648_pages', [])}, "
                 f"OCR page(s)={len(diagnostics.get('ocr_pages', []))}"
             )
             for row in rows:
@@ -108,7 +110,7 @@ def main() -> int:
         f"- PDFs scanned: {payload['sample_count']}",
         f"- Projects read: {payload['successful_projects']}",
         f"- Read errors: {payload['failed_projects']}",
-        f"- Candidate connections: {payload['total_connections']}",
+        f"- Candidate input connections: {payload['total_connections']}",
         f"- OCR-sourced labels: {payload['ocr_connection_count']}",
         "",
         "| Project | Page | Terminal | PDF type | Connected signal | Cable | Source | Confidence |",
