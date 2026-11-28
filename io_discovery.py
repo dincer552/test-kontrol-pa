@@ -389,6 +389,7 @@ def _is_generic_label(value: str) -> bool:
     if normalized in {
         "", "M", "GND", "COM", "0V", "24V", "5V", "N", "L", "PE",
         "DIP", "G+", "SLCH", "LIHCH", "POL648A", "POL648B",
+        "24V", "24VAC", "24VDC", "24VACDC", "230VAC", "230V",
     }:
         return True
     normalized_noise = re.sub(r"[^A-Z0-9]", "", cleaned.upper())
