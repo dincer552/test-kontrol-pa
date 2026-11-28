@@ -477,7 +477,7 @@ def discover_pol648_connections(
                         if nearby_numbers:
                             cable = min(nearby_numbers, key=lambda value: (abs(cx - wire_x), len(value)))
 
-                    local_context = [signal]
+                    local_context = [cleaned, signal]
                     for context_item in text_items:
                         if context_item is item:
                             continue
