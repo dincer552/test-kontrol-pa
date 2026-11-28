@@ -296,9 +296,15 @@ def _ocr_page(page: fitz.Page, dpi: int = 300, rotation: int = 0) -> list[_TextI
         if result is None:
             continue
 
-        boxes = getattr(result, "boxes", None) or []
-        texts = getattr(result, "txts", None) or []
-        scores = getattr(result, "scores", None) or []
+        boxes = getattr(result, "boxes", None)
+        texts = getattr(result, "txts", None)
+        scores = getattr(result, "scores", None)
+        if boxes is None:
+            boxes = []
+        if texts is None:
+            texts = []
+        if scores is None:
+            scores = []
         for index, (box, text) in enumerate(zip(boxes, texts)):
             value = str(text).strip()
             score = float(scores[index]) if index < len(scores) else 0.5
