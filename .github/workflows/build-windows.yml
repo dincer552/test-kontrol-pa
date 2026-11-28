@@ -33,6 +33,11 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: python -m pytest -q -s
 
+      - name: Analyze POL648 electrical PDF samples
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python analyze_io_samples.py
+
       - name: Commit PDF discovery report
         if: always()
         shell: bash
@@ -65,7 +70,7 @@ jobs:
         run: python icon_builder.py
 
       - name: Compile sources
-        run: python -m py_compile app.py models.py updater.py webbrowser.py build_info.py connection.py tcp_tunnel.py pdf_reader.py io_discovery.py damper.py sensors.py report.py icon_builder.py
+        run: python -m py_compile app.py models.py updater.py webbrowser.py build_info.py connection.py tcp_tunnel.py pdf_reader.py io_discovery.py analyze_io_samples.py test_io_discovery.py damper.py sensors.py report.py icon_builder.py
 
       - name: Build EXE
         shell: pwsh
@@ -75,6 +80,10 @@ jobs:
           $pyiArgs = @(
             "--noconfirm", "--clean", "--onefile", "--windowed",
             "--collect-all", "tkinterdnd2",
+            "--collect-all", "rapidocr",
+            "--collect-all", "onnxruntime",
+            "--collect-all", "cv2",
+            "--collect-all", "pdfplumber",
             "--add-data", "SYSR.ST.png;.",
             "--add-data", "app_icon.png;.",
             "--icon", "app_icon.ico",
