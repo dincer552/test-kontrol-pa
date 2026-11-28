@@ -398,7 +398,7 @@ def _is_generic_label(value: str) -> bool:
     }
     if normalized_noise in known_noise:
         return True
-    if re.fullmatch(r"\\d{2}[A-Z]{2,}\\d{2,}", cleaned, re.I):
+    if re.fullmatch(r"\d{2}[A-Z]{2,}\d{2,}", cleaned, re.I):
         return True
     if re.match(r"^(?:W|R|U|TS|HA)\d", cleaned, re.I):
         return True
@@ -423,6 +423,7 @@ def _split_cable_and_signal(value: str) -> tuple[str, str]:
         cable, signal = "", cleaned
     signal = re.sub(r"^(?:DI|AI|DO|AO)\s*[_-]\s*", "", signal, flags=re.I)
     signal = re.sub(r"^(?:DI|AI|DO|AO)\s+", "", signal, flags=re.I)
+    signal = re.sub(r"^-(?=[A-Za-zÀ-ÿ])", "", signal)
     return cable, signal.strip()
 
 
@@ -441,11 +442,11 @@ def _classify_signal(text: str, terminal: str = "") -> str:
                 return "AO"
             if label == "DO":
                 return "DO"
-    if re.search(r"\bSW\b|SWITCH|ALARM|EMERGENCY|STOP|FIRE|PHASE PROTECTION", upper):
+    if re.search(r"(?:^|[_\s-])SW(?:[_\s-]|$)|SWITCH|ALARM|EMERGENCY|STOP|FIRE|PHASE PROTECTION|FILTER|FRST", upper):
         return "DI"
-    if re.search(r"\bFEEDBACK\b|\bCO2\b|\bHUM(?:IDITY)?\b|TEMP|TEMPERATURE|PRESSURE|SENSOR", upper):
+    if re.search(r"(?:^|[_\s-])FEEDBACK(?:[_\s-]|$)|CO2|HUM(?:IDITY)?|TEMP|TEMPERATURE|PRESSURE|SENSOR", upper):
         return "AI"
-    if re.search(r"VALVE[_ ]?POS|ACTUATOR|COMMAND|\bCONTROL\b", upper):
+    if re.search(r"VALVE[_ ]?POS|ACTUATOR|COMMAND|(?:^|[_\s-])CONTROL(?:[_\s-]|$)", upper):
         return "AO"
     return _DEFAULT_TYPE
 
