@@ -401,6 +401,9 @@ def _is_generic_label(value: str) -> bool:
         return True
     if re.search(r"\b\d+(?:[.,]\d+)?\s*(?:kw|w)\b|mm[²2]", cleaned, re.I):
         return True
+    signal_terms = r"SW|SWITCH|ALARM|EMERGENCY|STOP|FIRE|PHASE|FEEDBACK|TEMP|TEMPERATURE|HUM|CO2|PRESS|FILTER|VALVE|SENSOR|CONTROL|ROTARY|FROST|FRST"
+    if len(cleaned.split()) >= 3 and not re.search(signal_terms, cleaned, re.I):
+        return True
     return False
 
 
