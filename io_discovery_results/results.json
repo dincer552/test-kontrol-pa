@@ -1,0 +1,2070 @@
+{
+  "sample_count": 11,
+  "successful_projects": 11,
+  "failed_projects": 0,
+  "total_connections": 114,
+  "ocr_connection_count": 0,
+  "projects": [
+    {
+      "project": "AHU-01.pdf",
+      "status": "ok",
+      "pages_scanned": 25,
+      "pol648_pages": [
+        5,
+        23,
+        24
+      ],
+      "connections_found": 10,
+      "terminals": [
+        "D1",
+        "D2",
+        "DU1",
+        "DU2",
+        "X10",
+        "X11",
+        "X2",
+        "X8",
+        "X9"
+      ],
+      "ocr_pages": [
+        {
+          "page": 25,
+          "text_items": 38,
+          "rotations": [
+            0,
+            90,
+            270
+          ]
+        }
+      ],
+      "ocr_errors": [],
+      "pdf_text_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "geometry": {
+        "pymupdf_vertical_edges": 1448,
+        "pdfplumber_vertical_edges": 1448
+      },
+      "connections": [
+        {
+          "project": "AHU-01.pdf",
+          "terminal": "X2",
+          "signal_type": "AI",
+          "signal": "Cooling_Valve_Feedback-1",
+          "cable": "41",
+          "page": 23,
+          "confidence": 0.995,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU-01.pdf",
+          "terminal": "X8",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_3",
+          "cable": "79",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU-01.pdf",
+          "terminal": "X9",
+          "signal_type": "DI",
+          "signal": "Fire Alarm",
+          "cable": "12",
+          "page": 23,
+          "confidence": 0.967,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU-01.pdf",
+          "terminal": "X10",
+          "signal_type": "DI",
+          "signal": "Phase Protection Alarm",
+          "cable": "16",
+          "page": 23,
+          "confidence": 0.964,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU-01.pdf",
+          "terminal": "X11",
+          "signal_type": "DI",
+          "signal": "EmergencyStop",
+          "cable": "45",
+          "page": 23,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU-01.pdf",
+          "terminal": "D1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_1",
+          "cable": "38",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU-01.pdf",
+          "terminal": "D2",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_2",
+          "cable": "39",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU-01.pdf",
+          "terminal": "DU1",
+          "signal_type": "DI",
+          "signal": "Vantilatordoorswitch",
+          "cable": "46",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU-01.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "24V AC/DC",
+          "cable": "",
+          "page": 23,
+          "confidence": 1.0,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU-01.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "Aspiratordoorswitch",
+          "cable": "47",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        }
+      ]
+    },
+    {
+      "project": "AHU_01/AHU_01.pdf",
+      "status": "ok",
+      "pages_scanned": 46,
+      "pol648_pages": [
+        5,
+        6,
+        23,
+        24
+      ],
+      "connections_found": 12,
+      "terminals": [
+        "D1",
+        "D2",
+        "DU1",
+        "DU2",
+        "X1",
+        "X10",
+        "X11",
+        "X3",
+        "X4",
+        "X6",
+        "X9"
+      ],
+      "ocr_pages": [
+        {
+          "page": 25,
+          "text_items": 38,
+          "rotations": [
+            0,
+            90,
+            270
+          ]
+        }
+      ],
+      "ocr_errors": [],
+      "pdf_text_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "geometry": {
+        "pymupdf_vertical_edges": 8989,
+        "pdfplumber_vertical_edges": 8989
+      },
+      "connections": [
+        {
+          "project": "AHU_01/AHU_01.pdf",
+          "terminal": "X1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_3",
+          "cable": "79",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01/AHU_01.pdf",
+          "terminal": "X3",
+          "signal_type": "AI",
+          "signal": "Cooling_Valve_Feedback-1",
+          "cable": "41",
+          "page": 23,
+          "confidence": 0.995,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01/AHU_01.pdf",
+          "terminal": "X4",
+          "signal_type": "DI",
+          "signal": "FRST",
+          "cable": "42",
+          "page": 23,
+          "confidence": 0.999,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01/AHU_01.pdf",
+          "terminal": "X6",
+          "signal_type": "AI",
+          "signal": "Heating_Valve_Feedback-1",
+          "cable": "44",
+          "page": 23,
+          "confidence": 0.994,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01/AHU_01.pdf",
+          "terminal": "X9",
+          "signal_type": "DI",
+          "signal": "Fire Alarm",
+          "cable": "12",
+          "page": 23,
+          "confidence": 0.967,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01/AHU_01.pdf",
+          "terminal": "X10",
+          "signal_type": "DI",
+          "signal": "Phase Protection Alarm",
+          "cable": "16",
+          "page": 23,
+          "confidence": 0.964,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01/AHU_01.pdf",
+          "terminal": "X11",
+          "signal_type": "DI",
+          "signal": "EmergencyStop",
+          "cable": "45",
+          "page": 23,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01/AHU_01.pdf",
+          "terminal": "D1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_1",
+          "cable": "38",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01/AHU_01.pdf",
+          "terminal": "D2",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_2",
+          "cable": "39",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01/AHU_01.pdf",
+          "terminal": "DU1",
+          "signal_type": "DI",
+          "signal": "Vantilatordoorswitch",
+          "cable": "46",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01/AHU_01.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "24V AC/DC",
+          "cable": "",
+          "page": 23,
+          "confidence": 1.0,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01/AHU_01.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "Aspiratordoorswitch",
+          "cable": "47",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        }
+      ]
+    },
+    {
+      "project": "AHU_01_root.pdf",
+      "status": "ok",
+      "pages_scanned": 25,
+      "pol648_pages": [
+        22,
+        23,
+        25
+      ],
+      "connections_found": 12,
+      "terminals": [
+        "D1",
+        "D2",
+        "DU1",
+        "DU2",
+        "X10",
+        "X11",
+        "X2",
+        "X3",
+        "X5",
+        "X8",
+        "X9"
+      ],
+      "ocr_pages": [
+        {
+          "page": 5,
+          "text_items": 67,
+          "rotations": [
+            0,
+            90,
+            270
+          ]
+        },
+        {
+          "page": 24,
+          "text_items": 35,
+          "rotations": [
+            0,
+            90,
+            270
+          ]
+        }
+      ],
+      "ocr_errors": [],
+      "pdf_text_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "geometry": {
+        "pymupdf_vertical_edges": 1448,
+        "pdfplumber_vertical_edges": 1448
+      },
+      "connections": [
+        {
+          "project": "AHU_01_root.pdf",
+          "terminal": "X2",
+          "signal_type": "AI",
+          "signal": "Cooling_Valve_Feedback-1",
+          "cable": "41",
+          "page": 22,
+          "confidence": 0.995,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01_root.pdf",
+          "terminal": "X3",
+          "signal_type": "DI",
+          "signal": "FRST",
+          "cable": "42",
+          "page": 22,
+          "confidence": 0.999,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01_root.pdf",
+          "terminal": "X5",
+          "signal_type": "AI",
+          "signal": "Heating_Valve_Feedback-1",
+          "cable": "44",
+          "page": 22,
+          "confidence": 0.995,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01_root.pdf",
+          "terminal": "X8",
+          "signal_type": "DI",
+          "signal": "RETURN_G4_filter",
+          "cable": "85",
+          "page": 22,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01_root.pdf",
+          "terminal": "X9",
+          "signal_type": "DI",
+          "signal": "Fire Alarm",
+          "cable": "12",
+          "page": 22,
+          "confidence": 0.977,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01_root.pdf",
+          "terminal": "X10",
+          "signal_type": "DI",
+          "signal": "Phase Protection Alarm",
+          "cable": "16",
+          "page": 22,
+          "confidence": 0.974,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01_root.pdf",
+          "terminal": "X11",
+          "signal_type": "DI",
+          "signal": "EmergencyStop",
+          "cable": "45",
+          "page": 22,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01_root.pdf",
+          "terminal": "D1",
+          "signal_type": "DI",
+          "signal": "Fresh_G4_filter",
+          "cable": "38",
+          "page": 22,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01_root.pdf",
+          "terminal": "D2",
+          "signal_type": "DI",
+          "signal": "Fresh_F7_filter",
+          "cable": "39",
+          "page": 22,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01_root.pdf",
+          "terminal": "DU1",
+          "signal_type": "DI",
+          "signal": "Vantilatordoorswitch",
+          "cable": "46",
+          "page": 22,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01_root.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "24V AC/DC",
+          "cable": "",
+          "page": 22,
+          "confidence": 1.0,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_01_root.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "Aspiratordoorswitch",
+          "cable": "47",
+          "page": 22,
+          "confidence": 1.0,
+          "source": "PDF"
+        }
+      ]
+    },
+    {
+      "project": "AHU_02/AHU_02.pdf",
+      "status": "ok",
+      "pages_scanned": 46,
+      "pol648_pages": [
+        5,
+        6,
+        23,
+        24
+      ],
+      "connections_found": 12,
+      "terminals": [
+        "D1",
+        "D2",
+        "DU1",
+        "DU2",
+        "X1",
+        "X10",
+        "X11",
+        "X3",
+        "X4",
+        "X6",
+        "X9"
+      ],
+      "ocr_pages": [
+        {
+          "page": 25,
+          "text_items": 38,
+          "rotations": [
+            0,
+            90,
+            270
+          ]
+        }
+      ],
+      "ocr_errors": [],
+      "pdf_text_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "geometry": {
+        "pymupdf_vertical_edges": 8989,
+        "pdfplumber_vertical_edges": 8989
+      },
+      "connections": [
+        {
+          "project": "AHU_02/AHU_02.pdf",
+          "terminal": "X1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_3",
+          "cable": "79",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_02/AHU_02.pdf",
+          "terminal": "X3",
+          "signal_type": "AI",
+          "signal": "Cooling_Valve_Feedback-1",
+          "cable": "41",
+          "page": 23,
+          "confidence": 0.995,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_02/AHU_02.pdf",
+          "terminal": "X4",
+          "signal_type": "DI",
+          "signal": "FRST",
+          "cable": "42",
+          "page": 23,
+          "confidence": 0.999,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_02/AHU_02.pdf",
+          "terminal": "X6",
+          "signal_type": "AI",
+          "signal": "Heating_Valve_Feedback-1",
+          "cable": "44",
+          "page": 23,
+          "confidence": 0.994,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_02/AHU_02.pdf",
+          "terminal": "X9",
+          "signal_type": "DI",
+          "signal": "Fire Alarm",
+          "cable": "12",
+          "page": 23,
+          "confidence": 0.967,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_02/AHU_02.pdf",
+          "terminal": "X10",
+          "signal_type": "DI",
+          "signal": "Phase Protection Alarm",
+          "cable": "16",
+          "page": 23,
+          "confidence": 0.964,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_02/AHU_02.pdf",
+          "terminal": "X11",
+          "signal_type": "DI",
+          "signal": "EmergencyStop",
+          "cable": "45",
+          "page": 23,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_02/AHU_02.pdf",
+          "terminal": "D1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_1",
+          "cable": "38",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_02/AHU_02.pdf",
+          "terminal": "D2",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_2",
+          "cable": "39",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_02/AHU_02.pdf",
+          "terminal": "DU1",
+          "signal_type": "DI",
+          "signal": "Vantilatordoorswitch",
+          "cable": "46",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_02/AHU_02.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "24V AC/DC",
+          "cable": "",
+          "page": 23,
+          "confidence": 1.0,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_02/AHU_02.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "Aspiratordoorswitch",
+          "cable": "47",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        }
+      ]
+    },
+    {
+      "project": "AHU_03/AHU_03.pdf",
+      "status": "ok",
+      "pages_scanned": 46,
+      "pol648_pages": [
+        5,
+        6,
+        23,
+        24
+      ],
+      "connections_found": 12,
+      "terminals": [
+        "D1",
+        "D2",
+        "DU1",
+        "DU2",
+        "X1",
+        "X10",
+        "X11",
+        "X3",
+        "X4",
+        "X6",
+        "X9"
+      ],
+      "ocr_pages": [
+        {
+          "page": 25,
+          "text_items": 38,
+          "rotations": [
+            0,
+            90,
+            270
+          ]
+        }
+      ],
+      "ocr_errors": [],
+      "pdf_text_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "geometry": {
+        "pymupdf_vertical_edges": 8989,
+        "pdfplumber_vertical_edges": 8989
+      },
+      "connections": [
+        {
+          "project": "AHU_03/AHU_03.pdf",
+          "terminal": "X1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_3",
+          "cable": "79",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_03/AHU_03.pdf",
+          "terminal": "X3",
+          "signal_type": "AI",
+          "signal": "Cooling_Valve_Feedback-1",
+          "cable": "41",
+          "page": 23,
+          "confidence": 0.995,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_03/AHU_03.pdf",
+          "terminal": "X4",
+          "signal_type": "DI",
+          "signal": "FRST",
+          "cable": "42",
+          "page": 23,
+          "confidence": 0.999,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_03/AHU_03.pdf",
+          "terminal": "X6",
+          "signal_type": "AI",
+          "signal": "Heating_Valve_Feedback-1",
+          "cable": "44",
+          "page": 23,
+          "confidence": 0.994,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_03/AHU_03.pdf",
+          "terminal": "X9",
+          "signal_type": "DI",
+          "signal": "Fire Alarm",
+          "cable": "12",
+          "page": 23,
+          "confidence": 0.967,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_03/AHU_03.pdf",
+          "terminal": "X10",
+          "signal_type": "DI",
+          "signal": "Phase Protection Alarm",
+          "cable": "16",
+          "page": 23,
+          "confidence": 0.964,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_03/AHU_03.pdf",
+          "terminal": "X11",
+          "signal_type": "DI",
+          "signal": "EmergencyStop",
+          "cable": "45",
+          "page": 23,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_03/AHU_03.pdf",
+          "terminal": "D1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_1",
+          "cable": "38",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_03/AHU_03.pdf",
+          "terminal": "D2",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_2",
+          "cable": "39",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_03/AHU_03.pdf",
+          "terminal": "DU1",
+          "signal_type": "DI",
+          "signal": "Vantilatordoorswitch",
+          "cable": "46",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_03/AHU_03.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "24V AC/DC",
+          "cable": "",
+          "page": 23,
+          "confidence": 1.0,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_03/AHU_03.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "Aspiratordoorswitch",
+          "cable": "47",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        }
+      ]
+    },
+    {
+      "project": "AHU_04/AHU_04.pdf",
+      "status": "ok",
+      "pages_scanned": 46,
+      "pol648_pages": [
+        5,
+        6,
+        23,
+        24
+      ],
+      "connections_found": 12,
+      "terminals": [
+        "D1",
+        "D2",
+        "DU1",
+        "DU2",
+        "X1",
+        "X10",
+        "X11",
+        "X3",
+        "X4",
+        "X6",
+        "X9"
+      ],
+      "ocr_pages": [
+        {
+          "page": 25,
+          "text_items": 38,
+          "rotations": [
+            0,
+            90,
+            270
+          ]
+        }
+      ],
+      "ocr_errors": [],
+      "pdf_text_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "geometry": {
+        "pymupdf_vertical_edges": 8989,
+        "pdfplumber_vertical_edges": 8989
+      },
+      "connections": [
+        {
+          "project": "AHU_04/AHU_04.pdf",
+          "terminal": "X1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_3",
+          "cable": "79",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_04/AHU_04.pdf",
+          "terminal": "X3",
+          "signal_type": "AI",
+          "signal": "Cooling_Valve_Feedback-1",
+          "cable": "41",
+          "page": 23,
+          "confidence": 0.995,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_04/AHU_04.pdf",
+          "terminal": "X4",
+          "signal_type": "DI",
+          "signal": "FRST",
+          "cable": "42",
+          "page": 23,
+          "confidence": 0.999,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_04/AHU_04.pdf",
+          "terminal": "X6",
+          "signal_type": "AI",
+          "signal": "Heating_Valve_Feedback-1",
+          "cable": "44",
+          "page": 23,
+          "confidence": 0.994,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_04/AHU_04.pdf",
+          "terminal": "X9",
+          "signal_type": "DI",
+          "signal": "Fire Alarm",
+          "cable": "12",
+          "page": 23,
+          "confidence": 0.967,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_04/AHU_04.pdf",
+          "terminal": "X10",
+          "signal_type": "DI",
+          "signal": "Phase Protection Alarm",
+          "cable": "16",
+          "page": 23,
+          "confidence": 0.964,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_04/AHU_04.pdf",
+          "terminal": "X11",
+          "signal_type": "DI",
+          "signal": "EmergencyStop",
+          "cable": "45",
+          "page": 23,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_04/AHU_04.pdf",
+          "terminal": "D1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_1",
+          "cable": "38",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_04/AHU_04.pdf",
+          "terminal": "D2",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_2",
+          "cable": "39",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_04/AHU_04.pdf",
+          "terminal": "DU1",
+          "signal_type": "DI",
+          "signal": "Vantilatordoorswitch",
+          "cable": "46",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_04/AHU_04.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "24V AC/DC",
+          "cable": "",
+          "page": 23,
+          "confidence": 1.0,
+          "source": "PDF"
+        },
+        {
+          "project": "AHU_04/AHU_04.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "Aspiratordoorswitch",
+          "cable": "47",
+          "page": 23,
+          "confidence": 0.996,
+          "source": "PDF"
+        }
+      ]
+    },
+    {
+      "project": "mer/AHU_02/AHU_02.pdf",
+      "status": "ok",
+      "pages_scanned": 52,
+      "pol648_pages": [
+        5,
+        6,
+        25,
+        26
+      ],
+      "connections_found": 13,
+      "terminals": [
+        "D1",
+        "D2",
+        "DU1",
+        "DU2",
+        "X1",
+        "X10",
+        "X11",
+        "X3",
+        "X4",
+        "X6",
+        "X8",
+        "X9"
+      ],
+      "ocr_pages": [
+        {
+          "page": 27,
+          "text_items": 38,
+          "rotations": [
+            0,
+            90,
+            270
+          ]
+        }
+      ],
+      "ocr_errors": [],
+      "pdf_text_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52
+      ],
+      "geometry": {
+        "pymupdf_vertical_edges": 8957,
+        "pdfplumber_vertical_edges": 8957
+      },
+      "connections": [
+        {
+          "project": "mer/AHU_02/AHU_02.pdf",
+          "terminal": "X1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_3",
+          "cable": "79",
+          "page": 25,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_02/AHU_02.pdf",
+          "terminal": "X3",
+          "signal_type": "AI",
+          "signal": "Cooling_Valve_Feedback-1",
+          "cable": "41",
+          "page": 25,
+          "confidence": 0.995,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_02/AHU_02.pdf",
+          "terminal": "X4",
+          "signal_type": "DI",
+          "signal": "FRST",
+          "cable": "42",
+          "page": 25,
+          "confidence": 0.999,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_02/AHU_02.pdf",
+          "terminal": "X6",
+          "signal_type": "AI",
+          "signal": "Heating_Valve_Feedback-1",
+          "cable": "44",
+          "page": 25,
+          "confidence": 0.994,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_02/AHU_02.pdf",
+          "terminal": "X8",
+          "signal_type": "DI",
+          "signal": "Rotary Alarm",
+          "cable": "231",
+          "page": 25,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_02/AHU_02.pdf",
+          "terminal": "X9",
+          "signal_type": "DI",
+          "signal": "Fire Alarm",
+          "cable": "12",
+          "page": 25,
+          "confidence": 0.967,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_02/AHU_02.pdf",
+          "terminal": "X10",
+          "signal_type": "DI",
+          "signal": "Phase Protection Alarm",
+          "cable": "16",
+          "page": 25,
+          "confidence": 0.995,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_02/AHU_02.pdf",
+          "terminal": "X11",
+          "signal_type": "DI",
+          "signal": "EmergencyStop",
+          "cable": "45",
+          "page": 25,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_02/AHU_02.pdf",
+          "terminal": "D1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_1",
+          "cable": "38",
+          "page": 25,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_02/AHU_02.pdf",
+          "terminal": "D2",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_2",
+          "cable": "39",
+          "page": 25,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_02/AHU_02.pdf",
+          "terminal": "DU1",
+          "signal_type": "DI",
+          "signal": "Vantilatordoorswitch",
+          "cable": "46",
+          "page": 25,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_02/AHU_02.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "24V AC/DC",
+          "cable": "",
+          "page": 25,
+          "confidence": 1.0,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_02/AHU_02.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "Aspiratordoorswitch",
+          "cable": "47",
+          "page": 25,
+          "confidence": 0.996,
+          "source": "PDF"
+        }
+      ]
+    },
+    {
+      "project": "mer/AHU_03/AHU_03.pdf",
+      "status": "ok",
+      "pages_scanned": 52,
+      "pol648_pages": [
+        5,
+        6,
+        25,
+        26
+      ],
+      "connections_found": 13,
+      "terminals": [
+        "D1",
+        "D2",
+        "DU1",
+        "DU2",
+        "X1",
+        "X10",
+        "X11",
+        "X3",
+        "X4",
+        "X6",
+        "X8",
+        "X9"
+      ],
+      "ocr_pages": [
+        {
+          "page": 27,
+          "text_items": 38,
+          "rotations": [
+            0,
+            90,
+            270
+          ]
+        }
+      ],
+      "ocr_errors": [],
+      "pdf_text_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52
+      ],
+      "geometry": {
+        "pymupdf_vertical_edges": 8957,
+        "pdfplumber_vertical_edges": 8957
+      },
+      "connections": [
+        {
+          "project": "mer/AHU_03/AHU_03.pdf",
+          "terminal": "X1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_3",
+          "cable": "79",
+          "page": 25,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_03/AHU_03.pdf",
+          "terminal": "X3",
+          "signal_type": "AI",
+          "signal": "Cooling_Valve_Feedback-1",
+          "cable": "41",
+          "page": 25,
+          "confidence": 0.995,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_03/AHU_03.pdf",
+          "terminal": "X4",
+          "signal_type": "DI",
+          "signal": "FRST",
+          "cable": "42",
+          "page": 25,
+          "confidence": 0.999,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_03/AHU_03.pdf",
+          "terminal": "X6",
+          "signal_type": "AI",
+          "signal": "Heating_Valve_Feedback-1",
+          "cable": "44",
+          "page": 25,
+          "confidence": 0.994,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_03/AHU_03.pdf",
+          "terminal": "X8",
+          "signal_type": "DI",
+          "signal": "Rotary Alarm",
+          "cable": "231",
+          "page": 25,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_03/AHU_03.pdf",
+          "terminal": "X9",
+          "signal_type": "DI",
+          "signal": "Fire Alarm",
+          "cable": "12",
+          "page": 25,
+          "confidence": 0.967,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_03/AHU_03.pdf",
+          "terminal": "X10",
+          "signal_type": "DI",
+          "signal": "Phase Protection Alarm",
+          "cable": "16",
+          "page": 25,
+          "confidence": 0.995,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_03/AHU_03.pdf",
+          "terminal": "X11",
+          "signal_type": "DI",
+          "signal": "EmergencyStop",
+          "cable": "45",
+          "page": 25,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_03/AHU_03.pdf",
+          "terminal": "D1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_1",
+          "cable": "38",
+          "page": 25,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_03/AHU_03.pdf",
+          "terminal": "D2",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_2",
+          "cable": "39",
+          "page": 25,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_03/AHU_03.pdf",
+          "terminal": "DU1",
+          "signal_type": "DI",
+          "signal": "Vantilatordoorswitch",
+          "cable": "46",
+          "page": 25,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_03/AHU_03.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "24V AC/DC",
+          "cable": "",
+          "page": 25,
+          "confidence": 1.0,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/AHU_03/AHU_03.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "Aspiratordoorswitch",
+          "cable": "47",
+          "page": 25,
+          "confidence": 0.996,
+          "source": "PDF"
+        }
+      ]
+    },
+    {
+      "project": "mer/DAV_THF_01/DAV_THF_01.pdf",
+      "status": "ok",
+      "pages_scanned": 30,
+      "pol648_pages": [
+        5,
+        6,
+        17,
+        18
+      ],
+      "connections_found": 6,
+      "terminals": [
+        "D1",
+        "DU1",
+        "DU2",
+        "X10",
+        "X11",
+        "X9"
+      ],
+      "ocr_pages": [
+        {
+          "page": 19,
+          "text_items": 38,
+          "rotations": [
+            0,
+            90,
+            270
+          ]
+        }
+      ],
+      "ocr_errors": [],
+      "pdf_text_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
+      ],
+      "geometry": {
+        "pymupdf_vertical_edges": 4538,
+        "pdfplumber_vertical_edges": 4538
+      },
+      "connections": [
+        {
+          "project": "mer/DAV_THF_01/DAV_THF_01.pdf",
+          "terminal": "X9",
+          "signal_type": "DI",
+          "signal": "Fire Alarm",
+          "cable": "12",
+          "page": 17,
+          "confidence": 0.967,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_01/DAV_THF_01.pdf",
+          "terminal": "X10",
+          "signal_type": "DI",
+          "signal": "Phase Protection Alarm",
+          "cable": "16",
+          "page": 17,
+          "confidence": 0.964,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_01/DAV_THF_01.pdf",
+          "terminal": "X11",
+          "signal_type": "DI",
+          "signal": "EmergencyStop",
+          "cable": "45",
+          "page": 17,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_01/DAV_THF_01.pdf",
+          "terminal": "D1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_1",
+          "cable": "38",
+          "page": 17,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_01/DAV_THF_01.pdf",
+          "terminal": "DU1",
+          "signal_type": "DI",
+          "signal": "Vantilatordoorswitch",
+          "cable": "46",
+          "page": 17,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_01/DAV_THF_01.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "24V AC/DC",
+          "cable": "",
+          "page": 17,
+          "confidence": 1.0,
+          "source": "PDF"
+        }
+      ]
+    },
+    {
+      "project": "mer/DAV_THF_02/DAV_THF_02.pdf",
+      "status": "ok",
+      "pages_scanned": 30,
+      "pol648_pages": [
+        5,
+        6,
+        17,
+        18
+      ],
+      "connections_found": 6,
+      "terminals": [
+        "D1",
+        "DU1",
+        "DU2",
+        "X10",
+        "X11",
+        "X9"
+      ],
+      "ocr_pages": [
+        {
+          "page": 19,
+          "text_items": 38,
+          "rotations": [
+            0,
+            90,
+            270
+          ]
+        }
+      ],
+      "ocr_errors": [],
+      "pdf_text_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
+      ],
+      "geometry": {
+        "pymupdf_vertical_edges": 4538,
+        "pdfplumber_vertical_edges": 4538
+      },
+      "connections": [
+        {
+          "project": "mer/DAV_THF_02/DAV_THF_02.pdf",
+          "terminal": "X9",
+          "signal_type": "DI",
+          "signal": "Fire Alarm",
+          "cable": "12",
+          "page": 17,
+          "confidence": 0.967,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_02/DAV_THF_02.pdf",
+          "terminal": "X10",
+          "signal_type": "DI",
+          "signal": "Phase Protection Alarm",
+          "cable": "16",
+          "page": 17,
+          "confidence": 0.964,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_02/DAV_THF_02.pdf",
+          "terminal": "X11",
+          "signal_type": "DI",
+          "signal": "EmergencyStop",
+          "cable": "45",
+          "page": 17,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_02/DAV_THF_02.pdf",
+          "terminal": "D1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_1",
+          "cable": "38",
+          "page": 17,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_02/DAV_THF_02.pdf",
+          "terminal": "DU1",
+          "signal_type": "DI",
+          "signal": "Vantilatordoorswitch",
+          "cable": "46",
+          "page": 17,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_02/DAV_THF_02.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "24V AC/DC",
+          "cable": "",
+          "page": 17,
+          "confidence": 1.0,
+          "source": "PDF"
+        }
+      ]
+    },
+    {
+      "project": "mer/DAV_THF_03/DAV_THF_03.pdf",
+      "status": "ok",
+      "pages_scanned": 30,
+      "pol648_pages": [
+        5,
+        6,
+        17,
+        18
+      ],
+      "connections_found": 6,
+      "terminals": [
+        "D1",
+        "DU1",
+        "DU2",
+        "X10",
+        "X11",
+        "X9"
+      ],
+      "ocr_pages": [
+        {
+          "page": 19,
+          "text_items": 38,
+          "rotations": [
+            0,
+            90,
+            270
+          ]
+        }
+      ],
+      "ocr_errors": [],
+      "pdf_text_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
+      ],
+      "geometry": {
+        "pymupdf_vertical_edges": 4538,
+        "pdfplumber_vertical_edges": 4538
+      },
+      "connections": [
+        {
+          "project": "mer/DAV_THF_03/DAV_THF_03.pdf",
+          "terminal": "X9",
+          "signal_type": "DI",
+          "signal": "Fire Alarm",
+          "cable": "12",
+          "page": 17,
+          "confidence": 0.967,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_03/DAV_THF_03.pdf",
+          "terminal": "X10",
+          "signal_type": "DI",
+          "signal": "Phase Protection Alarm",
+          "cable": "16",
+          "page": 17,
+          "confidence": 0.964,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_03/DAV_THF_03.pdf",
+          "terminal": "X11",
+          "signal_type": "DI",
+          "signal": "EmergencyStop",
+          "cable": "45",
+          "page": 17,
+          "confidence": 0.997,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_03/DAV_THF_03.pdf",
+          "terminal": "D1",
+          "signal_type": "DI",
+          "signal": "Diff_Press_SW_1",
+          "cable": "38",
+          "page": 17,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_03/DAV_THF_03.pdf",
+          "terminal": "DU1",
+          "signal_type": "DI",
+          "signal": "Vantilatordoorswitch",
+          "cable": "46",
+          "page": 17,
+          "confidence": 0.996,
+          "source": "PDF"
+        },
+        {
+          "project": "mer/DAV_THF_03/DAV_THF_03.pdf",
+          "terminal": "DU2",
+          "signal_type": "DI",
+          "signal": "24V AC/DC",
+          "cable": "",
+          "page": 17,
+          "confidence": 1.0,
+          "source": "PDF"
+        }
+      ]
+    }
+  ],
+  "method": [
+    "PyMuPDF text spans and vector drawings",
+    "pdfplumber vector-edge cross-check",
+    "RapidOCR ONNX for scanned/image-based pages"
+  ],
+  "warning": "These are PDF-derived candidates only. They are not verified PLC runtime values or confirmed terminal configuration."
+}

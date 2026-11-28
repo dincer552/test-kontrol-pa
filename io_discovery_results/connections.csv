@@ -1,0 +1,115 @@
+﻿project,terminal,signal_type,signal,cable,page,confidence,source
+AHU-01.pdf,X2,AI,Cooling_Valve_Feedback-1,41,23,0.995,PDF
+AHU-01.pdf,X8,DI,Diff_Press_SW_3,79,23,0.996,PDF
+AHU-01.pdf,X9,DI,Fire Alarm,12,23,0.967,PDF
+AHU-01.pdf,X10,DI,Phase Protection Alarm,16,23,0.964,PDF
+AHU-01.pdf,X11,DI,EmergencyStop,45,23,0.997,PDF
+AHU-01.pdf,D1,DI,Diff_Press_SW_1,38,23,0.996,PDF
+AHU-01.pdf,D2,DI,Diff_Press_SW_2,39,23,0.996,PDF
+AHU-01.pdf,DU1,DI,Vantilatordoorswitch,46,23,0.996,PDF
+AHU-01.pdf,DU2,DI,24V AC/DC,,23,1.0,PDF
+AHU-01.pdf,DU2,DI,Aspiratordoorswitch,47,23,0.996,PDF
+AHU_01/AHU_01.pdf,X1,DI,Diff_Press_SW_3,79,23,0.996,PDF
+AHU_01/AHU_01.pdf,X3,AI,Cooling_Valve_Feedback-1,41,23,0.995,PDF
+AHU_01/AHU_01.pdf,X4,DI,FRST,42,23,0.999,PDF
+AHU_01/AHU_01.pdf,X6,AI,Heating_Valve_Feedback-1,44,23,0.994,PDF
+AHU_01/AHU_01.pdf,X9,DI,Fire Alarm,12,23,0.967,PDF
+AHU_01/AHU_01.pdf,X10,DI,Phase Protection Alarm,16,23,0.964,PDF
+AHU_01/AHU_01.pdf,X11,DI,EmergencyStop,45,23,0.997,PDF
+AHU_01/AHU_01.pdf,D1,DI,Diff_Press_SW_1,38,23,0.996,PDF
+AHU_01/AHU_01.pdf,D2,DI,Diff_Press_SW_2,39,23,0.996,PDF
+AHU_01/AHU_01.pdf,DU1,DI,Vantilatordoorswitch,46,23,0.996,PDF
+AHU_01/AHU_01.pdf,DU2,DI,24V AC/DC,,23,1.0,PDF
+AHU_01/AHU_01.pdf,DU2,DI,Aspiratordoorswitch,47,23,0.996,PDF
+AHU_01_root.pdf,X2,AI,Cooling_Valve_Feedback-1,41,22,0.995,PDF
+AHU_01_root.pdf,X3,DI,FRST,42,22,0.999,PDF
+AHU_01_root.pdf,X5,AI,Heating_Valve_Feedback-1,44,22,0.995,PDF
+AHU_01_root.pdf,X8,DI,RETURN_G4_filter,85,22,0.996,PDF
+AHU_01_root.pdf,X9,DI,Fire Alarm,12,22,0.977,PDF
+AHU_01_root.pdf,X10,DI,Phase Protection Alarm,16,22,0.974,PDF
+AHU_01_root.pdf,X11,DI,EmergencyStop,45,22,0.997,PDF
+AHU_01_root.pdf,D1,DI,Fresh_G4_filter,38,22,0.997,PDF
+AHU_01_root.pdf,D2,DI,Fresh_F7_filter,39,22,0.997,PDF
+AHU_01_root.pdf,DU1,DI,Vantilatordoorswitch,46,22,0.996,PDF
+AHU_01_root.pdf,DU2,DI,24V AC/DC,,22,1.0,PDF
+AHU_01_root.pdf,DU2,DI,Aspiratordoorswitch,47,22,1.0,PDF
+AHU_02/AHU_02.pdf,X1,DI,Diff_Press_SW_3,79,23,0.996,PDF
+AHU_02/AHU_02.pdf,X3,AI,Cooling_Valve_Feedback-1,41,23,0.995,PDF
+AHU_02/AHU_02.pdf,X4,DI,FRST,42,23,0.999,PDF
+AHU_02/AHU_02.pdf,X6,AI,Heating_Valve_Feedback-1,44,23,0.994,PDF
+AHU_02/AHU_02.pdf,X9,DI,Fire Alarm,12,23,0.967,PDF
+AHU_02/AHU_02.pdf,X10,DI,Phase Protection Alarm,16,23,0.964,PDF
+AHU_02/AHU_02.pdf,X11,DI,EmergencyStop,45,23,0.997,PDF
+AHU_02/AHU_02.pdf,D1,DI,Diff_Press_SW_1,38,23,0.996,PDF
+AHU_02/AHU_02.pdf,D2,DI,Diff_Press_SW_2,39,23,0.996,PDF
+AHU_02/AHU_02.pdf,DU1,DI,Vantilatordoorswitch,46,23,0.996,PDF
+AHU_02/AHU_02.pdf,DU2,DI,24V AC/DC,,23,1.0,PDF
+AHU_02/AHU_02.pdf,DU2,DI,Aspiratordoorswitch,47,23,0.996,PDF
+AHU_03/AHU_03.pdf,X1,DI,Diff_Press_SW_3,79,23,0.996,PDF
+AHU_03/AHU_03.pdf,X3,AI,Cooling_Valve_Feedback-1,41,23,0.995,PDF
+AHU_03/AHU_03.pdf,X4,DI,FRST,42,23,0.999,PDF
+AHU_03/AHU_03.pdf,X6,AI,Heating_Valve_Feedback-1,44,23,0.994,PDF
+AHU_03/AHU_03.pdf,X9,DI,Fire Alarm,12,23,0.967,PDF
+AHU_03/AHU_03.pdf,X10,DI,Phase Protection Alarm,16,23,0.964,PDF
+AHU_03/AHU_03.pdf,X11,DI,EmergencyStop,45,23,0.997,PDF
+AHU_03/AHU_03.pdf,D1,DI,Diff_Press_SW_1,38,23,0.996,PDF
+AHU_03/AHU_03.pdf,D2,DI,Diff_Press_SW_2,39,23,0.996,PDF
+AHU_03/AHU_03.pdf,DU1,DI,Vantilatordoorswitch,46,23,0.996,PDF
+AHU_03/AHU_03.pdf,DU2,DI,24V AC/DC,,23,1.0,PDF
+AHU_03/AHU_03.pdf,DU2,DI,Aspiratordoorswitch,47,23,0.996,PDF
+AHU_04/AHU_04.pdf,X1,DI,Diff_Press_SW_3,79,23,0.996,PDF
+AHU_04/AHU_04.pdf,X3,AI,Cooling_Valve_Feedback-1,41,23,0.995,PDF
+AHU_04/AHU_04.pdf,X4,DI,FRST,42,23,0.999,PDF
+AHU_04/AHU_04.pdf,X6,AI,Heating_Valve_Feedback-1,44,23,0.994,PDF
+AHU_04/AHU_04.pdf,X9,DI,Fire Alarm,12,23,0.967,PDF
+AHU_04/AHU_04.pdf,X10,DI,Phase Protection Alarm,16,23,0.964,PDF
+AHU_04/AHU_04.pdf,X11,DI,EmergencyStop,45,23,0.997,PDF
+AHU_04/AHU_04.pdf,D1,DI,Diff_Press_SW_1,38,23,0.996,PDF
+AHU_04/AHU_04.pdf,D2,DI,Diff_Press_SW_2,39,23,0.996,PDF
+AHU_04/AHU_04.pdf,DU1,DI,Vantilatordoorswitch,46,23,0.996,PDF
+AHU_04/AHU_04.pdf,DU2,DI,24V AC/DC,,23,1.0,PDF
+AHU_04/AHU_04.pdf,DU2,DI,Aspiratordoorswitch,47,23,0.996,PDF
+mer/AHU_02/AHU_02.pdf,X1,DI,Diff_Press_SW_3,79,25,0.996,PDF
+mer/AHU_02/AHU_02.pdf,X3,AI,Cooling_Valve_Feedback-1,41,25,0.995,PDF
+mer/AHU_02/AHU_02.pdf,X4,DI,FRST,42,25,0.999,PDF
+mer/AHU_02/AHU_02.pdf,X6,AI,Heating_Valve_Feedback-1,44,25,0.994,PDF
+mer/AHU_02/AHU_02.pdf,X8,DI,Rotary Alarm,231,25,0.997,PDF
+mer/AHU_02/AHU_02.pdf,X9,DI,Fire Alarm,12,25,0.967,PDF
+mer/AHU_02/AHU_02.pdf,X10,DI,Phase Protection Alarm,16,25,0.995,PDF
+mer/AHU_02/AHU_02.pdf,X11,DI,EmergencyStop,45,25,0.997,PDF
+mer/AHU_02/AHU_02.pdf,D1,DI,Diff_Press_SW_1,38,25,0.996,PDF
+mer/AHU_02/AHU_02.pdf,D2,DI,Diff_Press_SW_2,39,25,0.996,PDF
+mer/AHU_02/AHU_02.pdf,DU1,DI,Vantilatordoorswitch,46,25,0.996,PDF
+mer/AHU_02/AHU_02.pdf,DU2,DI,24V AC/DC,,25,1.0,PDF
+mer/AHU_02/AHU_02.pdf,DU2,DI,Aspiratordoorswitch,47,25,0.996,PDF
+mer/AHU_03/AHU_03.pdf,X1,DI,Diff_Press_SW_3,79,25,0.996,PDF
+mer/AHU_03/AHU_03.pdf,X3,AI,Cooling_Valve_Feedback-1,41,25,0.995,PDF
+mer/AHU_03/AHU_03.pdf,X4,DI,FRST,42,25,0.999,PDF
+mer/AHU_03/AHU_03.pdf,X6,AI,Heating_Valve_Feedback-1,44,25,0.994,PDF
+mer/AHU_03/AHU_03.pdf,X8,DI,Rotary Alarm,231,25,0.997,PDF
+mer/AHU_03/AHU_03.pdf,X9,DI,Fire Alarm,12,25,0.967,PDF
+mer/AHU_03/AHU_03.pdf,X10,DI,Phase Protection Alarm,16,25,0.995,PDF
+mer/AHU_03/AHU_03.pdf,X11,DI,EmergencyStop,45,25,0.997,PDF
+mer/AHU_03/AHU_03.pdf,D1,DI,Diff_Press_SW_1,38,25,0.996,PDF
+mer/AHU_03/AHU_03.pdf,D2,DI,Diff_Press_SW_2,39,25,0.996,PDF
+mer/AHU_03/AHU_03.pdf,DU1,DI,Vantilatordoorswitch,46,25,0.996,PDF
+mer/AHU_03/AHU_03.pdf,DU2,DI,24V AC/DC,,25,1.0,PDF
+mer/AHU_03/AHU_03.pdf,DU2,DI,Aspiratordoorswitch,47,25,0.996,PDF
+mer/DAV_THF_01/DAV_THF_01.pdf,X9,DI,Fire Alarm,12,17,0.967,PDF
+mer/DAV_THF_01/DAV_THF_01.pdf,X10,DI,Phase Protection Alarm,16,17,0.964,PDF
+mer/DAV_THF_01/DAV_THF_01.pdf,X11,DI,EmergencyStop,45,17,0.997,PDF
+mer/DAV_THF_01/DAV_THF_01.pdf,D1,DI,Diff_Press_SW_1,38,17,0.996,PDF
+mer/DAV_THF_01/DAV_THF_01.pdf,DU1,DI,Vantilatordoorswitch,46,17,0.996,PDF
+mer/DAV_THF_01/DAV_THF_01.pdf,DU2,DI,24V AC/DC,,17,1.0,PDF
+mer/DAV_THF_02/DAV_THF_02.pdf,X9,DI,Fire Alarm,12,17,0.967,PDF
+mer/DAV_THF_02/DAV_THF_02.pdf,X10,DI,Phase Protection Alarm,16,17,0.964,PDF
+mer/DAV_THF_02/DAV_THF_02.pdf,X11,DI,EmergencyStop,45,17,0.997,PDF
+mer/DAV_THF_02/DAV_THF_02.pdf,D1,DI,Diff_Press_SW_1,38,17,0.996,PDF
+mer/DAV_THF_02/DAV_THF_02.pdf,DU1,DI,Vantilatordoorswitch,46,17,0.996,PDF
+mer/DAV_THF_02/DAV_THF_02.pdf,DU2,DI,24V AC/DC,,17,1.0,PDF
+mer/DAV_THF_03/DAV_THF_03.pdf,X9,DI,Fire Alarm,12,17,0.967,PDF
+mer/DAV_THF_03/DAV_THF_03.pdf,X10,DI,Phase Protection Alarm,16,17,0.964,PDF
+mer/DAV_THF_03/DAV_THF_03.pdf,X11,DI,EmergencyStop,45,17,0.997,PDF
+mer/DAV_THF_03/DAV_THF_03.pdf,D1,DI,Diff_Press_SW_1,38,17,0.996,PDF
+mer/DAV_THF_03/DAV_THF_03.pdf,DU1,DI,Vantilatordoorswitch,46,17,0.996,PDF
+mer/DAV_THF_03/DAV_THF_03.pdf,DU2,DI,24V AC/DC,,17,1.0,PDF
