@@ -216,9 +216,12 @@ def _ocr_page(page: fitz.Page, dpi: int = 260) -> list[_TextItem]:
     if result is None:
         return []
 
-    boxes = getattr(result, "boxes", None) or []
-    texts = getattr(result, "txts", None) or []
-    scores = getattr(result, "scores", None) or []
+    boxes = getattr(result, "boxes", None)
+    texts = getattr(result, "txts", None)
+    scores = getattr(result, "scores", None)
+    boxes = [] if boxes is None else boxes
+    texts = [] if texts is None else texts
+    scores = [] if scores is None else scores
     scale = 72.0 / float(dpi)
     items: list[_TextItem] = []
     for index, (box, text) in enumerate(zip(boxes, texts)):
@@ -306,8 +309,12 @@ def _split_cable_and_signal(value: str) -> tuple[str, str]:
     cleaned = re.sub(r"\s+", " ", value).strip(" \t:;|")
     match = re.match(r"^(\d{1,4})\s*[-:]\s*(.+)$", cleaned)
     if match:
-        return match.group(1), match.group(2).strip()
-    return "", cleaned
+        cable, signal = match.group(1), match.group(2).strip()
+    else:
+        cable, signal = "", cleaned
+    signal = re.sub(r"^(?:DI|AI|DO|AO)\s*[_-]\s*", "", signal, flags=re.I)
+    signal = re.sub(r"^(?:DI|AI|DO|AO)\s+", "", signal, flags=re.I)
+    return cable, signal.strip()
 
 
 def _classify_signal(text: str) -> str:
