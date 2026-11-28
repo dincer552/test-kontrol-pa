@@ -93,6 +93,7 @@ def test_adjacent_terminals_in_one_cad_text_span_keep_separate_coordinates(tmp_p
     doc.close()
 
     rows = discover_pol648_connections(pdf_path, enable_ocr=False)
+    print("ADJACENT TERMINAL RESULTS:", [(row.terminal, row.signal, row.signal_type) for row in rows])
     by_terminal = {row.terminal: row for row in rows}
 
     assert by_terminal["X1"].signal == "FIRE_ALARM"
