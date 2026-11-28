@@ -47,6 +47,7 @@ def main() -> int:
                 "terminals": sorted({row["terminal"] for row in rows}),
                 "ocr_pages": diagnostics.get("ocr_pages", []),
                 "ocr_errors": diagnostics.get("ocr_errors", []),
+                "ocr_preprocessing": diagnostics.get("ocr_preprocessing", []),
                 "pdf_text_pages": diagnostics.get("pdf_text_pages", []),
                 "geometry": {
                     "pymupdf_vertical_edges": diagnostics.get("pymupdf_edges", 0),
@@ -94,6 +95,7 @@ def main() -> int:
             "PyMuPDF text spans and vector drawings",
             "pdfplumber vector-edge cross-check",
             "RapidOCR ONNX for scanned/image-based pages",
+            "OpenCV: original image, CLAHE+sharpen, adaptive threshold (multi-pass)",
         ],
         "warning": (
             "These are PDF-derived candidates only. They are not verified PLC "
