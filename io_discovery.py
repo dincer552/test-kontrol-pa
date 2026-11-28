@@ -138,8 +138,13 @@ def _text_items(page: fitz.Page) -> list[_TextItem]:
                     line_text_parts.append(" ")
                     line_char_boxes.append(None)
 
-            line_text = "".join(line_text_parts).strip()
+            raw_line_text = "".join(line_text_parts)
+            line_text = raw_line_text.strip()
             if line_text and line_boxes:
+                trim_offset = len(raw_line_text) - len(raw_line_text.lstrip())
+                aligned_char_boxes = tuple(
+                    line_char_boxes[trim_offset:trim_offset + len(line_text)]
+                )
                 items.append(_TextItem(
                     line_text,
                     (
@@ -148,7 +153,7 @@ def _text_items(page: fitz.Page) -> list[_TextItem]:
                         max(box[2] for box in line_boxes),
                         max(box[3] for box in line_boxes),
                     ),
-                    char_boxes=tuple(line_char_boxes) if len(line_char_boxes) == len(line_text) else (),
+                    char_boxes=aligned_char_boxes if len(aligned_char_boxes) == len(line_text) else (),
                 ))
     return items
 
@@ -329,7 +334,7 @@ def _wires_for_terminal(
         wire for wire in wires
         if abs(wire.x - terminal_x) <= 28
         and wire.bottom > terminal_y
-        and wire.top <= terminal_y + 140
+        and wire.top <= terminal_y + 180
     ]
     # Merge duplicate/superimposed edges from the two PDF geometry engines.
     candidates.sort(key=lambda wire: (wire.x, wire.top, wire.bottom))
@@ -536,7 +541,7 @@ def discover_pol648_connections(
                     for context_item in text_items:
                         if context_item is item:
                             continue
-                        if abs(context_item.cx - wire_x) <= 28 and abs(context_item.cy - cy) <= 85:
+                        if abs(context_item.cx - wire_x) <= 14 and abs(context_item.cy - cy) <= 85:
                             local_context.append(context_item.text)
                     signal_type = _classify_signal(" ".join(local_context))
                     confidence = max(0.0, min(1.0, item.confidence - best_score / 100.0))
