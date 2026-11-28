@@ -21,7 +21,7 @@ from connection import C600ConnectionMixin
 from damper import DamperTabMixin
 from sensors import SensorTabMixin
 from pdf_reader import discover_pdf
-from io_discovery import discover_pol648_connections, POL648_TERMINAL_MODES
+from io_discovery import discover_pol648_connections
 from report import save_report_dialog
 
 
@@ -673,7 +673,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         table = ttk.Treeview(window, columns=columns, show="headings", height=15)
         for key, label, width in (
             ("terminal", "Terminal", 85),
-            ("capability", "Terminal tipi / PDF ipucu", 205),
+            ("capability", "PDF tipi", 205),
             ("signal", "Bağlı sinyal", 300),
             ("cable", "Kablo", 75),
             ("page", "Sayfa", 55),
@@ -683,14 +683,8 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         table.pack(fill="both", expand=True, padx=14, pady=(0, 8))
 
         for item in connections:
-            modes = ", ".join(POL648_TERMINAL_MODES.get(item.terminal, ()))
-            # Capability is the controller's supported mode list; the PDF
-            # hint is kept separate and is never presented as a confirmed mode.
-            capability = modes
-            if item.signal_type != "PDF bağlantısı bulundu; elektriksel tip belirtilmemiş":
-                capability = f"{item.signal_type} | {modes}"
             table.insert("", "end", values=(
-                item.terminal, capability, item.signal, item.cable or "—", item.page
+                item.terminal, item.signal_type, item.signal, item.cable or "—", item.page
             ))
 
         if not connections:
