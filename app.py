@@ -21,6 +21,7 @@ from connection import C600ConnectionMixin
 from damper import DamperTabMixin
 from sensors import SensorTabMixin
 from pdf_reader import discover_pdf
+from io_discovery import discover_pol648_connections, POL648_TERMINAL_MODES
 from report import save_report_dialog
 
 
@@ -80,6 +81,7 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         self._update_build_label: ttk.Label | None = None
         # Test raporu için varsayılan kayıt klasörü, eklenen AHU PDF'sinin klasörüdür.
         self._report_initial_dir: str | None = None
+        self._last_pdf_path: str | None = None
         self._app_icon_image: tk.PhotoImage | None = None
         self._init_app_icon()
         self._init_modern_theme()
@@ -451,6 +453,11 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             btn_col, text="+ PDF Ekle", style="Secondary.TButton",
             command=self._select_pdf
         ).pack(side="left", padx=2)
+        self._io_discovery_button = ttk.Button(
+            btn_col, text="I/O KEŞFET", style="Secondary.TButton",
+            command=self._show_pol648_io_discovery, state="disabled"
+        )
+        self._io_discovery_button.pack(side="left", padx=2)
 
         drop_banner = tk.Frame(
             inner_box, bg="#eff6ff", highlightbackground="#2563eb",
@@ -604,6 +611,9 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
 
         # Rapor kaydetme penceresi ilk açıldığında AHU PDF'sinin klasörünü önersin.
         self._report_initial_dir = str(pdf_path.parent)
+        self._last_pdf_path = str(pdf_path)
+        if hasattr(self, "_io_discovery_button"):
+            self._io_discovery_button.configure(state="normal")
         self._pdf_count_label.configure(text="1 PDF")
         self._pdf_list_label.configure(
             text=f"✓  {pdf_path.name}",
@@ -627,6 +637,74 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
         if result.ahu_name:
             self._ahu_name_var.set(result.ahu_name)
             self.state.ahu_name = result.ahu_name
+
+    def _show_pol648_io_discovery(self) -> None:
+        """Show only the POL648 terminals that are actually wired in the PDF."""
+        if not self._last_pdf_path:
+            self._log("I/O KEŞİF: Önce elektrik projesi PDF'si ekleyin.", "error")
+            return
+        try:
+            connections = discover_pol648_connections(self._last_pdf_path)
+        except Exception as exc:
+            self._log(f"I/O KEŞİF: PDF analiz hatası: {exc}", "error")
+            messagebox.showerror("POL648 I/O Keşif", f"PDF analiz edilemedi:\n{exc}", parent=self)
+            return
+
+        window = tk.Toplevel(self)
+        window.title("POL648.10 — PDF I/O Keşfi")
+        window.geometry("760x440")
+        window.minsize(600, 300)
+        window.transient(self)
+        window.configure(bg="#f8fafc")
+
+        heading = tk.Frame(window, bg="#f8fafc")
+        heading.pack(fill="x", padx=14, pady=(12, 8))
+        tk.Label(
+            heading, text="POL648.10 — PDF'DE BAĞLI I/O NOKTALARI",
+            bg="#f8fafc", fg="#0f172a", font=("Segoe UI", 10, "bold")
+        ).pack(anchor="w")
+        tk.Label(
+            heading,
+            text=f"{Path(self._last_pdf_path).name}  •  {len(connections)} bağlantı bulundu",
+            bg="#f8fafc", fg="#64748b", font=("Segoe UI", 8)
+        ).pack(anchor="w", pady=(3, 0))
+
+        columns = ("terminal", "capability", "signal", "cable", "page")
+        table = ttk.Treeview(window, columns=columns, show="headings", height=15)
+        for key, label, width in (
+            ("terminal", "Terminal", 85),
+            ("capability", "Terminal tipi / PDF ipucu", 205),
+            ("signal", "Bağlı sinyal", 300),
+            ("cable", "Kablo", 75),
+            ("page", "Sayfa", 55),
+        ):
+            table.heading(key, text=label)
+            table.column(key, width=width, anchor="w")
+        table.pack(fill="both", expand=True, padx=14, pady=(0, 8))
+
+        for item in connections:
+            modes = ", ".join(POL648_TERMINAL_MODES.get(item.terminal, ()))
+            # Capability is the controller's supported mode list; the PDF
+            # hint is kept separate and is never presented as a confirmed mode.
+            capability = modes
+            if item.signal_type != "PDF bağlantısı bulundu; elektriksel tip belirtilmemiş":
+                capability = f"{item.signal_type} | {modes}"
+            table.insert("", "end", values=(
+                item.terminal, capability, item.signal, item.cable or "—", item.page
+            ))
+
+        if not connections:
+            tk.Label(
+                window,
+                text="Bu PDF'de POL648 terminaline güvenilir şekilde bağlanabilen metin etiketi bulunamadı.",
+                bg="#f8fafc", fg="#b45309", font=("Segoe UI", 9)
+            ).pack(anchor="w", padx=16, pady=(0, 8))
+        tk.Label(
+            window,
+            text="Not: Terminalin desteklediği modlar donanım dokümanıdır; PDF'den aktif mod ancak bağlantı şeması açıkça gösteriyorsa belirlenir.",
+            bg="#f8fafc", fg="#64748b", font=("Segoe UI", 8), wraplength=720, justify="left"
+        ).pack(anchor="w", padx=14, pady=(0, 10))
+        self._log(f"I/O KEŞİF: {len(connections)} POL648 terminal bağlantısı listelendi.", "ok")
 
     def _clear_project_field(self, field: str) -> None:
         if field not in ("order_no", "project_name", "ahu_name"):
