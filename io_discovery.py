@@ -391,7 +391,14 @@ def _is_generic_label(value: str) -> bool:
         "DIP", "G+", "SLCH", "LIHCH", "POL648A", "POL648B",
     }:
         return True
-    if cleaned.casefold() in {item.casefold() for item in _NOISE_LABELS}:
+    normalized_noise = re.sub(r"[^A-Z0-9]", "", cleaned.upper())
+    known_noise = {
+        re.sub(r"[^A-Z0-9]", "", item.upper())
+        for item in _NOISE_LABELS
+    }
+    if normalized_noise in known_noise:
+        return True
+    if re.fullmatch(r"\\d{2}[A-Z]{2,}\\d{2,}", cleaned, re.I):
         return True
     if re.match(r"^(?:W|R|U|TS|HA)\d", cleaned, re.I):
         return True
