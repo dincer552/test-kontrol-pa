@@ -239,64 +239,111 @@ def _get_ocr_engine():
     return _OCR_ENGINE
 
 
-def _ocr_page(page: fitz.Page, dpi: int = 260, rotation: int = 0) -> list[_TextItem]:
-    """OCR image-only content with the bundled RapidOCR ONNX models."""
+def _ocr_page(page: fitz.Page, dpi: int = 300, rotation: int = 0) -> list[_TextItem]:
+    """Read a drawing with RapidOCR using original and enhanced image variants.
+
+    The vector/text path remains primary. These image passes are used only for
+    scanned or image-heavy controller sheets. All variants keep the same pixel
+    dimensions so OCR boxes map back to the original PDF coordinates.
+    """
+    import cv2
     import numpy as np
 
     pix = page.get_pixmap(dpi=dpi, colorspace=fitz.csRGB, alpha=False)
-    image = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
+    rgb = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
     if pix.n == 4:
-        image = image[:, :, :3]
-    # RapidOCR accepts an OpenCV-style image array.
-    image = image[:, :, ::-1].copy()
+        rgb = rgb[:, :, :3]
+    bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
     original_width, original_height = pix.width, pix.height
     rotation = rotation % 360
     if rotation == 90:
-        image = np.rot90(image, k=1).copy()
+        bgr = cv2.rotate(bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
     elif rotation == 270:
-        image = np.rot90(image, k=3).copy()
-    elif rotation not in (0, 180):
-        raise ValueError("OCR rotation must be 0, 90, 180, or 270 degrees.")
+        bgr = cv2.rotate(bgr, cv2.ROTATE_90_CLOCKWISE)
     elif rotation == 180:
-        image = np.rot90(image, k=2).copy()
-    result = _get_ocr_engine()(image)
-    if result is None:
-        return []
+        bgr = cv2.rotate(bgr, cv2.ROTATE_180)
+    elif rotation != 0:
+        raise ValueError("OCR rotation must be 0, 90, 180, or 270 degrees.")
 
-    boxes = getattr(result, "boxes", None)
-    texts = getattr(result, "txts", None)
-    scores = getattr(result, "scores", None)
-    boxes = [] if boxes is None else boxes
-    texts = [] if texts is None else texts
-    scores = [] if scores is None else scores
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    # Engineering drawings often contain pale grey CAD text and thin wires.
+    # CLAHE improves local contrast; adaptive threshold helps faint scans.
+    clahe = cv2.createCLAHE(clipLimit=2.2, tileGridSize=(8, 8)).apply(gray)
+    sharpen_kernel = np.array(
+        [[0, -1, 0], [-1, 5, -1], [0, -1, 0]], dtype=np.float32
+    )
+    sharpened = cv2.filter2D(clahe, -1, sharpen_kernel)
+    adaptive = cv2.adaptiveThreshold(
+        clahe, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY, 31, 11,
+    )
+    variants = (
+        ("original", bgr),
+        ("contrast_sharpen", cv2.cvtColor(sharpened, cv2.COLOR_GRAY2BGR)),
+        ("adaptive_threshold", cv2.cvtColor(adaptive, cv2.COLOR_GRAY2BGR)),
+    )
+
+    engine = _get_ocr_engine()
     scale = 72.0 / float(dpi)
-    items: list[_TextItem] = []
-    for index, (box, text) in enumerate(zip(boxes, texts)):
-        value = str(text).strip()
-        score = float(scores[index]) if index < len(scores) else 0.5
-        if not value or score < 0.25:
+    detected: list[_TextItem] = []
+    errors: list[str] = []
+    for variant_name, image in variants:
+        try:
+            result = engine(image)
+        except Exception as exc:
+            errors.append(f"{variant_name}: {exc}")
             continue
-        points = []
-        for point in list(box):
-            x, y = float(point[0]), float(point[1])
-            if rotation == 90:
-                x, y = original_width - y, x
-            elif rotation == 270:
-                x, y = y, original_height - x
-            elif rotation == 180:
-                x, y = original_width - x, original_height - y
-            points.append((x, y))
-        xs = [point[0] for point in points]
-        ys = [point[1] for point in points]
-        bbox = (
-            max(0.0, min(xs)) * scale,
-            max(0.0, min(ys)) * scale,
-            min(float(original_width), max(xs)) * scale,
-            min(float(original_height), max(ys)) * scale,
-        )
-        items.append(_TextItem(value, bbox, "OCR", score))
-    return items
+        if result is None:
+            continue
 
+        boxes = getattr(result, "boxes", None) or []
+        texts = getattr(result, "txts", None) or []
+        scores = getattr(result, "scores", None) or []
+        for index, (box, text) in enumerate(zip(boxes, texts)):
+            value = str(text).strip()
+            score = float(scores[index]) if index < len(scores) else 0.5
+            if not value or score < 0.30:
+                continue
+            points = []
+            for point in list(box):
+                x, y = float(point[0]), float(point[1])
+                if rotation == 90:
+                    x, y = original_width - y, x
+                elif rotation == 270:
+                    x, y = y, original_height - x
+                elif rotation == 180:
+                    x, y = original_width - x, original_height - y
+                points.append((x, y))
+            xs = [point[0] for point in points]
+            ys = [point[1] for point in points]
+            bbox = (
+                max(0.0, min(xs)) * scale,
+                max(0.0, min(ys)) * scale,
+                min(float(original_width), max(xs)) * scale,
+                min(float(original_height), max(ys)) * scale,
+            )
+            detected.append(_TextItem(value, bbox, "OCR", score))
+
+    if not detected and errors:
+        raise RuntimeError("; ".join(errors))
+
+    # Multi-pass OCR sees the same text more than once. Keep the strongest
+    # recognition at each location, but preserve repeated labels elsewhere.
+    detected.sort(key=lambda item: item.confidence, reverse=True)
+    unique: list[_TextItem] = []
+    for item in detected:
+        normalized = re.sub(r"[^A-Z0-9]", "", item.text.upper())
+        if not normalized:
+            continue
+        duplicate = any(
+            normalized == re.sub(r"[^A-Z0-9]", "", old.text.upper())
+            and abs(item.cx - old.cx) <= 10
+            and abs(item.cy - old.cy) <= 10
+            for old in unique
+        )
+        if not duplicate:
+            unique.append(item)
+    return unique
 
 def _terminal_anchors(items: list[_TextItem]) -> list[tuple[str, float, float, tuple[float, float, float, float], _TextItem]]:
     anchors = []
@@ -391,6 +438,12 @@ def _is_generic_label(value: str) -> bool:
         "DIP", "G+", "SLCH", "LIHCH", "POL648A", "POL648B",
         "24V", "24VAC", "24VDC", "24VACDC", "230VAC", "230V",
     }:
+        return True
+    # Supply rails and voltage legends are not connected I/O signal names.
+    if re.fullmatch(
+        r"\d+(?:[.,]\d+)?\s*V(?:\s*(?:AC|DC)(?:\s*/\s*(?:AC|DC))?)?",
+        cleaned, re.I,
+    ):
         return True
     normalized_noise = re.sub(r"[^A-Z0-9]", "", cleaned.upper())
     known_noise = {
