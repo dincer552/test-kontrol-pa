@@ -639,66 +639,152 @@ class TestControlApp(SensorTabMixin, DamperTabMixin, C600ConnectionMixin, _TkBas
             self.state.ahu_name = result.ahu_name
 
     def _show_pol648_io_discovery(self) -> None:
-        """Show only the POL648 terminals that are actually wired in the PDF."""
+        """Run multi-engine PDF discovery without blocking the Tk event loop."""
         if not self._last_pdf_path:
             self._log("I/O KEŞİF: Önce elektrik projesi PDF'si ekleyin.", "error")
             return
-        try:
-            connections = discover_pol648_connections(self._last_pdf_path)
-        except Exception as exc:
-            self._log(f"I/O KEŞİF: PDF analiz hatası: {exc}", "error")
-            messagebox.showerror("POL648 I/O Keşif", f"PDF analiz edilemedi:\n{exc}", parent=self)
-            return
 
-        window = tk.Toplevel(self)
-        window.title("POL648.10 — PDF I/O Keşfi")
-        window.geometry("760x440")
-        window.minsize(600, 300)
-        window.transient(self)
-        window.configure(bg="#f8fafc")
+        pdf_path = self._last_pdf_path
+        progress = tk.Toplevel(self)
+        progress.title("POL648 I/O keşfi")
+        progress.geometry("360x112")
+        progress.resizable(False, False)
+        progress.transient(self)
+        progress.grab_set()
+        ttk.Label(
+            progress,
+            text="PDF inceleniyor: metin, çizgi geometrisi ve OCR",
+            style="White.TLabel",
+        ).pack(anchor="w", padx=16, pady=(16, 8))
+        bar = ttk.Progressbar(progress, mode="indeterminate", length=325)
+        bar.pack(fill="x", padx=16, pady=(0, 14))
+        bar.start(10)
+        if hasattr(self, "_io_discovery_button"):
+            self._io_discovery_button.configure(state="disabled")
 
-        heading = tk.Frame(window, bg="#f8fafc")
-        heading.pack(fill="x", padx=14, pady=(12, 8))
-        tk.Label(
-            heading, text="POL648.10 — PDF'DE BAĞLI I/O NOKTALARI",
-            bg="#f8fafc", fg="#0f172a", font=("Segoe UI", 10, "bold")
-        ).pack(anchor="w")
-        tk.Label(
-            heading,
-            text=f"{Path(self._last_pdf_path).name}  •  {len(connections)} bağlantı bulundu",
-            bg="#f8fafc", fg="#64748b", font=("Segoe UI", 8)
-        ).pack(anchor="w", pady=(3, 0))
+        def finish(connections=None, diagnostics=None, error=None) -> None:
+            try:
+                bar.stop()
+                progress.grab_release()
+                progress.destroy()
+            except tk.TclError:
+                pass
+            if hasattr(self, "_io_discovery_button"):
+                self._io_discovery_button.configure(state="normal")
+            if error is not None:
+                self._log(f"I/O KEŞİF: PDF analiz hatası: {error}", "error")
+                messagebox.showerror(
+                    "POL648 I/O Keşif",
+                    f"PDF analiz edilemedi:\n{error}",
+                    parent=self,
+                )
+                return
 
-        columns = ("terminal", "capability", "signal", "cable", "page")
-        table = ttk.Treeview(window, columns=columns, show="headings", height=15)
-        for key, label, width in (
-            ("terminal", "Terminal", 85),
-            ("capability", "PDF tipi", 205),
-            ("signal", "Bağlı sinyal", 300),
-            ("cable", "Kablo", 75),
-            ("page", "Sayfa", 55),
-        ):
-            table.heading(key, text=label)
-            table.column(key, width=width, anchor="w")
-        table.pack(fill="both", expand=True, padx=14, pady=(0, 8))
+            diagnostics = diagnostics or {}
+            window = tk.Toplevel(self)
+            window.title("POL648.10 — PDF I/O Keşfi")
+            window.geometry("760x440")
+            window.minsize(600, 300)
+            window.transient(self)
+            window.configure(bg="#f8fafc")
 
-        for item in connections:
-            table.insert("", "end", values=(
-                item.terminal, item.signal_type, item.signal, item.cable or "—", item.page
-            ))
+            heading = tk.Frame(window, bg="#f8fafc")
+            heading.pack(fill="x", padx=14, pady=(12, 8))
+            tk.Label(
+                heading,
+                text="POL648.10 — PDF'DE BAĞLI I/O NOKTALARI",
+                bg="#f8fafc",
+                fg="#0f172a",
+                font=("Segoe UI", 10, "bold"),
+            ).pack(anchor="w")
+            ocr_pages = len(diagnostics.get("ocr_pages", []))
+            tk.Label(
+                heading,
+                text=(
+                    f"{Path(pdf_path).name}  •  {len(connections)} bağlantı  "
+                    f"•  OCR: {ocr_pages} sayfa"
+                ),
+                bg="#ffffff",
+                fg="#64748b",
+                font=("Segoe UI", 8),
+            ).pack(anchor="w", pady=(3, 0))
 
-        if not connections:
+            columns = ("terminal", "capability", "signal", "cable", "page")
+            table = ttk.Treeview(window, columns=columns, show="headings", height=15)
+            for key, label_text, width in (
+                ("terminal", "Terminal", 85),
+                ("capability", "PDF tipi", 180),
+                ("signal", "Bağlı sinyal", 315),
+                ("cable", "Kablo", 75),
+                ("page", "Sayfa", 55),
+            ):
+                table.heading(key, text=label_text)
+                table.column(key, width=width, anchor="w")
+            table.pack(fill="both", expand=True, padx=14, pady=(0, 8))
+
+            for item in connections:
+                table.insert(
+                    "",
+                    "end",
+                    values=(
+                        item.terminal,
+                        item.signal_type,
+                        item.signal,
+                        item.cable or "—",
+                        item.page,
+                    ),
+                )
+
+            if not connections:
+                tk.Label(
+                    window,
+                    text=(
+                        "Bu PDF'de POL648 terminaline güvenilir şekilde "
+                        "bağlanabilen sinyal etiketi bulunamadı."
+                    ),
+                    bg="#f8fafc",
+                    fg="#b45309",
+                    font=("Segoe UI", 9),
+                ).pack(anchor="w", padx=16, pady=(0, 8))
             tk.Label(
                 window,
-                text="Bu PDF'de POL648 terminaline güvenilir şekilde bağlanabilen metin etiketi bulunamadı.",
-                bg="#f8fafc", fg="#b45309", font=("Segoe UI", 9)
-            ).pack(anchor="w", padx=16, pady=(0, 8))
-        tk.Label(
-            window,
-            text="Not: Terminalin desteklediği modlar donanım dokümanıdır; PDF'den aktif mod ancak bağlantı şeması açıkça gösteriyorsa belirlenir.",
-            bg="#f8fafc", fg="#64748b", font=("Segoe UI", 8), wraplength=720, justify="left"
-        ).pack(anchor="w", padx=14, pady=(0, 10))
-        self._log(f"I/O KEŞİF: {len(connections)} POL648 terminal bağlantısı listelendi.", "ok")
+                text=(
+                    "Tip PDF üzerinde açıkça gösterilmiyorsa tahmin edilmez. "
+                    "Yalnızca projede bağlı olduğu belirlenen terminaller listelenir."
+                ),
+                bg="#f8fafc",
+                fg="#64748b",
+                font=("Segoe UI", 8),
+                wraplength=720,
+                justify="left",
+            ).pack(anchor="w", padx=14, pady=(0, 10))
+            self._log(
+                f"I/O KEŞİF: {len(connections)} bağlantı bulundu; OCR {ocr_pages} sayfada çalıştı.",
+                "ok",
+            )
+            if diagnostics.get("ocr_errors"):
+                self._log(
+                    f"I/O KEŞİF: {len(diagnostics['ocr_errors'])} sayfada OCR hatası oluştu.",
+                    "error",
+                )
+
+        def worker() -> None:
+            diagnostics: dict = {}
+            try:
+                connections = discover_pol648_connections(
+                    pdf_path,
+                    enable_ocr=True,
+                    diagnostics=diagnostics,
+                )
+                self.after(0, lambda: finish(connections, diagnostics))
+            except Exception as exc:
+                self.after(0, lambda error=exc: finish(error=error))
+
+        threading.Thread(
+            target=worker,
+            name="pol648-pdf-io-discovery",
+            daemon=True,
+        ).start()
 
     def _clear_project_field(self, field: str) -> None:
         if field not in ("order_no", "project_name", "ahu_name"):
