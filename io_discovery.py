@@ -559,6 +559,11 @@ def discover_pol648_connections(
         "pdfplumber_edges": 0,
         "pymupdf_edges": 0,
         "pol648_pages": [],
+        "ocr_preprocessing": [
+            "original RGB-to-BGR render",
+            "CLAHE local contrast + sharpening",
+            "adaptive Gaussian threshold",
+        ],
     })
 
     found: list[IoConnection] = []
