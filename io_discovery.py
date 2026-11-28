@@ -239,7 +239,9 @@ def _get_ocr_engine():
     return _OCR_ENGINE
 
 
-def _ocr_page(page: fitz.Page, dpi: int = 300, rotation: int = 0) -> list[_TextItem]:
+def _ocr_page(
+    page: fitz.Page, dpi: int = 300, rotation: int = 0, *, enhanced: bool = True
+) -> list[_TextItem]:
     """Read a drawing with RapidOCR using original and enhanced image variants.
 
     The vector/text path remains primary. These image passes are used only for
@@ -278,9 +280,12 @@ def _ocr_page(page: fitz.Page, dpi: int = 300, rotation: int = 0) -> list[_TextI
         cv2.THRESH_BINARY, 31, 11,
     )
     variants = (
-        ("original", bgr),
-        ("contrast_sharpen", cv2.cvtColor(sharpened, cv2.COLOR_GRAY2BGR)),
-        ("adaptive_threshold", cv2.cvtColor(adaptive, cv2.COLOR_GRAY2BGR)),
+        (
+            ("original", bgr),
+            ("contrast_sharpen", cv2.cvtColor(sharpened, cv2.COLOR_GRAY2BGR)),
+            ("adaptive_threshold", cv2.cvtColor(adaptive, cv2.COLOR_GRAY2BGR)),
+        )
+        if enhanced else (("original", bgr),)
     )
 
     engine = _get_ocr_engine()
@@ -590,13 +595,12 @@ def discover_pol648_connections(
                 ocr_attempted = False
                 should_ocr = enable_ocr and _should_run_ocr(page, text_items)
 
-                # On text-based drawings, skip OCR entirely for unrelated sheets.
-                # On image-only pages, one normal pass is used to look for the
-                # POL648 title; rotated passes are reserved for confirmed controller
-                # pages so a large multi-page project does not OCR every sheet thrice.
+                # Use a single fast OCR pass only to locate a controller on image-only
+                # pages. The three-pass enhanced OCR is reserved for confirmed POL648
+                # sheets, avoiding expensive processing of unrelated scanned pages.
                 if not controller_found and should_ocr:
                     try:
-                        ocr_items = _ocr_page(page)
+                        ocr_items = _ocr_page(page, enhanced=False)
                         ocr_attempted = True
                         text_items.extend(ocr_items)
                         controller_found = bool(re.search(
@@ -607,7 +611,7 @@ def discover_pol648_connections(
                         # A fully scanned page may itself be rotated.
                         if not controller_found and not page_text.strip():
                             for rotation in (90, 270):
-                                rotated_items = _ocr_page(page, rotation=rotation)
+                                rotated_items = _ocr_page(page, rotation=rotation, enhanced=False)
                                 if rotated_items:
                                     text_items.extend(rotated_items)
                                     controller_found = bool(re.search(
@@ -629,13 +633,15 @@ def discover_pol648_connections(
 
                 if should_ocr:
                     try:
-                        if not ocr_attempted:
-                            ocr_items = _ocr_page(page)
-                            text_items.extend(ocr_items)
+                        # Re-read the confirmed controller sheet with all image
+                        # enhancement variants, replacing the lightweight probe.
+                        ocr_items = _ocr_page(page, enhanced=True)
+                        text_items = [item for item in text_items if item.source != "OCR"]
+                        text_items.extend(ocr_items)
                         rotations_used = [0] if ocr_items else []
                         if not _terminal_anchors(text_items) or len(ocr_items) < 8:
                             for rotation in (90, 270):
-                                rotated_items = _ocr_page(page, rotation=rotation)
+                                rotated_items = _ocr_page(page, rotation=rotation, enhanced=True)
                                 if rotated_items:
                                     text_items.extend(rotated_items)
                                     rotations_used.append(rotation)
