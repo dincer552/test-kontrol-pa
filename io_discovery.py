@@ -450,6 +450,7 @@ def discover_pol648_connections(
         "ocr_errors": [],
         "pdfplumber_edges": 0,
         "pymupdf_edges": 0,
+        "pol648_pages": [],
     })
 
     found: list[IoConnection] = []
@@ -461,6 +462,12 @@ def discover_pol648_connections(
                 text_items = _text_items(page)
                 if text_items:
                     stats["pdf_text_pages"].append(page_index)
+
+                # Ignore unrelated field-device sheets that also use X1..X11.
+                page_text = page.get_text("text")
+                if not re.search(r"POL\\s*648", page_text, re.I):
+                    continue
+                stats["pol648_pages"].append(page_index)
 
                 wires = _vertical_wires_from_pymupdf(page)
                 stats["pymupdf_edges"] += len(wires)
