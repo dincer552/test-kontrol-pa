@@ -127,3 +127,50 @@ def test_input_type_hints_and_title_block_noise() -> None:
     assert _is_generic_label("-R1")
     assert _is_generic_label("POL648-A")
     assert _is_generic_label("24V AC/DC")
+
+
+def test_voltage_legend_is_not_reported_as_an_io_signal() -> None:
+    from io_discovery import _is_generic_label
+
+    assert _is_generic_label("24V AC/DC")
+    assert _is_generic_label("24 V DC")
+    assert _is_generic_label("230V AC")
+
+
+def test_ocr_uses_three_preprocessed_variants_and_deduplicates(tmp_path: Path, monkeypatch) -> None:
+    import io_discovery
+
+    doc = fitz.open()
+    page = doc.new_page(width=300, height=180)
+    page.insert_text((20, 30), "POL648.10", fontsize=12)
+    pdf_path = tmp_path / "ocr-preprocess.pdf"
+    doc.save(pdf_path)
+    doc.close()
+
+    class FakeResult:
+        boxes = [[(20, 20), (80, 20), (80, 45), (20, 45)]]
+        txts = ["X1"]
+        scores = [0.91]
+
+    class FakeEngine:
+        def __init__(self):
+            self.calls = 0
+
+        def __call__(self, image):
+            self.calls += 1
+            return FakeResult()
+
+    engine = FakeEngine()
+    monkeypatch.setattr(io_discovery, "_get_ocr_engine", lambda: engine)
+
+    scanned_doc = fitz.open(pdf_path)
+    try:
+        items = io_discovery._ocr_page(scanned_doc[0], dpi=72)
+    finally:
+        scanned_doc.close()
+
+    assert engine.calls == 3
+    assert len(items) == 1
+    assert items[0].text == "X1"
+    assert items[0].source == "OCR"
+    assert items[0].confidence == pytest.approx(0.91)
