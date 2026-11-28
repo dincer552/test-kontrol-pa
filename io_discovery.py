@@ -239,7 +239,7 @@ def _get_ocr_engine():
     return _OCR_ENGINE
 
 
-def _ocr_page(page: fitz.Page, dpi: int = 260) -> list[_TextItem]:
+def _ocr_page(page: fitz.Page, dpi: int = 260, rotation: int = 0) -> list[_TextItem]:
     """OCR image-only content with the bundled RapidOCR ONNX models."""
     import numpy as np
 
@@ -249,6 +249,16 @@ def _ocr_page(page: fitz.Page, dpi: int = 260) -> list[_TextItem]:
         image = image[:, :, :3]
     # RapidOCR accepts an OpenCV-style image array.
     image = image[:, :, ::-1].copy()
+    original_width, original_height = pix.width, pix.height
+    rotation = rotation % 360
+    if rotation == 90:
+        image = np.rot90(image, k=1).copy()
+    elif rotation == 270:
+        image = np.rot90(image, k=3).copy()
+    elif rotation not in (0, 180):
+        raise ValueError("OCR rotation must be 0, 90, 180, or 270 degrees.")
+    elif rotation == 180:
+        image = np.rot90(image, k=2).copy()
     result = _get_ocr_engine()(image)
     if result is None:
         return []
@@ -266,14 +276,23 @@ def _ocr_page(page: fitz.Page, dpi: int = 260) -> list[_TextItem]:
         score = float(scores[index]) if index < len(scores) else 0.5
         if not value or score < 0.25:
             continue
-        points = list(box)
-        xs = [float(point[0]) for point in points]
-        ys = [float(point[1]) for point in points]
+        points = []
+        for point in list(box):
+            x, y = float(point[0]), float(point[1])
+            if rotation == 90:
+                x, y = original_width - y, x
+            elif rotation == 270:
+                x, y = y, original_height - x
+            elif rotation == 180:
+                x, y = original_width - x, original_height - y
+            points.append((x, y))
+        xs = [point[0] for point in points]
+        ys = [point[1] for point in points]
         bbox = (
-            min(xs) * scale,
-            min(ys) * scale,
-            max(xs) * scale,
-            max(ys) * scale,
+            max(0.0, min(xs)) * scale,
+            max(0.0, min(ys)) * scale,
+            min(float(original_width), max(xs)) * scale,
+            min(float(original_height), max(ys)) * scale,
         )
         items.append(_TextItem(value, bbox, "OCR", score))
     return items
@@ -455,10 +474,21 @@ def discover_pol648_connections(
                     try:
                         ocr_items = _ocr_page(page)
                         text_items.extend(ocr_items)
-                        if ocr_items:
+                        rotations_used = [0] if ocr_items else []
+                        # Electrical schematics often print wire names vertically.
+                        # Try both 90-degree orientations when ordinary OCR finds
+                        # no terminal anchor or only a sparse set of words.
+                        if not _terminal_anchors(text_items) or len(ocr_items) < 8:
+                            for rotation in (90, 270):
+                                rotated_items = _ocr_page(page, rotation=rotation)
+                                if rotated_items:
+                                    text_items.extend(rotated_items)
+                                    rotations_used.append(rotation)
+                        if rotations_used:
                             stats["ocr_pages"].append({
                                 "page": page_index,
                                 "text_items": len(ocr_items),
+                                "rotations": rotations_used,
                             })
                     except Exception as exc:
                         stats["ocr_errors"].append({
