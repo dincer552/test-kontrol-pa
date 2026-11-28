@@ -24,7 +24,7 @@ POL648_TERMINAL_MODES = {
 }
 
 _TERMINAL_RE = re.compile(
-    r"(?<![A-Z0-9])(?P<terminal>DU[12]|X(?:[1-9]|1[01])|D[12]|Q[1-6])(?![A-Z0-9])",
+    r"(?<![A-Z0-9])(?P<terminal>DU\s*[12]|X\s*(?:[1-9]|1[01])|D\s*[12]|Q\s*[1-6])(?![A-Z0-9])",
     re.IGNORECASE,
 )
 _MODE_HINTS = (
@@ -58,6 +58,7 @@ class _TextItem:
     bbox: tuple[float, float, float, float]
     source: str = "PDF"
     confidence: float = 1.0
+    char_boxes: tuple[tuple[float, float, float, float] | None, ...] = ()
 
     @property
     def cx(self) -> float:
@@ -91,33 +92,64 @@ def _clean_ocr_terminal_text(value: str) -> str:
 
 def _text_items(page: fitz.Page) -> list[_TextItem]:
     items: list[_TextItem] = []
-    data = page.get_text("dict")
+    data = page.get_text("rawdict")
     for block in data.get("blocks", []):
         for line in block.get("lines", []):
             spans = line.get("spans", [])
-            # Keep individual spans for exact terminal positions.
-            for span in spans:
-                text = str(span.get("text", "")).strip()
-                bbox = span.get("bbox")
-                if text and bbox and len(bbox) == 4:
-                    items.append(_TextItem(text, tuple(float(v) for v in bbox)))
-            # Also add a whole-line item so labels split across font runs survive.
-            if spans:
-                line_text = " ".join(
-                    str(span.get("text", "")).strip()
-                    for span in spans if str(span.get("text", "")).strip()
-                ).strip()
-                boxes = [span.get("bbox") for span in spans if span.get("bbox")]
-                if line_text and boxes:
-                    items.append(_TextItem(
-                        line_text,
-                        (
-                            min(float(b[0]) for b in boxes),
-                            min(float(b[1]) for b in boxes),
-                            max(float(b[2]) for b in boxes),
-                            max(float(b[3]) for b in boxes),
-                        ),
-                    ))
+            line_text_parts: list[str] = []
+            line_char_boxes: list[tuple[float, float, float, float] | None] = []
+            line_boxes: list[tuple[float, float, float, float]] = []
+
+            for span_index, span in enumerate(spans):
+                chars = span.get("chars", [])
+                if chars:
+                    text = "".join(str(char.get("c", "")) for char in chars)
+                    boxes = tuple(
+                        tuple(float(v) for v in char.get("bbox", (0, 0, 0, 0)))
+                        if char.get("bbox") else None
+                        for char in chars
+                    )
+                    valid_boxes = [box for box in boxes if box is not None]
+                    if text and valid_boxes:
+                        items.append(_TextItem(
+                            text,
+                            (
+                                min(box[0] for box in valid_boxes),
+                                min(box[1] for box in valid_boxes),
+                                max(box[2] for box in valid_boxes),
+                                max(box[3] for box in valid_boxes),
+                            ),
+                            char_boxes=boxes,
+                        ))
+                    line_text_parts.append(text)
+                    line_char_boxes.extend(boxes)
+                    line_boxes.extend(valid_boxes)
+                else:
+                    text = str(span.get("text", "")).strip()
+                    bbox = span.get("bbox")
+                    if text and bbox and len(bbox) == 4:
+                        box = tuple(float(v) for v in bbox)
+                        items.append(_TextItem(text, box))
+                        line_text_parts.append(text)
+                        line_char_boxes.extend([box] * len(text))
+                        line_boxes.append(box)
+
+                if span_index < len(spans) - 1:
+                    line_text_parts.append(" ")
+                    line_char_boxes.append(None)
+
+            line_text = "".join(line_text_parts).strip()
+            if line_text and line_boxes:
+                items.append(_TextItem(
+                    line_text,
+                    (
+                        min(box[0] for box in line_boxes),
+                        min(box[1] for box in line_boxes),
+                        max(box[2] for box in line_boxes),
+                        max(box[3] for box in line_boxes),
+                    ),
+                    char_boxes=tuple(line_char_boxes) if len(line_char_boxes) == len(line_text) else (),
+                ))
     return items
 
 
@@ -247,11 +279,34 @@ def _terminal_anchors(items: list[_TextItem]) -> list[tuple[str, float, float, t
     for item in items:
         candidate = _clean_ocr_terminal_text(item.text)
         for match in _TERMINAL_RE.finditer(candidate):
-            terminal = match.group("terminal").upper()
-            anchors.append((terminal, item.cx, item.cy, item.bbox, item))
+            terminal = re.sub(r"\s+", "", match.group("terminal")).upper()
+            bbox = item.bbox
+            # Character boxes separate X1 and X2 even when CAD exports a
+            # complete terminal row as one text span.
+            if item.char_boxes and len(item.char_boxes) == len(item.text):
+                selected = [
+                    box for box in item.char_boxes[match.start():match.end()]
+                    if box is not None
+                ]
+                if selected:
+                    bbox = (
+                        min(box[0] for box in selected),
+                        min(box[1] for box in selected),
+                        max(box[2] for box in selected),
+                        max(box[3] for box in selected),
+                    )
+            anchor_item = _TextItem(
+                match.group("terminal"), bbox, item.source, item.confidence
+            )
+            anchors.append((
+                terminal,
+                (bbox[0] + bbox[2]) / 2,
+                (bbox[1] + bbox[3]) / 2,
+                bbox,
+                anchor_item,
+            ))
 
-    # PyMuPDF may expose both a span and its enclosing line. Collapse anchors
-    # only when the same terminal occupies the same physical point.
+    # Collapse overlapping matches from a span and its enclosing line.
     unique = []
     for anchor in sorted(anchors, key=lambda value: (value[0], value[1], value[2])):
         if any(
