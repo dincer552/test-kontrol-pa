@@ -24,7 +24,7 @@ POL648_TERMINAL_MODES = {
 }
 
 _TERMINAL_RE = re.compile(
-    r"(?<![A-Z0-9])(?P<terminal>DU\s*[12]|X\s*(?:[1-9]|1[01])|D\s*[12]|Q\s*[1-6])(?![A-Z0-9])",
+    r"(?<![A-Z0-9])(?P<terminal>DU\s*[12]|X\s*(?:[1-9]|1[01])|D\s*[12])(?![A-Z0-9])",
     re.IGNORECASE,
 )
 _MODE_HINTS = (
