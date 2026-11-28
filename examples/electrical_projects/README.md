@@ -25,3 +25,5 @@ A result is still a PDF-derived candidate, not a verified electrical fact. DI/AI
 
 
 Regression tests cover adjacent X1/X2 terminal labels, non-POL648 field-device sheets, and DI/AI versus output-label filtering.
+
+The wire-geometry matcher assigns each conductor to the nearest terminal only, preventing adjacent X terminals from claiming the same line.
