@@ -559,11 +559,31 @@ def discover_pol648_connections(
 
                 # Build a terminal-to-wire map before assigning labels. This
                 # prevents a nearby label from drifting to the next terminal.
-                terminal_wires: dict[str, list[_Wire]] = {}
-                terminal_positions: dict[str, tuple[float, float]] = {}
-                for terminal, tx, ty, _bbox, _source in anchors:
-                    terminal_wires[terminal] = _wires_for_terminal(tx, ty, wires)
-                    terminal_positions[terminal] = (tx, ty)
+                terminal_wires: dict[str, list[_Wire]] = {
+                    terminal: [] for terminal, _tx, _ty, _bbox, _source in anchors
+                }
+                terminal_positions: dict[str, tuple[float, float]] = {
+                    terminal: (tx, ty)
+                    for terminal, tx, ty, _bbox, _source in anchors
+                }
+                # Each physical conductor belongs to its nearest terminal
+                # anchor only. Without this global assignment, two close
+                # terminals can both claim the same vertical wire.
+                for wire in wires:
+                    wire_candidates = []
+                    for terminal, tx, ty, _bbox, _source in anchors:
+                        if wire.bottom <= ty or wire.top > ty + 180:
+                            continue
+                        dx = abs(wire.x - tx)
+                        if dx <= 28:
+                            wire_candidates.append((dx, terminal))
+                    if wire_candidates:
+                        wire_candidates.sort(key=lambda entry: entry[0])
+                        if (
+                            len(wire_candidates) == 1
+                            or wire_candidates[1][0] - wire_candidates[0][0] > 1.5
+                        ):
+                            terminal_wires[wire_candidates[0][1]].append(wire)
 
                 numeric_labels: list[tuple[str, str, float, float, float]] = []
                 for item in text_items:
