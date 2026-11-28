@@ -49,7 +49,7 @@ jobs:
         run: python icon_builder.py
 
       - name: Compile sources
-        run: python -m py_compile app.py models.py updater.py webbrowser.py build_info.py connection.py tcp_tunnel.py pdf_reader.py damper.py sensors.py report.py icon_builder.py
+        run: python -m py_compile app.py models.py updater.py webbrowser.py build_info.py connection.py tcp_tunnel.py pdf_reader.py io_discovery.py damper.py sensors.py report.py icon_builder.py
 
       - name: Build EXE
         shell: pwsh
