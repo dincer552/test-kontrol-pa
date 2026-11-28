@@ -126,3 +126,4 @@ def test_input_type_hints_and_title_block_noise() -> None:
     assert _is_generic_label("Appr")
     assert _is_generic_label("-R1")
     assert _is_generic_label("POL648-A")
+    assert _is_generic_label("24V AC/DC")
