@@ -139,6 +139,13 @@ jobs:
           fi
 
       - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: POL648_IO_Discovery_Results
+          path: io_discovery_results/
+          if-no-files-found: warn
+
+      - uses: actions/upload-artifact@v4
         with:
           name: Test_Kontrol_Windows
           path: dist/Test_Kontrol_v0.1.0.${{ github.run_number }}.exe
