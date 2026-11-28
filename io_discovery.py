@@ -519,14 +519,55 @@ def discover_pol648_connections(
                     wires.extend(extra_wires)
                     stats["pdfplumber_edges"] += len(extra_wires)
 
-                if enable_ocr and _should_run_ocr(page, text_items):
+                page_text = page.get_text("text")
+                controller_found = bool(re.search(r"POL\s*648", page_text, re.I))
+                ocr_items: list[_TextItem] = []
+                ocr_attempted = False
+                should_ocr = enable_ocr and _should_run_ocr(page, text_items)
+
+                # On text-based drawings, skip OCR entirely for unrelated sheets.
+                # On image-only pages, one normal pass is used to look for the
+                # POL648 title; rotated passes are reserved for confirmed controller
+                # pages so a large multi-page project does not OCR every sheet thrice.
+                if not controller_found and should_ocr:
                     try:
                         ocr_items = _ocr_page(page)
+                        ocr_attempted = True
                         text_items.extend(ocr_items)
+                        controller_found = bool(re.search(
+                            r"POL\s*648",
+                            " ".join(item.text for item in ocr_items),
+                            re.I,
+                        ))
+                        # A fully scanned page may itself be rotated.
+                        if not controller_found and not page_text.strip():
+                            for rotation in (90, 270):
+                                rotated_items = _ocr_page(page, rotation=rotation)
+                                if rotated_items:
+                                    text_items.extend(rotated_items)
+                                    controller_found = bool(re.search(
+                                        r"POL\s*648",
+                                        " ".join(item.text for item in rotated_items),
+                                        re.I,
+                                    ))
+                                if controller_found:
+                                    break
+                    except Exception as exc:
+                        stats["ocr_errors"].append({
+                            "page": page_index,
+                            "error": str(exc),
+                        })
+
+                if not controller_found:
+                    continue
+                stats["pol648_pages"].append(page_index)
+
+                if should_ocr:
+                    try:
+                        if not ocr_attempted:
+                            ocr_items = _ocr_page(page)
+                            text_items.extend(ocr_items)
                         rotations_used = [0] if ocr_items else []
-                        # Electrical schematics often print wire names vertically.
-                        # Try both 90-degree orientations when ordinary OCR finds
-                        # no terminal anchor or only a sparse set of words.
                         if not _terminal_anchors(text_items) or len(ocr_items) < 8:
                             for rotation in (90, 270):
                                 rotated_items = _ocr_page(page, rotation=rotation)
@@ -544,14 +585,6 @@ def discover_pol648_connections(
                             "page": page_index,
                             "error": str(exc),
                         })
-
-                # OCR is performed before this gate so scanned controller
-                # pages can be identified from their rasterized POL648 title.
-                page_text = page.get_text("text")
-                recognized_text = " ".join(item.text for item in text_items)
-                if not re.search(r"POL\s*648", page_text + " " + recognized_text, re.I):
-                    continue
-                stats["pol648_pages"].append(page_index)
 
                 anchors = _terminal_anchors(text_items)
                 if not anchors:
