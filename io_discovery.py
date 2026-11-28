@@ -375,13 +375,33 @@ def _wires_for_terminal(
     return merged
 
 
+_NOISE_LABELS = {
+    "APPR", "APPROVED", "DATE", "ED", "ORIGINAL", "DRAWN", "CHECKED",
+    "ONAYLAYAN", "TARIH", "ÇIZEN", "HARUN PAK", "YUSUF UÇAR",
+    "SYSTEMAIR", "TEGETA OFFICE", "GENERAL RUN", "GENERAL ALARM",
+    "SPARE", "ILLUMINATION",
+}
+
+
 def _is_generic_label(value: str) -> bool:
-    normalized = re.sub(r"[^A-Z0-9+]", "", value.upper())
-    return normalized in {
+    cleaned = re.sub(r"^[-+\\s]+", "", value).strip()
+    normalized = re.sub(r"[^A-Z0-9+]", "", cleaned.upper())
+    if normalized in {
         "", "M", "GND", "COM", "0V", "24V", "5V", "N", "L", "PE",
-        "X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9",
-        "X10", "X11", "D1", "D2", "DU1", "DU2",
-    }
+        "DIP", "G+", "SLCH", "LIHCH", "POL648A", "POL648B",
+    }:
+        return True
+    if cleaned.casefold() in {item.casefold() for item in _NOISE_LABELS}:
+        return True
+    if re.match(r"^(?:W|R|U|TS|HA)\\d", cleaned, re.I):
+        return True
+    if re.match(r"^(?:POL648|AHU[_ -]?\\d|DAV[_ -]THF)", cleaned, re.I):
+        return True
+    if re.search(r"(?:fax:|tel:|www\\.|https?://|@)", cleaned, re.I):
+        return True
+    if re.search(r"\\b\\d+(?:[.,]\\d+)?\\s*(?:kw|w)\\b|mm[²2]", cleaned, re.I):
+        return True
+    return False
 
 
 def _split_cable_and_signal(value: str) -> tuple[str, str]:
@@ -396,10 +416,27 @@ def _split_cable_and_signal(value: str) -> tuple[str, str]:
     return cable, signal.strip()
 
 
-def _classify_signal(text: str) -> str:
+def _classify_signal(text: str, terminal: str = "") -> str:
+    upper = text.upper()
+    if terminal in {"D1", "D2", "DU1", "DU2"}:
+        return "DI"
+    # Explicit electrical notation takes precedence over semantic label hints.
     for pattern, label in _MODE_HINTS:
         if pattern.search(text):
-            return label
+            if label == "DI":
+                return "DI"
+            if label.startswith("4–20") or label.startswith("0–10") or label.endswith("AI"):
+                return "AI"
+            if label == "AO" or label.startswith("Analog output"):
+                return "AO"
+            if label == "DO":
+                return "DO"
+    if re.search(r"\\bSW\\b|SWITCH|ALARM|EMERGENCY|STOP|FIRE|PHASE PROTECTION", upper):
+        return "DI"
+    if re.search(r"\\bFEEDBACK\\b|\\bCO2\\b|\\bHUM(?:IDITY)?\\b|TEMP|TEMPERATURE|PRESSURE|SENSOR", upper):
+        return "AI"
+    if re.search(r"VALVE[_ ]?POS|ACTUATOR|COMMAND|\\bCONTROL\\b", upper):
+        return "AO"
     return _DEFAULT_TYPE
 
 
@@ -580,7 +617,9 @@ def discover_pol648_connections(
                             continue
                         if abs(context_item.cx - wire_x) <= 14 and abs(context_item.cy - cy) <= 85:
                             local_context.append(context_item.text)
-                    signal_type = _classify_signal(" ".join(local_context))
+                    signal_type = _classify_signal(" ".join(local_context), terminal)
+                    if signal_type in {"AO", "DO"}:
+                        continue
                     confidence = max(0.0, min(1.0, item.confidence - best_score / 100.0))
                     found.append(IoConnection(
                         terminal=terminal,
