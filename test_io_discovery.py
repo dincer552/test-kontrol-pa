@@ -13,6 +13,7 @@ def _make_vector_project(path: Path) -> None:
     page = doc.new_page(width=600, height=800)
 
     # POL648 terminal and its drawn vertical conductor.
+    page.insert_text((20, 30), "POL648.10 SIEMENS", fontsize=12)
     page.insert_text((94, 58), "X1", fontsize=11)
     page.draw_line((100, 72), (100, 330), color=(0, 0, 0), width=0.8)
 
@@ -82,6 +83,7 @@ def test_adjacent_terminals_in_one_cad_text_span_keep_separate_coordinates(tmp_p
     page = doc.new_page(width=600, height=800)
 
     # CAD exporters commonly store a whole terminal row in one text span.
+    page.insert_text((20, 30), "POL648.10 SIEMENS", fontsize=12)
     page.insert_text((50, 60), "X1 M X2", fontsize=14)
     page.draw_line((58, 72), (58, 330), color=(0, 0, 0), width=0.8)
     page.draw_line((84, 72), (84, 330), color=(0, 0, 0), width=0.8)
