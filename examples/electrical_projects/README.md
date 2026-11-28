@@ -22,3 +22,6 @@ The extraction first identifies a page containing a POL648 controller label, the
 The script writes `io_discovery_results/results.json`, `connections.csv` and `REPORT.md`. Each row shows the source PDF, page, terminal, signal label, type candidate, cable number, source and confidence score.
 
 A result is still a PDF-derived candidate, not a verified electrical fact. DI/AI classification is shown only when explicit electrical notation or a recognizable signal label supports it; unknown labels remain unclassified. Compare each row with the original drawing before treating it as correct. The PDF does not always prove the active configuration of a universal X1–X8 channel.
+
+
+Regression tests cover adjacent X1/X2 terminal labels, non-POL648 field-device sheets, and DI/AI versus output-label filtering.
