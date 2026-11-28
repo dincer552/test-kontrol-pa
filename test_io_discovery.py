@@ -73,3 +73,27 @@ def test_scanned_page_can_be_read_by_rapidocr_when_installed(tmp_path: Path) -> 
 
     assert items
     assert any("X1" in item.text.upper() or "EMERGENCY" in item.text.upper() for item in items)
+
+
+
+def test_adjacent_terminals_in_one_cad_text_span_keep_separate_coordinates(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "pol648-multiple-pins.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=600, height=800)
+
+    # CAD exporters commonly store a whole terminal row in one text span.
+    page.insert_text((50, 60), "X1 M X2", fontsize=14)
+    page.draw_line((58, 72), (58, 330), color=(0, 0, 0), width=0.8)
+    page.draw_line((84, 72), (84, 330), color=(0, 0, 0), width=0.8)
+    page.insert_text((65, 180), "DI_FIRE_ALARM", fontsize=10, rotate=90)
+    page.insert_text((91, 180), "AI_SUPPLY_TEMP", fontsize=10, rotate=90)
+    doc.save(pdf_path)
+    doc.close()
+
+    rows = discover_pol648_connections(pdf_path, enable_ocr=False)
+    by_terminal = {row.terminal: row for row in rows}
+
+    assert by_terminal["X1"].signal == "FIRE_ALARM"
+    assert by_terminal["X1"].signal_type == "DI"
+    assert by_terminal["X2"].signal == "SUPPLY_TEMP"
+    assert by_terminal["X2"].signal_type == "AI"
