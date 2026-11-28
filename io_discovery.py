@@ -384,7 +384,7 @@ _NOISE_LABELS = {
 
 
 def _is_generic_label(value: str) -> bool:
-    cleaned = re.sub(r"^[-+\\s]+", "", value).strip()
+    cleaned = re.sub(r"^[-+\s]+", "", value).strip()
     normalized = re.sub(r"[^A-Z0-9+]", "", cleaned.upper())
     if normalized in {
         "", "M", "GND", "COM", "0V", "24V", "5V", "N", "L", "PE",
@@ -393,13 +393,13 @@ def _is_generic_label(value: str) -> bool:
         return True
     if cleaned.casefold() in {item.casefold() for item in _NOISE_LABELS}:
         return True
-    if re.match(r"^(?:W|R|U|TS|HA)\\d", cleaned, re.I):
+    if re.match(r"^(?:W|R|U|TS|HA)\d", cleaned, re.I):
         return True
-    if re.match(r"^(?:POL648|AHU[_ -]?\\d|DAV[_ -]THF)", cleaned, re.I):
+    if re.match(r"^(?:POL648|AHU[_ -]?\d|DAV[_ -]THF)", cleaned, re.I):
         return True
-    if re.search(r"(?:fax:|tel:|www\\.|https?://|@)", cleaned, re.I):
+    if re.search(r"(?:fax:|tel:|www\.|https?://|@)", cleaned, re.I):
         return True
-    if re.search(r"\\b\\d+(?:[.,]\\d+)?\\s*(?:kw|w)\\b|mm[²2]", cleaned, re.I):
+    if re.search(r"\b\d+(?:[.,]\d+)?\s*(?:kw|w)\b|mm[²2]", cleaned, re.I):
         return True
     return False
 
@@ -431,11 +431,11 @@ def _classify_signal(text: str, terminal: str = "") -> str:
                 return "AO"
             if label == "DO":
                 return "DO"
-    if re.search(r"\\bSW\\b|SWITCH|ALARM|EMERGENCY|STOP|FIRE|PHASE PROTECTION", upper):
+    if re.search(r"\bSW\b|SWITCH|ALARM|EMERGENCY|STOP|FIRE|PHASE PROTECTION", upper):
         return "DI"
-    if re.search(r"\\bFEEDBACK\\b|\\bCO2\\b|\\bHUM(?:IDITY)?\\b|TEMP|TEMPERATURE|PRESSURE|SENSOR", upper):
+    if re.search(r"\bFEEDBACK\b|\bCO2\b|\bHUM(?:IDITY)?\b|TEMP|TEMPERATURE|PRESSURE|SENSOR", upper):
         return "AI"
-    if re.search(r"VALVE[_ ]?POS|ACTUATOR|COMMAND|\\bCONTROL\\b", upper):
+    if re.search(r"VALVE[_ ]?POS|ACTUATOR|COMMAND|\bCONTROL\b", upper):
         return "AO"
     return _DEFAULT_TYPE
 
@@ -500,12 +500,6 @@ def discover_pol648_connections(
                 if text_items:
                     stats["pdf_text_pages"].append(page_index)
 
-                # Ignore unrelated field-device sheets that also use X1..X11.
-                page_text = page.get_text("text")
-                if not re.search(r"POL\\s*648", page_text, re.I):
-                    continue
-                stats["pol648_pages"].append(page_index)
-
                 wires = _vertical_wires_from_pymupdf(page)
                 stats["pymupdf_edges"] += len(wires)
                 if page_index <= len(plumber.pages):
@@ -539,6 +533,14 @@ def discover_pol648_connections(
                             "page": page_index,
                             "error": str(exc),
                         })
+
+                # OCR is performed before this gate so scanned controller
+                # pages can be identified from their rasterized POL648 title.
+                page_text = page.get_text("text")
+                recognized_text = " ".join(item.text for item in text_items)
+                if not re.search(r"POL\s*648", page_text + " " + recognized_text, re.I):
+                    continue
+                stats["pol648_pages"].append(page_index)
 
                 anchors = _terminal_anchors(text_items)
                 if not anchors:
