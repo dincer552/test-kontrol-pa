@@ -99,3 +99,30 @@ def test_adjacent_terminals_in_one_cad_text_span_keep_separate_coordinates(tmp_p
     assert by_terminal["X1"].signal_type == "DI"
     assert by_terminal["X2"].signal == "SUPPLY_TEMP"
     assert by_terminal["X2"].signal_type == "AI"
+
+
+
+def test_non_controller_device_sheet_is_ignored(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "field-device-sheet.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=600, height=800)
+    page.insert_text((94, 58), "X1", fontsize=11)
+    page.draw_line((100, 72), (100, 330), color=(0, 0, 0), width=0.8)
+    page.insert_text((108, 180), "DI_FIRE_ALARM", fontsize=10, rotate=90)
+    doc.save(pdf_path)
+    doc.close()
+
+    assert discover_pol648_connections(pdf_path, enable_ocr=False) == []
+
+
+def test_input_type_hints_and_title_block_noise() -> None:
+    from io_discovery import _classify_signal, _is_generic_label
+
+    assert _classify_signal("DI_Pres_SW_1", "X1") == "DI"
+    assert _classify_signal("Cooling_Valve_Feedback-1", "X2") == "AI"
+    assert _classify_signal("Cooling_Valve_pos-1", "X1") == "AO"
+    assert _is_generic_label("Fax: +90 (262) 460 49 95")
+    assert _is_generic_label("YUSUF UÇAR")
+    assert _is_generic_label("Appr")
+    assert _is_generic_label("-R1")
+    assert _is_generic_label("POL648-A")
